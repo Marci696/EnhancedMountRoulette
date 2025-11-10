@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -7,9 +8,11 @@ using System.Linq;
 using BetterMountRoulette.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
+using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel.Sheets;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using Lumina;
 using Lumina.Extensions;
 
@@ -36,6 +39,9 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IPluginLog Log { get; private set; } = null!;
 
+    [PluginService]
+    internal static IChatGui ChatGui { get; private set; } = null!;
+
     private const string CommandName = "/pmbmroulette";
 
     public Configuration Configuration { get; init; }
@@ -61,6 +67,14 @@ public sealed class Plugin : IDalamudPlugin
         {
             HelpMessage = "A useful message to display in /xlhelp"
         });
+        CommandManager.AddHandler("/blacklist-mount", new CommandInfo(OnBlacklistCommand)
+        {
+            HelpMessage = "Blacklist a mount by name"
+        });
+        CommandManager.AddHandler("/better-mount-roulette", new CommandInfo(OnCallMountCommand)
+        {
+            HelpMessage = "Calls a random mount from the list"
+        });
 
         // Tell the UI system that we want our windows to be drawn throught he window system
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
@@ -77,7 +91,9 @@ public sealed class Plugin : IDalamudPlugin
         // Example Output: 00:57:54.959 | INF | [BetterMountRoulette] ===A cool log message from Sample Plugin===
         Log.Information($"===A cool log message from {PluginInterface.Manifest.Name}===");
 
-        UnlockedMounts();
+        Log.Debug("Blacklisted mounts: " + Configuration.BlacklistedMountIds.ToString());
+
+        // UnlockedMounts();
     }
 
     public void Dispose()
@@ -107,13 +123,70 @@ public sealed class Plugin : IDalamudPlugin
         }
         else
         {
-            var isMountUnlocked = IsMountUnlocked(checked((int)mount.Value.RowId + 1));
-            
-            Log.Debug($" Mount \"{mount.Value.Singular.ExtractText()}\" is unlocked: {isMountUnlocked}");
+            var isMountUnlocked = IsMountUnlocked(checked((int)mount.Value.RowId));
+
+            Log.Debug(
+                $" Mount \"{mount.Value.Singular.ExtractText()}\" with icon {mount.Value.Icon} is unlocked: {isMountUnlocked}");
         }
 
         // In response to the slash command, toggle the display status of our main ui
         MainWindow.Toggle();
+    }
+
+    private void OnBlacklistCommand(string command, string args)
+    {
+        var mount = GetMount(args);
+
+        if (mount == null)
+        {
+            ChatGui.PrintError($"No mount found for the name \"{args}\"");
+
+            return;
+        }
+
+        var mountId = mount.Value.RowId + 1;
+
+        Configuration.BlacklistedMountIds.Add(mountId);
+        Configuration.Save();
+
+        ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was blacklisted");
+    }
+
+    private void OnCallMountCommand(string command, string args)
+    {
+        var availableMountsForShuffle = new List<uint>();
+        string ownedMounts = "";
+
+        unsafe
+        {
+            var mountList = PlayerState.Instance();
+            var mounts = mountList->UnlockedMountsBitArray;
+
+            foreach (var mount in mounts)
+            {
+                bool isMountUnlocked = mount.Value;
+                uint mountId = (uint)mount.Index + 1;
+                ownedMounts += $"{mountId}: {GetMount(mountId)?.Singular.ExtractText() ?? "does not exist"}, owned: {isMountUnlocked}\n";
+
+                if (isMountUnlocked.Equals(true) && GetMount(mountId) != null &&
+                    !Configuration.BlacklistedMountIds.Contains(mountId))
+                {
+                    availableMountsForShuffle.Add(mountId);
+                }
+            }
+        }
+
+        var randomNumber = Random.Shared.Next(availableMountsForShuffle.Count);
+        var mountIdToMount = availableMountsForShuffle[randomNumber];
+
+        Log.Information(ownedMounts);
+        Log.Information($"MountIdToMount: {mountIdToMount}, Name: {GetMount(mountIdToMount)?.Singular.ExtractText()}");
+
+        unsafe
+        {
+            ActionManager.Instance()->UseAction(ActionType.Mount, mountIdToMount);
+            // ActionManager.Instance()->UseAction(ActionType.Mount, availableMountsForShuffle[mountIdToMount]);
+        }
     }
 
     private void UnlockedMounts()
@@ -139,6 +212,25 @@ public sealed class Plugin : IDalamudPlugin
                          .FirstOrNull();
     }
 
+    private Mount? GetMount(uint mountId)
+    {
+        var mountSheet = DataManager.GetExcelSheet<Mount>();
+
+        var mount =  mountSheet.GetRowOrDefault(mountId);
+        
+        if (!mount.HasValue)
+        {
+            return null;
+        }
+
+        if (mount.Value.Singular.IsEmpty)
+        {
+            return null;
+        }
+
+        return mount;
+    }
+
     private bool IsMountUnlocked(int mountId)
     {
         unsafe
@@ -147,7 +239,7 @@ public sealed class Plugin : IDalamudPlugin
 
             var unlockedMounts = mountList->UnlockedMountsBitArray;
 
-            return unlockedMounts.Get(mountId);
+            return unlockedMounts.Get(mountId + 1);
         }
     }
 
