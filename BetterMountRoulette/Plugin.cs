@@ -159,17 +159,24 @@ public sealed class Plugin : IDalamudPlugin
 
         unsafe
         {
-            var mountList = PlayerState.Instance();
-            var mounts = mountList->UnlockedMountsBitArray;
-
-            foreach (var mount in mounts)
+            var mountSheet = DataManager.GetExcelSheet<Mount>();
+                
+            foreach (var mount in mountSheet)
             {
-                bool isMountUnlocked = mount.Value;
-                uint mountId = (uint)mount.Index + 1;
-                ownedMounts += $"{mountId}: {GetMount(mountId)?.Singular.ExtractText() ?? "does not exist"}, owned: {isMountUnlocked}\n";
+                // Skip invalid mounts
+                if (mount.Singular.IsEmpty || mount.Order < 0)
+                    continue;
+                    
+                var mountList = PlayerState.Instance();
+                var mounts = mountList->UnlockedMountsBitArray;
+                    
+                // Use mount.Order as the bit array index, not the row ID
+                bool isMountUnlocked = mounts.Get(mount.Order);
+                uint mountId = mount.RowId;
+                    
+                ownedMounts += $"{mountId}: {mount.Singular.ExtractText()}, owned: {isMountUnlocked}\n";
 
-                if (isMountUnlocked.Equals(true) && GetMount(mountId) != null &&
-                    !Configuration.BlacklistedMountIds.Contains(mountId))
+                if (isMountUnlocked && !Configuration.BlacklistedMountIds.Contains(mountId))
                 {
                     availableMountsForShuffle.Add(mountId);
                 }
@@ -185,7 +192,6 @@ public sealed class Plugin : IDalamudPlugin
         unsafe
         {
             ActionManager.Instance()->UseAction(ActionType.Mount, mountIdToMount);
-            // ActionManager.Instance()->UseAction(ActionType.Mount, availableMountsForShuffle[mountIdToMount]);
         }
     }
 
