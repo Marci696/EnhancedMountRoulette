@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility;
@@ -6,12 +7,13 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Lumina.Excel.Sheets;
 
-namespace SamplePlugin.Windows;
+namespace BetterMountRoulette.Windows;
 
 public class MainWindow : Window, IDisposable
 {
     private readonly string goatImagePath;
     private readonly Plugin plugin;
+    private string allMounts = "";
 
     // We give this window a hidden ID using ##.
     // The user will see "My Amazing Window" as window title,
@@ -27,6 +29,18 @@ public class MainWindow : Window, IDisposable
 
         this.goatImagePath = goatImagePath;
         this.plugin = plugin;
+
+        var allMounts = "";
+        
+        
+        var mountSheet = Plugin.DataManager.GetExcelSheet<Mount>();
+        foreach (var mount in mountSheet)
+        {
+            allMounts += mount.RowId + ": " +  mount.Singular.ExtractText() + ", " + mount.Unknown3.ExtractText();
+            allMounts += "\n";
+        }
+        
+        this.allMounts = allMounts;
     }
 
     public void Dispose() { }
@@ -84,6 +98,8 @@ public class MainWindow : Window, IDisposable
 
                 // If you want to see the Macro representation of this SeString use `ToMacroString()`
                 ImGui.TextUnformatted($"Our current job is ({localPlayer.ClassJob.RowId}) \"{localPlayer.ClassJob.Value.Abbreviation}\"");
+                
+                ImGui.TextUnformatted($"All mounts: {allMounts}");
 
                 // Example for quarrying Lumina directly, getting the name of our current area.
                 var territoryId = Plugin.ClientState.TerritoryType;

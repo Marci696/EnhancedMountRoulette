@@ -2,9 +2,10 @@
 <Project Sdk="Dalamud.NET.Sdk/13.1.0">
     <PropertyGroup>
         <Version>0.0.0.1</Version>
-        <Description>A sample plugin.</Description>
-        <PackageProjectUrl>https://github.com/goatcorp/SamplePlugin</PackageProjectUrl>
-        <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+        <Description>Provide a better customizable list of mounts for roulette.</Description>
+        <PackageProjectUrl>https://github.com/Marci696/better-mount-roulette</PackageProjectUrl>
+        <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+        <RootNamespace>BetterMountRoulette</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
