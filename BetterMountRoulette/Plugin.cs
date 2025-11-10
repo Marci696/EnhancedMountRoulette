@@ -67,9 +67,21 @@ public sealed class Plugin : IDalamudPlugin
         {
             HelpMessage = "A useful message to display in /xlhelp"
         });
-        CommandManager.AddHandler("/blacklist-mount", new CommandInfo(OnBlacklistCommand)
+        CommandManager.AddHandler("/better-mount-blacklist-add", new CommandInfo(OnBlacklistCommand)
         {
             HelpMessage = "Blacklist a mount by name"
+        });
+        CommandManager.AddHandler("/better-mount-blacklist-remove", new CommandInfo(OnBlacklistRemoveCommand)
+        {
+            HelpMessage = "Remove a mount from blacklist"
+        });
+        CommandManager.AddHandler("/better-mount-blacklist-clear", new CommandInfo(OnClearBlacklistCommand)
+        {
+            HelpMessage = "Clear blacklist"
+        });
+        CommandManager.AddHandler("/better-mount-blacklist-current", new CommandInfo(OnCurrentBlacklistCommand)
+        {
+            HelpMessage = "Show currently blacklisted mounts"
         });
         CommandManager.AddHandler("/better-mount-roulette", new CommandInfo(OnCallMountCommand)
         {
@@ -144,12 +156,58 @@ public sealed class Plugin : IDalamudPlugin
             return;
         }
 
-        var mountId = mount.Value.RowId + 1;
+        var mountId = mount.Value.RowId;
 
         Configuration.BlacklistedMountIds.Add(mountId);
         Configuration.Save();
 
         ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was blacklisted");
+    }
+    
+    private void OnBlacklistRemoveCommand(string command, string args)
+    {
+        var mount = GetMount(args);
+
+        if (mount == null)
+        {
+            ChatGui.PrintError($"No mount found for the name \"{args}\"");
+
+            return;
+        }
+
+        var mountId = mount.Value.RowId;
+
+        Configuration.BlacklistedMountIds.Remove(mountId);
+        Configuration.Save();
+
+        ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was removed from blacklist");
+    }
+
+    private void OnClearBlacklistCommand(string command, string args)
+    {
+        Configuration.BlacklistedMountIds.Clear();
+        Configuration.Save();
+
+        ChatGui.Print("Blacklist cleared");
+    }
+
+    private void OnCurrentBlacklistCommand(string command, string args)
+    {
+        var blacklistedMounts = new List<string>();
+
+        foreach (var mountId in Configuration.BlacklistedMountIds)
+        {
+            var mount = GetMount(mountId);
+
+            if (mount == null)
+            {
+                continue;
+            }
+
+            blacklistedMounts.Add(mount.Value.Singular.ExtractText());
+        }
+
+        ChatGui.Print("Current Blacklist: " + string.Join(", ", blacklistedMounts));
     }
 
     private void OnCallMountCommand(string command, string args)
@@ -160,20 +218,20 @@ public sealed class Plugin : IDalamudPlugin
         unsafe
         {
             var mountSheet = DataManager.GetExcelSheet<Mount>();
-                
+
             foreach (var mount in mountSheet)
             {
                 // Skip invalid mounts
                 if (mount.Singular.IsEmpty || mount.Order < 0)
                     continue;
-                    
+
                 var mountList = PlayerState.Instance();
                 var mounts = mountList->UnlockedMountsBitArray;
-                    
+
                 // Use mount.Order as the bit array index, not the row ID
                 bool isMountUnlocked = mounts.Get(mount.Order);
                 uint mountId = mount.RowId;
-                    
+
                 ownedMounts += $"{mountId}: {mount.Singular.ExtractText()}, owned: {isMountUnlocked}\n";
 
                 if (isMountUnlocked && !Configuration.BlacklistedMountIds.Contains(mountId))
@@ -222,8 +280,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         var mountSheet = DataManager.GetExcelSheet<Mount>();
 
-        var mount =  mountSheet.GetRowOrDefault(mountId);
-        
+        var mount = mountSheet.GetRowOrDefault(mountId);
+
         if (!mount.HasValue)
         {
             return null;
