@@ -6,12 +6,47 @@
         <PackageProjectUrl>https://github.com/Marci696/better-mount-roulette</PackageProjectUrl>
         <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
         <RootNamespace>BetterMountRoulette</RootNamespace>
+
+        <TargetFramework>net9.0-windows</TargetFramework>
+        <Platforms>x64</Platforms>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+        <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <AssemblySearchPaths>$(AssemblySearchPaths);$(DalamudLibPath)</AssemblySearchPaths>
     </PropertyGroup>
+
+    <!-- Remove the FFXIVClientStructs reference that the SDK adds -->
+    <ItemGroup>
+        <Reference Remove="FFXIVClientStructs" />
+    </ItemGroup>
+
 
     <ItemGroup>
         <Content Include="..\Data\goat.png">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Visible>false</Visible>
         </Content>
+
+<!--
+        <PackageReference Include="DalamudPackager" Version="11.0.0" />
+-->
+        <Reference Include="Newtonsoft.Json" Private="false" />
+        <Reference Include="Dalamud" Private="false" />
+        <Reference Include="ImGui.NET" Private="false" />
+        <Reference Include="ImGuiScene" Private="false" />
+        <Reference Include="Lumina" Private="false" />
+        <Reference Include="Lumina.Excel" Private="false" />
+        <Reference Include="Serilog" Private="false" />
+
+        <!-- TODO Change back to no custom path -->
+        <Reference Include="FFXIVClientStructs">
+            <HintPath>D:\macif\Documents\FF14 Modding Tools\OwnMods\FFXIVClientStructs\bin\Debug\FFXIVClientStructs.dll</HintPath>
+            <Private>true</Private>  <!-- not necessary, but a good reminder -->
+        </Reference>
     </ItemGroup>
+    
 </Project>
