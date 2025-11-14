@@ -6,6 +6,8 @@ using Dalamud.Plugin;
 using System.IO;
 using System.Linq;
 using BetterMountRoulette.Windows;
+using Dalamud.Game.Gui.ContextMenu;
+using Dalamud.Game.Text;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -13,6 +15,7 @@ using Lumina.Excel.Sheets;
 using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
+using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina;
 using Lumina.Extensions;
 
@@ -41,6 +44,12 @@ public sealed class Plugin : IDalamudPlugin
 
     [PluginService]
     internal static IChatGui ChatGui { get; private set; } = null!;
+
+    [PluginService]
+    internal static IContextMenu ContextMenu { get; private set; } = null!;
+
+    [PluginService]
+    internal static IGameGui GameGui { get; private set; } = null!;
 
     private const string CommandName = "/pmbmroulette";
 
@@ -97,6 +106,8 @@ public sealed class Plugin : IDalamudPlugin
 
         // Adds another button doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
+
+        ContextMenu.OnMenuOpened += OnContextMenuOpened;
 
         // Add a simple message to the log with level set to information
         // Use /xllog to open the log window in-game
@@ -163,7 +174,7 @@ public sealed class Plugin : IDalamudPlugin
 
         ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was blacklisted");
     }
-    
+
     private void OnBlacklistRemoveCommand(string command, string args)
     {
         var mount = GetMount(args);
@@ -232,7 +243,7 @@ public sealed class Plugin : IDalamudPlugin
                 bool isMountUnlocked = mounts.Get(mount.Order);
                 uint mountId = mount.RowId;
 
-                ownedMounts += $"{mountId}: {mount.Singular.ExtractText()}, owned: {isMountUnlocked}\n";
+                ownedMounts += $"{mountId}: {mount.Singular.ExtractText()}, owned: {isMountUnlocked} Order: {mount.Order.ToString()} MountAction: {mount.MountAction.RowId.ToString()}\n ";
 
                 if (isMountUnlocked && !Configuration.BlacklistedMountIds.Contains(mountId))
                 {
@@ -247,23 +258,56 @@ public sealed class Plugin : IDalamudPlugin
         Log.Information(ownedMounts);
         Log.Information($"MountIdToMount: {mountIdToMount}, Name: {GetMount(mountIdToMount)?.Singular.ExtractText()}");
 
-        unsafe
-        {
-            ActionManager.Instance()->UseAction(ActionType.Mount, mountIdToMount);
-        }
+        this.Mount(mountIdToMount);
     }
 
-    private void UnlockedMounts()
+    private unsafe void Mount(uint mountId)
+    {
+        ActionManager.Instance()->UseAction(ActionType.Mount, mountId);
+    }
+
+    private void OnContextMenuOpened(IMenuOpenedArgs args)
     {
         unsafe
         {
-            var mountList = PlayerState.Instance();
-            var unlockedMounts = mountList->UnlockedMountsBitArray;
+            Log.Debug($"Context menu opened: {args.MenuType} target: {args.Target.ToString()}");
 
-            foreach (var (index, value) in unlockedMounts)
+            if (args.AddonName != "MountNoteBook")
             {
-                Log.Information($"Index: {index}, IsUnlocked: {value}");
+                return;
             }
+
+            
+
+            var target = args.Target as MenuTargetDefault;
+            var targetObjectId = target.TargetObjectId;
+            var targetObject = target.TargetObject;
+            var targetContentId = target.TargetContentId;
+
+            var addonPtr = GameGui.GetAddonByName("MountNoteBook");
+            var possibleAgent = GameGui.FindAgentInterface("MountNoteBook");
+
+            var addon = (AddonMinionMountBase*)addonPtr.Address;
+            
+            var atkLength = addon->AtkValuesCount;
+            var atkValues = addon->AtkValues;
+            var atkValue = addon->AtkUnitBase.AtkValues[495];
+            var atkValueUint = atkValue.UInt;
+            var atkValueUint64 = atkValue.UInt64;
+
+            // args->Target->Context
+            
+            args.AddMenuItem(new MenuItem()
+            {
+                Name = "Add to Mount Roulette", Prefix = SeIconChar.BoxedPlus, IsEnabled = true,
+                OnClicked = (IMenuItemClickedArgs args) =>
+                {
+                    var targetString = args.Target.ToString();
+                    
+                    
+                    this.Mount(1);
+                }
+            });
         }
     }
 
@@ -308,5 +352,6 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     public void ToggleConfigUi() => ConfigWindow.Toggle();
+
     public void ToggleMainUi() => MainWindow.Toggle();
 }
