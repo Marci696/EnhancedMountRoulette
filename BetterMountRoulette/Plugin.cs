@@ -8,6 +8,7 @@ using System.Linq;
 using BetterMountRoulette.Windows;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -16,6 +17,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Common.Component.Excel;
 using Lumina;
 using Lumina.Extensions;
 
@@ -26,6 +28,13 @@ enum MenuItemAction
 {
     Add,
     Remove
+}
+
+// Maps to UIColor RowId
+enum ColorMap
+{
+    Green = 46,
+    Red = 18,
 }
 
 public sealed class Plugin : IDalamudPlugin
@@ -342,7 +351,7 @@ public sealed class Plugin : IDalamudPlugin
         }
 
         Log.Debug($"Trying to mount {mount.RowId} {mount.Singular.ExtractText()}");
-        
+
         this.CallMount(mount);
     }
 
@@ -411,16 +420,25 @@ public sealed class Plugin : IDalamudPlugin
         {
             // TODO change to debug
             ChatGui.PrintError($"Mount with order {mountOrderId} not found");
-            
+
             return;
         }
 
-        args.AddMenuItem(new MenuItem() { IsEnabled = false, Name = "----------- Roulette -----------" });
-
-
-        foreach (MenuItemAction action in Enum.GetValues<MenuItemAction>())
+        foreach (var mountListType in Enum.GetValues<MountListType>())
         {
-            args.AddMenuItem(this.CreateMenuItem(action, mount));
+            args.AddMenuItem(new MenuItem()
+            {
+                Name = mountListType == MountListType.Whitelist
+                           ? "---- Roulette WhiteLists: ----"
+                           : "---- Roulette BlackLists: ----",
+                IsEnabled = false,
+                PrefixChar = 'R',
+            });
+
+            foreach (var mountList in Configuration.GetMountLists(mountListType))
+            {
+                args.AddMenuItem(this.MountListToMenuItem(mountList, mount));
+            }
         }
     }
 
@@ -472,54 +490,67 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private MenuItem CreateMenuItem(MenuItemAction action, Mount mount)
-    {
-        return new MenuItem()
-        {
-            Name = action == MenuItemAction.Add ? "Add to Roulette-List" : "Remove from Roulette-List",
-            Prefix = action == MenuItemAction.Add ? SeIconChar.BoxedPlus : SeIconChar.Cross,
-            IsEnabled = true,
-            IsSubmenu = true,
-            OnClicked = (menuItemClickedArgs) =>
-            {
-                var subMenuItems = Enum.GetValues<MountListType>()
-                                       .SelectMany(mountListType =>
-                                                       this.CreateSubMenuItems(mountListType, action, mount))
-                                       .ToList();
-
-                menuItemClickedArgs.OpenSubmenu(subMenuItems);
-            }
-        };
-    }
-
-    private List<MenuItem> CreateSubMenuItems(MountListType mountListType, MenuItemAction action, Mount mount)
-    {
-        var headerName = mountListType == MountListType.Whitelist ? "Whitelist" : "Blacklist";
-        var menuItems = new List<MenuItem>
-            { new() { Name = $"--- {headerName}  ---", IsEnabled = false } };
-
-
-        return menuItems.Concat(Configuration.GetMountLists(mountListType)
-                                             .Select((mountList => this.MountListToMenuItem(
-                                                             mountList, mount, action)))).ToList();
-    }
-
-    private MenuItem MountListToMenuItem(MountList mountList, Mount mount, MenuItemAction action)
+    private MenuItem MountListToMenuItem(MountList mountList, Mount mount)
     {
         var mountId = mount.RowId;
         var mountName = mount.Singular.ExtractText();
 
         var isMountIdInList = mountList.MountIds.Contains(mountId);
 
+        /*var colors = DataManager.GetExcelSheet<UIColor>();
+
+        foreach (UIColor color in colors)
+        {
+            ChatGui.Print($"Dark {color.RowId} {color.Dark:X}", "Some Tag", (ushort) color.RowId);
+            ChatGui.Print($"Light {color.RowId} {color.Light:X}", "Some Tag", (ushort) color.RowId);
+            ChatGui.Print($"ClassicFF {color.RowId} {color.ClassicFF:X}", "Some Tag", (ushort) color.RowId);
+            ChatGui.Print($"ClearBlue {color.RowId} {color.ClearBlue:X}", "Some Tag", (ushort) color.RowId);
+        }*/
+
+        string namePrefix;
+        SeIconChar prefixChar;
+        ColorMap prefixColor;
+
+        if (mountList.Type == MountListType.Whitelist)
+        {
+            if (isMountIdInList)
+            {
+                namePrefix = "Ignore in";
+                prefixChar = SeIconChar.Cross;
+                prefixColor = ColorMap.Red;
+            }
+            else
+            {
+                namePrefix = "Summon in";
+                prefixChar = SeIconChar.BoxedPlus;
+                prefixColor = ColorMap.Green;
+            }
+        }
+        else
+        {
+            if (isMountIdInList)
+            {
+                namePrefix = "Summon in";
+                prefixChar = SeIconChar.BoxedPlus;
+                prefixColor = ColorMap.Green;
+            }
+            else
+            {
+                namePrefix = "Ignore in";
+                prefixChar = SeIconChar.Cross;
+                prefixColor = ColorMap.Red;
+            }
+        }
+
         return new MenuItem()
         {
-            Name = mountList.Name,
-            IsEnabled = action == MenuItemAction.Add
-                            ? !isMountIdInList
-                            : isMountIdInList,
+            Name = $"{namePrefix} {mountList.Name}",
+            IsEnabled = true,
+            Prefix = prefixChar,
+            PrefixColor = (ushort)prefixColor,
             OnClicked = (_) =>
             {
-                if (action == MenuItemAction.Add)
+                if (!isMountIdInList)
                 {
                     mountList.MountIds.Add(mountId);
                     ChatGui.Print($"Added #{mountId} {mountName} to list {mountList.Name}");
