@@ -106,9 +106,9 @@ public sealed class Plugin : IDalamudPlugin
         {
             HelpMessage = "Remove a mount from blacklist"
         });
-        CommandManager.AddHandler("/better-mount-blacklist-clear", new CommandInfo(OnClearBlacklistCommand)
+        CommandManager.AddHandler("/bmr-clear", new CommandInfo(OnClearCommand)
         {
-            HelpMessage = "Clear blacklist"
+            HelpMessage = "Clears all lists."
         });
         CommandManager.AddHandler("/better-mount-blacklist-current", new CommandInfo(OnCurrentBlacklistCommand)
         {
@@ -119,6 +119,18 @@ public sealed class Plugin : IDalamudPlugin
             HelpMessage =
                 "Calls a random mount from a list. /bmr will use the default use. To use mount from your custom list use /bmr listName"
         });
+        CommandManager.AddHandler("/bmr-add-whitelist",
+                                  new CommandInfo(OnAddWhitelistCommand)
+                                  {
+                                      HelpMessage =
+                                          "Add a new mount whitelist. Specify a name by calling it like /bmr-add-whitelist myName"
+                                  });
+        CommandManager.AddHandler("/bmr-add-blacklist",
+                                  new CommandInfo(OnAddBlacklistCommand)
+                                  {
+                                      HelpMessage =
+                                          "Add a new mount blacklist. Specify a name by calling it like /bmr-add-blacklist myName"
+                                  });
 
         // Tell the UI system that we want our windows to be drawn throught he window system
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
@@ -175,6 +187,51 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Toggle();
     }
 
+    private void OnAddWhitelistCommand(string command, string args)
+    {
+        var newMountListName = args.Trim();
+        if (newMountListName.Length == 0)
+        {
+            ChatGui.PrintError(
+                "You need to specify a name for your new mount list. Add it like this: /bmr-add-whitelist myName");
+
+            return;
+        }
+
+        this.CreateNewMountList(newMountListName, MountListType.Whitelist);
+    }
+
+    private void OnAddBlacklistCommand(string command, string args)
+    {
+        var newMountListName = args.Trim();
+        if (newMountListName.Length == 0)
+        {
+            ChatGui.PrintError(
+                "You need to specify a name for your new mount list. Add it like this: /bmr-add-blacklist myName");
+
+            return;
+        }
+
+        this.CreateNewMountList(newMountListName, MountListType.Blacklist);
+    }
+
+
+    private void CreateNewMountList(string mountListName, MountListType mountListType)
+    {
+        if (Configuration.GetMountList(mountListName) != null)
+        {
+            ChatGui.PrintError($"Mount list with the name \"{mountListName}\" already exists!");
+        }
+
+        Configuration.StoreMountList(new MountList()
+        {
+            Name = mountListName,
+            Type = MountListType.Whitelist,
+        });
+
+        ChatGui.Print($"Your new list \"{mountListName}\" was created.");
+    }
+
     private void OnBlacklistCommand(string command, string args)
     {
         var mount = GetMount(args);
@@ -217,14 +274,11 @@ public sealed class Plugin : IDalamudPlugin
         ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was removed from blacklist");*/
     }
 
-    private void OnClearBlacklistCommand(string command, string args)
+    private void OnClearCommand(string command, string args)
     {
-        return;
+        Configuration.ClearMountList();
 
-        /*Configuration.GetOrCreateDefaultMountList()?.BlacklistedIds.Clear();
-        Configuration.Save();
-
-        ChatGui.Print("Blacklist cleared");*/
+        ChatGui.Print("All lists were removed.");
     }
 
     private void OnCurrentBlacklistCommand(string command, string args)
@@ -250,7 +304,6 @@ public sealed class Plugin : IDalamudPlugin
 
             blacklistedMounts.Add(mount.Value.Singular.ExtractText());
         }
-
         ChatGui.Print("Current Blacklist: " + string.Join(", ", blacklistedMounts));*/
     }
 
@@ -271,10 +324,26 @@ public sealed class Plugin : IDalamudPlugin
 
         var mountIdsForShuffle = this.GetAvailableMountsForList(mountList);
 
+        if (mountIdsForShuffle.Count == 0)
+        {
+            ChatGui.PrintError("No relevant mounts found for the list.");
+
+            return;
+        }
+
         var randomNumber = Random.Shared.Next(mountIdsForShuffle.Count);
         var mountIdToMount = mountIdsForShuffle[randomNumber];
 
-        this.Mount(mountIdToMount);
+        if (GetMount(mountIdToMount) is not { } mount)
+        {
+            ChatGui.PrintError("Unexpected error occured: Mount not found by id");
+
+            return;
+        }
+
+        Log.Debug($"Trying to mount {mount.RowId} {mount.Singular.ExtractText()}");
+        
+        this.CallMount(mount);
     }
 
     private HashSet<uint> GetOwnedMountIds()
@@ -313,14 +382,16 @@ public sealed class Plugin : IDalamudPlugin
     {
         var ownedMountIds = GetOwnedMountIds();
 
-        return (mountList.Type == MountListType.Whitelist
-                    ? ownedMountIds.Intersect(mountList.MountIds)
-                    : ownedMountIds.Except(mountList.MountIds)).ToList();
+        var ids = (mountList.Type == MountListType.Whitelist
+                       ? ownedMountIds.Intersect(mountList.MountIds)
+                       : ownedMountIds.Except(mountList.MountIds)).ToList();
+
+        return ids;
     }
 
-    private unsafe void Mount(uint mountId)
+    private unsafe void CallMount(Mount mount)
     {
-        ActionManager.Instance()->UseAction(ActionType.Mount, mountId);
+        ActionManager.Instance()->UseAction(ActionType.Mount, (uint)mount.RowId);
     }
 
     private void OnContextMenuOpened(IMenuOpenedArgs args)
@@ -330,10 +401,18 @@ public sealed class Plugin : IDalamudPlugin
             return;
         }
 
-        uint mountId;
+        uint mountOrderId;
         unsafe
         {
-            mountId = (uint)AgentMountNoteBook->SelectedId;
+            mountOrderId = (uint)AgentMountNoteBook->SelectedId;
+        }
+
+        if (GetMount(mountOrderId) is not { } mount)
+        {
+            // TODO change to debug
+            ChatGui.PrintError($"Mount with order {mountOrderId} not found");
+            
+            return;
         }
 
         args.AddMenuItem(new MenuItem() { IsEnabled = false, Name = "----------- Roulette -----------" });
@@ -341,7 +420,7 @@ public sealed class Plugin : IDalamudPlugin
 
         foreach (MenuItemAction action in Enum.GetValues<MenuItemAction>())
         {
-            args.AddMenuItem(this.CreateMenuItem(action, mountId));
+            args.AddMenuItem(this.CreateMenuItem(action, mount));
         }
     }
 
@@ -374,6 +453,13 @@ public sealed class Plugin : IDalamudPlugin
         return mount;
     }
 
+    private Mount? GetMountByOrderId(uint orderId)
+    {
+        var mountSheet = DataManager.GetExcelSheet<Mount>();
+
+        return mountSheet.FirstOrDefault(mount => mount.Order == orderId);
+    }
+
     private bool IsMountUnlocked(int mountId)
     {
         unsafe
@@ -386,18 +472,19 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private MenuItem CreateMenuItem(MenuItemAction action, uint mountId)
+    private MenuItem CreateMenuItem(MenuItemAction action, Mount mount)
     {
         return new MenuItem()
         {
             Name = action == MenuItemAction.Add ? "Add to Roulette-List" : "Remove from Roulette-List",
             Prefix = action == MenuItemAction.Add ? SeIconChar.BoxedPlus : SeIconChar.Cross,
             IsEnabled = true,
+            IsSubmenu = true,
             OnClicked = (menuItemClickedArgs) =>
             {
                 var subMenuItems = Enum.GetValues<MountListType>()
                                        .SelectMany(mountListType =>
-                                                       this.CreateSubMenuItems(mountListType, action, mountId))
+                                                       this.CreateSubMenuItems(mountListType, action, mount))
                                        .ToList();
 
                 menuItemClickedArgs.OpenSubmenu(subMenuItems);
@@ -405,7 +492,7 @@ public sealed class Plugin : IDalamudPlugin
         };
     }
 
-    private List<MenuItem> CreateSubMenuItems(MountListType mountListType, MenuItemAction action, uint mountId)
+    private List<MenuItem> CreateSubMenuItems(MountListType mountListType, MenuItemAction action, Mount mount)
     {
         var headerName = mountListType == MountListType.Whitelist ? "Whitelist" : "Blacklist";
         var menuItems = new List<MenuItem>
@@ -414,11 +501,14 @@ public sealed class Plugin : IDalamudPlugin
 
         return menuItems.Concat(Configuration.GetMountLists(mountListType)
                                              .Select((mountList => this.MountListToMenuItem(
-                                                             mountList, mountId, action)))).ToList();
+                                                             mountList, mount, action)))).ToList();
     }
 
-    private MenuItem MountListToMenuItem(MountList mountList, uint mountId, MenuItemAction action)
+    private MenuItem MountListToMenuItem(MountList mountList, Mount mount, MenuItemAction action)
     {
+        var mountId = mount.RowId;
+        var mountName = mount.Singular.ExtractText();
+
         var isMountIdInList = mountList.MountIds.Contains(mountId);
 
         return new MenuItem()
@@ -432,10 +522,12 @@ public sealed class Plugin : IDalamudPlugin
                 if (action == MenuItemAction.Add)
                 {
                     mountList.MountIds.Add(mountId);
+                    ChatGui.Print($"Added #{mountId} {mountName} to list {mountList.Name}");
                 }
                 else
                 {
                     mountList.MountIds.Remove(mountId);
+                    ChatGui.Print($"Removed #{mountId} {mountName} from list {mountList.Name}");
                 }
 
                 Configuration.Save();

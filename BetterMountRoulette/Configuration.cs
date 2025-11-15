@@ -17,7 +17,7 @@ public class Configuration : IPluginConfiguration
 
     public bool IsConfigWindowMovable { get; set; } = true;
     
-    private Dictionary<string, MountList> MountLists { get; set; } = new([], StringComparer.CurrentCultureIgnoreCase);
+    public Dictionary<string, MountList> MountLists { get; set; } = new([], StringComparer.CurrentCultureIgnoreCase);
 
     public List<MountList> GetMountLists()
     {
