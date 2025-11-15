@@ -1,17 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
+using Dalamud.Game.Gui.ContextMenu;
 
 namespace BetterMountRoulette;
+
+public enum MountListType
+{
+    Whitelist,
+    Blacklist
+}
 
 [Serializable]
 public class MountList
 {
     public string Name { get; set; } = "";
     
-    public bool IncludeNotMentionedMountIds { get; set; } = true;
-
-    // TODO do this with union type, for either whitelist or blacklist mode?
-    public HashSet<uint> WhitelistedIds { get; set; } = [];
+    public MountListType Type { get; set; } = MountListType.Blacklist;
     
-    public HashSet<uint> BlacklistedIds { get; set; } = [];
+    public HashSet<uint> MountIds { get; set; } = [];
 }

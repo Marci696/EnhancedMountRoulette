@@ -3,43 +3,73 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using FFXIVClientStructs.FFXIV.Client.UI;
 
 namespace BetterMountRoulette;
 
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
+    public const string DefaultMountListName = "Default";
+    
     // todo did i just add it as test, or is needed?
     public int Version { get; set; } = 1;
 
     public bool IsConfigWindowMovable { get; set; } = true;
     
-    public int DefaultMountListIndex { get; set; } = 0;
-    
-    public List<MountList> MountLists { get; set; } = [];
-    
-    /*
-    private Dictionary<string, MountList> MountListHashTable { get; set; } = new();
-    */
+    private Dictionary<string, MountList> MountLists { get; set; } = new([], StringComparer.CurrentCultureIgnoreCase);
 
-    public MountList? GetDefaultMountList()
+    public List<MountList> GetMountLists()
     {
-        var defaultMountList = MountLists.ElementAtOrDefault(this.DefaultMountListIndex);
+        return MountLists.Values.ToList();
+    }
+
+    public List<MountList> GetMountLists(MountListType type)
+    {
+        return MountLists.Values.Where(mountList => mountList.Type == type).ToList();
+    }
+
+    public MountList GetOrCreateDefaultMountList()
+    {
+        var defaultMountList = GetMountList(DefaultMountListName);
         if (defaultMountList == null)
         {
             // TODO just hacked, find better way
             defaultMountList = new MountList()
             {
-                Name = "Default",
-                IncludeNotMentionedMountIds = true,
+                Name = DefaultMountListName,
+                Type = MountListType.Blacklist,
             };
-            MountLists.Add(defaultMountList);
-            DefaultMountListIndex = 0;
+            MountLists.Add(DefaultMountListName, defaultMountList);
             Save();
         }
 
         return defaultMountList;
     }
+
+    public MountList? GetMountList(string listName)
+    {
+        return MountLists.GetValueOrDefault(listName);
+    }
+
+    public void StoreMountList(MountList mountList)
+    {
+        MountLists.Add(mountList.Name, mountList);
+        Save();
+    }
+
+    public void RemoveMountList(MountList mountList)
+    {
+        MountLists.Remove(mountList.Name);
+        Save();
+    }
+
+    public void ClearMountList()
+    {
+        MountLists.Clear();
+        GetOrCreateDefaultMountList();
+    }
+    
 
     /*
     public MountList? GetMountList()
