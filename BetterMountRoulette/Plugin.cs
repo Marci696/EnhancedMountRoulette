@@ -59,8 +59,20 @@ public sealed class Plugin : IDalamudPlugin
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
+    private unsafe AgentMountNoteBook* AgentMountNoteBook;
+
     public Plugin()
     {
+        // TODO remove once no longer custom xiv struct version
+        InteropGenerator.Runtime.Resolver.GetInstance.Setup();
+        FFXIVClientStructs.Interop.Generated.Addresses.Register();
+        InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
+
+        unsafe
+        {
+            this.AgentMountNoteBook = (AgentMountNoteBook*)GameGui.GetAgentById((int)AgentId.MountNotebook).Address;
+        }
+
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
 
         // You might normally want to embed resources and load them from the manifest stream
@@ -72,10 +84,12 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
+        // TODO replace
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
             HelpMessage = "A useful message to display in /xlhelp"
         });
+
         CommandManager.AddHandler("/better-mount-blacklist-add", new CommandInfo(OnBlacklistCommand)
         {
             HelpMessage = "Blacklist a mount by name"
@@ -113,10 +127,6 @@ public sealed class Plugin : IDalamudPlugin
         // Use /xllog to open the log window in-game
         // Example Output: 00:57:54.959 | INF | [BetterMountRoulette] ===A cool log message from Sample Plugin===
         Log.Information($"===A cool log message from {PluginInterface.Manifest.Name}===");
-
-        Log.Debug("Blacklisted mounts: " + Configuration.BlacklistedMountIds.ToString());
-
-        // UnlockedMounts();
     }
 
     public void Dispose()
@@ -169,7 +179,7 @@ public sealed class Plugin : IDalamudPlugin
 
         var mountId = mount.Value.RowId;
 
-        Configuration.BlacklistedMountIds.Add(mountId);
+        Configuration.GetDefaultMountList()?.BlacklistedIds.Add(mountId);
         Configuration.Save();
 
         ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was blacklisted");
@@ -188,7 +198,7 @@ public sealed class Plugin : IDalamudPlugin
 
         var mountId = mount.Value.RowId;
 
-        Configuration.BlacklistedMountIds.Remove(mountId);
+        Configuration.GetDefaultMountList()?.BlacklistedIds.Remove(mountId);
         Configuration.Save();
 
         ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was removed from blacklist");
@@ -196,7 +206,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnClearBlacklistCommand(string command, string args)
     {
-        Configuration.BlacklistedMountIds.Clear();
+        Configuration.GetDefaultMountList()?.BlacklistedIds.Clear();
         Configuration.Save();
 
         ChatGui.Print("Blacklist cleared");
@@ -204,9 +214,15 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnCurrentBlacklistCommand(string command, string args)
     {
+        var mountList = Configuration.GetDefaultMountList();
+        if (mountList == null)
+        {
+            return;
+        }
+
         var blacklistedMounts = new List<string>();
 
-        foreach (var mountId in Configuration.BlacklistedMountIds)
+        foreach (var mountId in mountList.BlacklistedIds)
         {
             var mount = GetMount(mountId);
 
@@ -223,14 +239,29 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnCallMountCommand(string command, string args)
     {
-        var availableMountsForShuffle = new List<uint>();
-        string ownedMounts = "";
-
-        unsafe
+        var defaultMountList = Configuration.GetDefaultMountList();
+        if (defaultMountList == null)
         {
-            var mountSheet = DataManager.GetExcelSheet<Mount>();
+            return;
+        }
 
-            foreach (var mount in mountSheet)
+        var mountIdsForShuffle = this.GetAvailableMountsForList(defaultMountList);
+
+        var randomNumber = Random.Shared.Next(mountIdsForShuffle.Count);
+        var mountIdToMount = mountIdsForShuffle[randomNumber];
+
+        this.Mount(mountIdToMount);
+    }
+
+    private HashSet<uint> GetOwnedMountIds()
+    {
+        // TODO see if it can use memory hook to safe performance to not always check that;
+        HashSet<uint> ownedMountIds = [];
+        var mountSheet = DataManager.GetExcelSheet<Mount>();
+
+        foreach (var mount in mountSheet)
+        {
+            unsafe
             {
                 // Skip invalid mounts
                 if (mount.Singular.IsEmpty || mount.Order < 0)
@@ -241,24 +272,26 @@ public sealed class Plugin : IDalamudPlugin
 
                 // Use mount.Order as the bit array index, not the row ID
                 bool isMountUnlocked = mounts.Get(mount.Order);
-                uint mountId = mount.RowId;
 
-                ownedMounts += $"{mountId}: {mount.Singular.ExtractText()}, owned: {isMountUnlocked} Order: {mount.Order.ToString()} MountAction: {mount.MountAction.RowId.ToString()}\n ";
-
-                if (isMountUnlocked && !Configuration.BlacklistedMountIds.Contains(mountId))
+                if (!isMountUnlocked)
                 {
-                    availableMountsForShuffle.Add(mountId);
+                    continue;
                 }
+
+                ownedMountIds.Add(mount.RowId);
             }
         }
 
-        var randomNumber = Random.Shared.Next(availableMountsForShuffle.Count);
-        var mountIdToMount = availableMountsForShuffle[randomNumber];
+        return ownedMountIds;
+    }
 
-        Log.Information(ownedMounts);
-        Log.Information($"MountIdToMount: {mountIdToMount}, Name: {GetMount(mountIdToMount)?.Singular.ExtractText()}");
+    private List<uint> GetAvailableMountsForList(MountList mountList)
+    {
+        var ownedMountIds = GetOwnedMountIds();
 
-        this.Mount(mountIdToMount);
+        return (mountList.IncludeNotMentionedMountIds
+                    ? ownedMountIds
+                    : ownedMountIds.Intersect(mountList.WhitelistedIds)).Except(mountList.BlacklistedIds).ToList();
     }
 
     private unsafe void Mount(uint mountId)
@@ -268,47 +301,61 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnContextMenuOpened(IMenuOpenedArgs args)
     {
+        if (args.AddonName != "MountNoteBook")
+        {
+            return;
+        }
+
+        uint mountId;
         unsafe
         {
-            Log.Debug($"Context menu opened: {args.MenuType} target: {args.Target.ToString()}");
-
-            if (args.AddonName != "MountNoteBook")
-            {
-                return;
-            }
-
-            
-
-            var target = args.Target as MenuTargetDefault;
-            var targetObjectId = target.TargetObjectId;
-            var targetObject = target.TargetObject;
-            var targetContentId = target.TargetContentId;
-
-            var addonPtr = GameGui.GetAddonByName("MountNoteBook");
-            var possibleAgent = GameGui.FindAgentInterface("MountNoteBook");
-
-            var addon = (AddonMinionMountBase*)addonPtr.Address;
-            
-            var atkLength = addon->AtkValuesCount;
-            var atkValues = addon->AtkValues;
-            var atkValue = addon->AtkUnitBase.AtkValues[495];
-            var atkValueUint = atkValue.UInt;
-            var atkValueUint64 = atkValue.UInt64;
-
-            // args->Target->Context
-            
-            args.AddMenuItem(new MenuItem()
-            {
-                Name = "Add to Mount Roulette", Prefix = SeIconChar.BoxedPlus, IsEnabled = true,
-                OnClicked = (IMenuItemClickedArgs args) =>
-                {
-                    var targetString = args.Target.ToString();
-                    
-                    
-                    this.Mount(1);
-                }
-            });
+            mountId = (uint)AgentMountNoteBook->SelectedId;
         }
+
+        args.AddMenuItem(new MenuItem() {IsEnabled = false, Name = "----------- Roulette -----------"});
+        args.AddMenuItem(new MenuItem()
+        {
+            Name = "Add to Roulette-List",
+            Prefix = SeIconChar.BoxedPlus,
+            IsEnabled = true,
+            OnClicked = (menuItemClickedArgs) =>
+            {
+                var menuItems = Configuration.MountLists.Select((mountList => new MenuItem()
+                                                                    {
+                                                                        Name = mountList.Name,
+                                                                        IsEnabled = true,
+                                                                        OnClicked = (_) =>
+                                                                        {
+                                                                            mountList.WhitelistedIds.Add(mountId);
+                                                                            mountList.BlacklistedIds.Remove(mountId);
+                                                                            Configuration.Save();
+                                                                        }
+                                                                    })).ToList();
+                menuItemClickedArgs.OpenSubmenu(menuItems);
+            }
+        });
+
+        args.AddMenuItem(new MenuItem()
+        {
+            Name = "Remove from Roulette-List",
+            Prefix = SeIconChar.Cross,
+            IsEnabled = true,
+            OnClicked = (menuItemClickedArgs) =>
+            {
+                var menuItems = Configuration.MountLists.Select((mountList => new MenuItem()
+                                                                    {
+                                                                        Name = mountList.Name,
+                                                                        IsEnabled = true,
+                                                                        OnClicked = (_) =>
+                                                                        {
+                                                                            mountList.WhitelistedIds.Remove(mountId);
+                                                                            mountList.BlacklistedIds.Add(mountId);
+                                                                            Configuration.Save();
+                                                                        },
+                                                                    })).ToList();
+                menuItemClickedArgs.OpenSubmenu(menuItems);
+            }
+        });
     }
 
     private Mount? GetMount(string mountName)
