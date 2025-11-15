@@ -64,6 +64,12 @@ public class Configuration : IPluginConfiguration
         Save();
     }
 
+    public void CleanMountList(MountList mountList)
+    {
+        mountList.MountIds.Clear();
+        Save();
+    }
+
     public void ClearMountList()
     {
         MountLists.Clear();

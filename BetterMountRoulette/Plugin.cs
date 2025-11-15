@@ -33,8 +33,9 @@ enum MenuItemAction
 // Maps to UIColor RowId
 enum ColorMap
 {
-    Green = 46,
     Red = 18,
+    Green = 46,
+    Lila = 48,
 }
 
 public sealed class Plugin : IDalamudPlugin
@@ -67,6 +68,11 @@ public sealed class Plugin : IDalamudPlugin
     internal static IGameGui GameGui { get; private set; } = null!;
 
     private const string CommandName = "/pmbmroulette";
+
+    private const string ChatTag = "BetterMountRoulette";
+
+    // todo pick different color
+    private const ushort ChatTagColor = (ushort)ColorMap.Lila;
 
     public Configuration Configuration { get; init; }
 
@@ -101,32 +107,14 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
-        // TODO replace
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = "A useful message to display in /xlhelp"
-        });
-
-        CommandManager.AddHandler("/better-mount-blacklist-add", new CommandInfo(OnBlacklistCommand)
-        {
-            HelpMessage = "Blacklist a mount by name"
-        });
-        CommandManager.AddHandler("/better-mount-blacklist-remove", new CommandInfo(OnBlacklistRemoveCommand)
-        {
-            HelpMessage = "Remove a mount from blacklist"
-        });
-        CommandManager.AddHandler("/bmr-clear", new CommandInfo(OnClearCommand)
-        {
-            HelpMessage = "Clears all lists."
-        });
-        CommandManager.AddHandler("/better-mount-blacklist-current", new CommandInfo(OnCurrentBlacklistCommand)
-        {
-            HelpMessage = "Show currently blacklisted mounts"
-        });
         CommandManager.AddHandler("/bmr", new CommandInfo(OnCallMountCommand)
         {
             HelpMessage =
                 "Calls a random mount from a list. /bmr will use the default use. To use mount from your custom list use /bmr listName"
+        });
+        CommandManager.AddHandler("/bmr-delete-all-lists", new CommandInfo(OnDeleteAllListsCommand)
+        {
+            HelpMessage = "Clears all lists."
         });
         CommandManager.AddHandler("/bmr-add-whitelist",
                                   new CommandInfo(OnAddWhitelistCommand)
@@ -140,6 +128,16 @@ public sealed class Plugin : IDalamudPlugin
                                       HelpMessage =
                                           "Add a new mount blacklist. Specify a name by calling it like /bmr-add-blacklist myName"
                                   });
+        CommandManager.AddHandler("/bmr-clear-list",
+                                  new CommandInfo(OnClearListCommand)
+                                  {
+                                      HelpMessage =
+                                          "Clear mount list, resetting it to an empty list. Usage like /bm-clear-list myName"
+                                  });
+        CommandManager.AddHandler("/bmr-delete-list", new CommandInfo(OnDeleteListCommand)
+        {
+            HelpMessage = "Deletes a mount list. Usage like /bm-delete-list myName"
+        });
 
         // Tell the UI system that we want our windows to be drawn throught he window system
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
@@ -176,22 +174,6 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnCommand(string command, string args)
     {
-        Log.Debug($"Command: {command}, Args: {args}");
-
-        var mount = GetMount(args);
-
-        if (mount == null)
-        {
-            Log.Debug("No mount found by that name");
-        }
-        else
-        {
-            var isMountUnlocked = IsMountUnlocked(checked((int)mount.Value.RowId));
-
-            Log.Debug(
-                $" Mount \"{mount.Value.Singular.ExtractText()}\" with icon {mount.Value.Icon} is unlocked: {isMountUnlocked}");
-        }
-
         // In response to the slash command, toggle the display status of our main ui
         MainWindow.Toggle();
     }
@@ -202,7 +184,8 @@ public sealed class Plugin : IDalamudPlugin
         if (newMountListName.Length == 0)
         {
             ChatGui.PrintError(
-                "You need to specify a name for your new mount list. Add it like this: /bmr-add-whitelist myName");
+                "You need to specify a name for your new mount list. Add it like this: /bmr-add-whitelist myName",
+                ChatTag, ChatTagColor);
 
             return;
         }
@@ -216,7 +199,8 @@ public sealed class Plugin : IDalamudPlugin
         if (newMountListName.Length == 0)
         {
             ChatGui.PrintError(
-                "You need to specify a name for your new mount list. Add it like this: /bmr-add-blacklist myName");
+                "You need to specify a name for your new mount list. Add it like this: /bmr-add-blacklist myName",
+                ChatTag, ChatTagColor);
 
             return;
         }
@@ -229,7 +213,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         if (Configuration.GetMountList(mountListName) != null)
         {
-            ChatGui.PrintError($"Mount list with the name \"{mountListName}\" already exists!");
+            ChatGui.PrintError($"Mount list with the name \"{mountListName}\" already exists!", ChatTag, ChatTagColor);
         }
 
         Configuration.StoreMountList(new MountList()
@@ -238,83 +222,66 @@ public sealed class Plugin : IDalamudPlugin
             Type = MountListType.Whitelist,
         });
 
-        ChatGui.Print($"Your new list \"{mountListName}\" was created.");
+        ChatGui.Print($"Your new list \"{mountListName}\" was created.", ChatTag, ChatTagColor);
     }
 
-    private void OnBlacklistCommand(string command, string args)
-    {
-        var mount = GetMount(args);
-
-        if (mount == null)
-        {
-            ChatGui.PrintError($"No mount found for the name \"{args}\"");
-
-            return;
-        }
-
-        var mountId = mount.Value.RowId;
-
-        return;
-
-        /*Configuration.GetOrCreateDefaultMountList()?.BlacklistedIds.Add(mountId);
-        Configuration.Save();
-
-        ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was blacklisted");*/
-    }
-
-    private void OnBlacklistRemoveCommand(string command, string args)
-    {
-        var mount = GetMount(args);
-
-        return;
-
-        /*if (mount == null)
-        {
-            ChatGui.PrintError($"No mount found for the name \"{args}\"");
-
-            return;
-        }
-
-        var mountId = mount.Value.RowId;
-
-        Configuration.GetOrCreateDefaultMountList()?.BlacklistedIds.Remove(mountId);
-        Configuration.Save();
-
-        ChatGui.Print($"\"{mount.Value.Singular.ExtractText()}\" was removed from blacklist");*/
-    }
-
-    private void OnClearCommand(string command, string args)
+    private void OnDeleteAllListsCommand(string command, string args)
     {
         Configuration.ClearMountList();
 
-        ChatGui.Print("All lists were removed.");
+        ChatGui.Print("All lists were removed.", ChatTag, ChatTagColor);
     }
 
-    private void OnCurrentBlacklistCommand(string command, string args)
+    private void OnClearListCommand(string command, string args)
     {
-        var mountList = Configuration.GetOrCreateDefaultMountList();
-        if (mountList == null)
+        var listName = args.Trim();
+
+        if (listName.Length == 0)
         {
+            ChatGui.PrintError(
+                "You need to specify a name for the list do clear. For example: /bmr-clear-list myName",
+                ChatTag, ChatTagColor);
+
             return;
         }
 
-        var blacklistedMounts = new List<string>();
-
-        return;
-
-        /*foreach (var mountId in mountList.BlacklistedIds)
+        if (Configuration.GetMountList(listName) is not { } mountList)
         {
-            var mount = GetMount(mountId);
+            ChatGui.PrintError($"No mount list found for the name \"{listName}\"", ChatTag, ChatTagColor);
 
-            if (mount == null)
-            {
-                continue;
-            }
-
-            blacklistedMounts.Add(mount.Value.Singular.ExtractText());
+            return;
         }
-        ChatGui.Print("Current Blacklist: " + string.Join(", ", blacklistedMounts));*/
+
+        Configuration.CleanMountList(mountList);
+
+        ChatGui.Print($"List \"{mountList.Name}\" was cleared.", ChatTag, ChatTagColor);
     }
+
+    private void OnDeleteListCommand(string command, string args)
+    {
+        var listName = args.Trim();
+
+        if (listName.Length == 0)
+        {
+            ChatGui.PrintError(
+                "You need to specify a name for the list do delete. For example: /bmr-delete-list myName",
+                ChatTag, ChatTagColor);
+
+            return;
+        }
+
+        if (Configuration.GetMountList(listName) is not { } mountList)
+        {
+            ChatGui.PrintError($"No mount list found for the name \"{listName}\"", ChatTag, ChatTagColor);
+
+            return;
+        }
+
+        Configuration.CleanMountList(mountList);
+
+        ChatGui.Print($"List \"{mountList.Name}\" was deleted.", ChatTag, ChatTagColor);
+    }
+
 
     private void OnCallMountCommand(string command, string args)
     {
@@ -326,7 +293,7 @@ public sealed class Plugin : IDalamudPlugin
 
         if (mountList == null)
         {
-            ChatGui.PrintError($"No mount list found for the name \"{listName}\"");
+            ChatGui.PrintError($"No mount list found for the name \"{listName}\"", ChatTag, ChatTagColor);
 
             return;
         }
@@ -335,7 +302,7 @@ public sealed class Plugin : IDalamudPlugin
 
         if (mountIdsForShuffle.Count == 0)
         {
-            ChatGui.PrintError("No relevant mounts found for the list.");
+            ChatGui.PrintError("No relevant mounts found for the list.", ChatTag, ChatTagColor);
 
             return;
         }
@@ -345,7 +312,7 @@ public sealed class Plugin : IDalamudPlugin
 
         if (GetMount(mountIdToMount) is not { } mount)
         {
-            ChatGui.PrintError("Unexpected error occured: Mount not found by id");
+            ChatGui.PrintError("Unexpected error occured: Mount not found by id", ChatTag, ChatTagColor);
 
             return;
         }
@@ -418,8 +385,7 @@ public sealed class Plugin : IDalamudPlugin
 
         if (GetMount(mountOrderId) is not { } mount)
         {
-            // TODO change to debug
-            ChatGui.PrintError($"Mount with order {mountOrderId} not found");
+            Log.Error($"Mount with order {mountOrderId} not found");
 
             return;
         }
@@ -478,18 +444,6 @@ public sealed class Plugin : IDalamudPlugin
         return mountSheet.FirstOrDefault(mount => mount.Order == orderId);
     }
 
-    private bool IsMountUnlocked(int mountId)
-    {
-        unsafe
-        {
-            var mountList = PlayerState.Instance();
-
-            var unlockedMounts = mountList->UnlockedMountsBitArray;
-
-            return unlockedMounts.Get(mountId + 1);
-        }
-    }
-
     private MenuItem MountListToMenuItem(MountList mountList, Mount mount)
     {
         var mountId = mount.RowId;
@@ -497,49 +451,32 @@ public sealed class Plugin : IDalamudPlugin
 
         var isMountIdInList = mountList.MountIds.Contains(mountId);
 
-        /*var colors = DataManager.GetExcelSheet<UIColor>();
+        /*
+        var colors = DataManager.GetExcelSheet<UIColor>();
 
         foreach (UIColor color in colors)
         {
             ChatGui.Print($"Dark {color.RowId} {color.Dark:X}", "Some Tag", (ushort) color.RowId);
-            ChatGui.Print($"Light {color.RowId} {color.Light:X}", "Some Tag", (ushort) color.RowId);
-            ChatGui.Print($"ClassicFF {color.RowId} {color.ClassicFF:X}", "Some Tag", (ushort) color.RowId);
-            ChatGui.Print($"ClearBlue {color.RowId} {color.ClearBlue:X}", "Some Tag", (ushort) color.RowId);
-        }*/
+        }
+        */
+
+        var isCurrentlySummonedInList = mountList.Type == MountListType.Whitelist ? isMountIdInList : !isMountIdInList;
 
         string namePrefix;
         SeIconChar prefixChar;
         ColorMap prefixColor;
 
-        if (mountList.Type == MountListType.Whitelist)
+        if (isCurrentlySummonedInList)
         {
-            if (isMountIdInList)
-            {
-                namePrefix = "Ignore in";
-                prefixChar = SeIconChar.Cross;
-                prefixColor = ColorMap.Red;
-            }
-            else
-            {
-                namePrefix = "Summon in";
-                prefixChar = SeIconChar.BoxedPlus;
-                prefixColor = ColorMap.Green;
-            }
+            namePrefix = "Ignore in";
+            prefixChar = SeIconChar.Cross;
+            prefixColor = ColorMap.Red;
         }
         else
         {
-            if (isMountIdInList)
-            {
-                namePrefix = "Summon in";
-                prefixChar = SeIconChar.BoxedPlus;
-                prefixColor = ColorMap.Green;
-            }
-            else
-            {
-                namePrefix = "Ignore in";
-                prefixChar = SeIconChar.Cross;
-                prefixColor = ColorMap.Red;
-            }
+            namePrefix = "Summon in";
+            prefixChar = SeIconChar.BoxedPlus;
+            prefixColor = ColorMap.Green;
         }
 
         return new MenuItem()
@@ -553,12 +490,12 @@ public sealed class Plugin : IDalamudPlugin
                 if (!isMountIdInList)
                 {
                     mountList.MountIds.Add(mountId);
-                    ChatGui.Print($"Added #{mountId} {mountName} to list {mountList.Name}");
+                    ChatGui.Print($"Added #{mountId} {mountName} to list {mountList.Name}", ChatTag, ChatTagColor);
                 }
                 else
                 {
                     mountList.MountIds.Remove(mountId);
-                    ChatGui.Print($"Removed #{mountId} {mountName} from list {mountList.Name}");
+                    ChatGui.Print($"Removed #{mountId} {mountName} from list {mountList.Name}", ChatTag, ChatTagColor);
                 }
 
                 Configuration.Save();
