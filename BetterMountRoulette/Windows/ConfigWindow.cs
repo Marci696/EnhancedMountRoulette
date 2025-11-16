@@ -7,12 +7,13 @@ namespace BetterMountRoulette.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
-    private readonly Configuration configuration;
+    private readonly Configuration.Configuration configuration;
 
     // We give this window a constant ID using ###.
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
-    public ConfigWindow(Plugin plugin) : base("A Wonderful Configuration Window###With a constant ID")
+    public ConfigWindow(Configuration.Configuration configuration) : base(
+        "A Wonderful Configuration Window###With a constant ID")
     {
         Flags = ImGuiWindowFlags.NoResize | ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoScrollbar |
                 ImGuiWindowFlags.NoScrollWithMouse;
@@ -20,7 +21,7 @@ public class ConfigWindow : Window, IDisposable
         Size = new Vector2(232, 90);
         SizeCondition = ImGuiCond.Always;
 
-        configuration = plugin.Configuration;
+        this.configuration = configuration;
     }
 
     public void Dispose() { }

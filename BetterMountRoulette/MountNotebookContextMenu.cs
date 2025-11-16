@@ -1,4 +1,5 @@
 ﻿using System;
+using BetterMountRoulette.Configuration;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
 using Dalamud.IoC;
@@ -13,9 +14,9 @@ namespace BetterMountRoulette;
 
 public class MountNotebookContextMenu
 {
-    private readonly Configuration configuration;
+    private readonly Configuration.Configuration configuration;
     
-    public MountNotebookContextMenu(Configuration configuration)
+    public MountNotebookContextMenu(Configuration.Configuration configuration)
     {
         this.configuration = configuration;
 

@@ -1,11 +1,9 @@
-﻿using Dalamud.Configuration;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using FFXIVClientStructs.FFXIV.Client.UI;
+using Dalamud.Configuration;
 
-namespace BetterMountRoulette;
+namespace BetterMountRoulette.Configuration;
 
 [Serializable]
 public class Configuration : IPluginConfiguration

@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using Dalamud.Game.Gui.ContextMenu;
 
-namespace BetterMountRoulette;
+namespace BetterMountRoulette.Configuration;
 
 public enum MountListType
 {

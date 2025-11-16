@@ -5,6 +5,9 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.JavaScript;
+using BetterMountRoulette.Commands;
+using BetterMountRoulette.Configuration;
 using BetterMountRoulette.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
@@ -35,7 +38,7 @@ public sealed class Plugin : IDalamudPlugin
     internal static ITextureProvider TextureProvider { get; private set; } = null!;
 
     [PluginService]
-    internal static ICommandManager CommandManager { get; private set; } = null!;
+    internal static ICommandManager DalamudCommandManager { get; private set; } = null!;
 
     [PluginService]
     internal static IClientState ClientState { get; private set; } = null!;
@@ -55,6 +58,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IGameGui GameGui { get; private set; } = null!;
 
+
     private const string CommandName = "/pmbmroulette";
 
     private const string ChatTag = "BetterMountRoulette";
@@ -62,12 +66,14 @@ public sealed class Plugin : IDalamudPlugin
     // todo pick different color
     private const ushort ChatTagColor = (ushort)ColorMap.Lila;
 
-    public Configuration Configuration { get; init; }
+    private Configuration.Configuration Configuration { get; init; }
+
+    private CommandManager CommandManager { get; init; }
 
     public readonly WindowSystem WindowSystem = new("BetterMountRoulette");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
-    
+
     private MountNotebookContextMenu MountNotebookContextMenu { get; init; }
 
     public Plugin()
@@ -76,49 +82,47 @@ public sealed class Plugin : IDalamudPlugin
         InteropGenerator.Runtime.Resolver.GetInstance.Setup();
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
-        
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+
+        Configuration = PluginInterface.GetPluginConfig() as Configuration.Configuration ??
+                        new Configuration.Configuration();
         // todo better way to ensure default exists
         Configuration.GetOrCreateDefaultMountList();
+
         MountNotebookContextMenu = new MountNotebookContextMenu(Configuration);
+        CommandManager = new CommandManager(Configuration);
 
         // You might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
-        ConfigWindow = new ConfigWindow(this);
+        ConfigWindow = new ConfigWindow(Configuration);
         MainWindow = new MainWindow(this, goatImagePath);
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
-        CommandManager.AddHandler("/bmr", new CommandInfo(OnCallMountCommand)
-        {
-            HelpMessage =
-                "Calls a random mount from a list. /bmr will use the default use. To use mount from your custom list use /bmr listName"
-        });
-        CommandManager.AddHandler("/bmr-delete-all-lists", new CommandInfo(OnDeleteAllListsCommand)
+        DalamudCommandManager.AddHandler("/bmr-delete-all-lists", new CommandInfo(OnDeleteAllListsCommand)
         {
             HelpMessage = "Clears all lists."
         });
-        CommandManager.AddHandler("/bmr-add-whitelist",
-                                  new CommandInfo(OnAddWhitelistCommand)
-                                  {
-                                      HelpMessage =
-                                          "Add a new mount whitelist. Specify a name by calling it like /bmr-add-whitelist myName"
-                                  });
-        CommandManager.AddHandler("/bmr-add-blacklist",
-                                  new CommandInfo(OnAddBlacklistCommand)
-                                  {
-                                      HelpMessage =
-                                          "Add a new mount blacklist. Specify a name by calling it like /bmr-add-blacklist myName"
-                                  });
-        CommandManager.AddHandler("/bmr-clear-list",
-                                  new CommandInfo(OnClearListCommand)
-                                  {
-                                      HelpMessage =
-                                          "Clear mount list, resetting it to an empty list. Usage like /bm-clear-list myName"
-                                  });
-        CommandManager.AddHandler("/bmr-delete-list", new CommandInfo(OnDeleteListCommand)
+        DalamudCommandManager.AddHandler("/bmr-add-whitelist",
+                                         new CommandInfo(OnAddWhitelistCommand)
+                                         {
+                                             HelpMessage =
+                                                 "Add a new mount whitelist. Specify a name by calling it like /bmr-add-whitelist myName"
+                                         });
+        DalamudCommandManager.AddHandler("/bmr-add-blacklist",
+                                         new CommandInfo(OnAddBlacklistCommand)
+                                         {
+                                             HelpMessage =
+                                                 "Add a new mount blacklist. Specify a name by calling it like /bmr-add-blacklist myName"
+                                         });
+        DalamudCommandManager.AddHandler("/bmr-clear-list",
+                                         new CommandInfo(OnClearListCommand)
+                                         {
+                                             HelpMessage =
+                                                 "Clear mount list, resetting it to an empty list. Usage like /bm-clear-list myName"
+                                         });
+        DalamudCommandManager.AddHandler("/bmr-delete-list", new CommandInfo(OnDeleteListCommand)
         {
             HelpMessage = "Deletes a mount list. Usage like /bm-delete-list myName"
         });
@@ -153,7 +157,9 @@ public sealed class Plugin : IDalamudPlugin
 
         MountNotebookContextMenu.Dispose();
 
-        CommandManager.RemoveHandler(CommandName);
+        CommandManager.Dispose();
+
+        DalamudCommandManager.RemoveHandler(CommandName);
     }
 
     private void OnCommand(string command, string args)
