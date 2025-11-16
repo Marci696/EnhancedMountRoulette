@@ -1,19 +1,22 @@
 ﻿using System;
+using BetterMountRoulette.Configuration;
 using Dalamud.Game.Command;
 
 namespace BetterMountRoulette.Commands;
 
-public class SummonMountCommand(Configuration.Configuration configuration) : BaseCommand(configuration)
+internal class SummonMountCommand(Configuration.Configuration configuration) : ICommand
 {
-    public override string Command => "/bmr";
+    public string Command => "/bmr";
 
-    public override CommandInfo CommandInfo => new(Handler)
+    public CommandInfo CommandInfo => new(Handler)
     {
         HelpMessage =
             "Calls a random mount from a list. /bmr will use the default use. To use mount from your custom list use /bmr listName"
     };
 
-    public void Handler(string _, string arguments)
+    private Configuration.Configuration Configuration { get; } = configuration;
+
+    private void Handler(string _, string arguments)
     {
         var listName = arguments.Trim();
 

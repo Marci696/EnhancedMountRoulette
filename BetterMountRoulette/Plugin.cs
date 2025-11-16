@@ -101,13 +101,6 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(MainWindow);
 
         DalamudCommandManager.AddHandler(
-            "/bmr-delete-all-lists",
-            new CommandInfo(OnDeleteAllListsCommand)
-            {
-                HelpMessage = "Clears all lists."
-            }
-        );
-        DalamudCommandManager.AddHandler(
             "/bmr-clear-list",
             new CommandInfo(OnClearListCommand)
             {
@@ -162,14 +155,6 @@ public sealed class Plugin : IDalamudPlugin
     {
         // In response to the slash command, toggle the display status of our main ui
         MainWindow.Toggle();
-    }
-
-
-    private void OnDeleteAllListsCommand(string command, string args)
-    {
-        Configuration.ClearMountList();
-
-        ChatGui.Print("All lists were removed.", ChatTag, ChatTagColor);
     }
 
     private void OnClearListCommand(string command, string args)

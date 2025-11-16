@@ -6,9 +6,9 @@ using Dalamud.Game.Command;
 
 namespace BetterMountRoulette.Commands;
 
-public class CommandManager
+internal class CommandManager
 {
-    private List<BaseCommand> Commands;
+    private List<ICommand> Commands { get; }
 
     public CommandManager(Configuration.Configuration configuration)
     {
@@ -16,7 +16,8 @@ public class CommandManager
         [
             new SummonMountCommand(configuration),
             .. Enum.GetValues<MountListType>()
-                .Select(mountListType => new CreateMountListCommand(configuration, mountListType))
+                .Select(mountListType => new CreateMountListCommand(configuration, mountListType)),
+            new DeleteAllMountListsCommand(configuration)
         ];
 
         foreach (var command in Commands)
