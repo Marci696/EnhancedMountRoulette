@@ -28,6 +28,13 @@ static class DrawHelper
 
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (padding * scale));
     }
+
+    public static void NextItemWidth(float width)
+    {
+        var scale = ImGui.GetIO().FontGlobalScale;
+        
+        ImGui.SetNextItemWidth(width * scale);
+    }
 }
 
 enum TextScale

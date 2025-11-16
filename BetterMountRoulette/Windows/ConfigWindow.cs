@@ -56,33 +56,53 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.SetWindowFontScale(scale);
 
-
-        
         foreach (var mountListType in Enum.GetValues<MountListType>())
         {
-            ImGui.SameLine();
-            ImGui.BeginChild("mountListType_" + mountListType, new Vector2(500, 0), border: true);
-            
             ImGui.PushID("mountListType_" + mountListType);
+
+            // Same line makes it so multiple boxes appear next to each other.
+            /*ImGui.SameLine();
+            ImGui.BeginChild("mountListType_" + mountListType, new Vector2(500, 0), border: true);*/
+
             PaddingY(10);
 
             Text(mountListType.AsString().FirstCharToUpper(), TextScale.H2);
 
             PaddingY(10);
 
+            ImGui.BeginTable(
+                "mountListTable" + mountListType,
+                3,
+                ImGuiTableFlags.Borders | ImGuiTableFlags.Hideable,
+                new Vector2(0, 0)
+            );
+
+            ImGui.TableSetupColumn("List Name", ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 3);
+
+            ImGui.TableSetupColumn("Considered during Mount action", ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 3);
+
+            ImGui.TableSetupColumn("", flags: ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 1);
+
+            ImGui.TableHeadersRow();
+
             uint mountListCounter = 0;
             foreach (var mountList in configuration.GetMountLists(mountListType))
             {
                 // Add a separator between the row above.
-                if (mountListCounter++ > 0)
+                /*if (mountListCounter++ > 0)
                 {
                     PaddingY(5);
                     ImGui.Separator();
                     PaddingY(5);
-                }
+                }*/
+
+                //   ImGui.TableNextRow();
 
                 RenderMountList(mountList);
             }
+
+            ImGui.EndTable();
+
 
             PaddingY(10);
 
@@ -90,9 +110,10 @@ public class ConfigWindow : Window, IDisposable
 
             RenderAddNewListSection(mountListType);
 
+
+            // ImGui.EndChild();
+
             ImGui.PopID();
-            
-            ImGui.EndChild();
         }
 
         // Can't ref a property, so use a local copy
@@ -152,12 +173,16 @@ public class ConfigWindow : Window, IDisposable
         // Needed so the inputs with the same label such as the button work for each entry.
         ImGui.PushID(mountList.GetHashCode());
 
+        ImGui.TableNextRow();
+
+        ImGui.TableSetColumnIndex(0);
+
         var mountName = mountList.Name;
 
-        Text("Name:");
+        NextItemWidth(250);
 
         // Goes into the if block when something changed.
-        if (ImGui.InputText("", ref mountName, 255))
+        if (ImGui.InputText("", ref mountName, 50))
         {
             if (mountName.Length == 0)
             {
@@ -175,18 +200,22 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        ImGui.SameLine();
+        ImGui.TableSetColumnIndex(2);
 
-        if (ImGui.Button("Remove"))
+        if (ImGui.Button("Delete List"))
         {
             configuration.RemoveMountList(mountList);
         }
 
-        PaddingY(10);
+//        PaddingY(10);
+
+        ImGui.TableSetColumnIndex(1);
 
         RenderAvailableMountsSection(mountList);
 
         ImGui.PopID();
+
+        ImGui.TableNextRow();
     }
 
     private void RenderMountIcon(Mount mount)
@@ -209,26 +238,45 @@ public class ConfigWindow : Window, IDisposable
 
         if (ImGui.CollapsingHeader($"Mounts currently in pool to be summoned ({availableMountsForList.Count})"))
         {
+            ImGui.BeginChild("availableMounts", new Vector2(0, 300), flags: ImGuiWindowFlags.AlwaysVerticalScrollbar);
+            
+            ImGui.BeginTable("mountTable", 2, ImGuiTableFlags.Borders);
+            
+            ImGui.TableSetupColumn("Mount");
+            ImGui.TableSetupColumn("");
+            
+            ImGui.TableHeadersRow();
+            
             foreach (var mountId in availableMountsForList)
             {
                 if (MountManager.GetMount(mountId) is not { } mount)
                 {
                     continue;
                 }
+                
+                ImGui.TableNextRow();
 
-                MountManager.GetAvailableMountsForList(mountList);
-
-                PaddingX(10);
-
-
-                ImGui.Bullet();
-
+                ImGui.TableSetColumnIndex(0);
+                
                 RenderMountIcon(mount);
 
                 ImGui.SameLine();
 
                 Text(mount.Singular.ExtractText());
+                
+                ImGui.TableSetColumnIndex(1);
+                
+                if (ImGui.Button("Remove###" + mountId))
+                {
+                    Chat.Write("Clicked remove mount" + mount.RowId);
+                }
+                
+                ImGui.TableNextRow();
             }
+            
+            ImGui.EndTable();
+            
+            ImGui.EndChild();
         }
     }
 }
