@@ -6,32 +6,20 @@ using Dalamud.Plugin;
 using System.IO;
 using System.Linq;
 using BetterMountRoulette.Windows;
-using Dalamud.Game.Gui.ContextMenu;
-using Dalamud.Game.Text;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel.Sheets;
-using FFXIVClientStructs.FFXIV.Client.Game.Character;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
-using FFXIVClientStructs.FFXIV.Common.Component.Excel;
-using Lumina;
-using Lumina.Extensions;
-
 
 namespace BetterMountRoulette;
 
-enum MenuItemAction
-{
-    Add,
-    Remove
-}
-
-// Maps to UIColor RowId
-enum ColorMap
+/**
+ * Maps to UIColor RowId
+ *
+ * @see https://exd.camora.dev/sheet/UIColor for available numbers.
+ */
+enum ColorMap : ushort
 {
     Red = 18,
     Green = 46,
@@ -79,8 +67,8 @@ public sealed class Plugin : IDalamudPlugin
     public readonly WindowSystem WindowSystem = new("BetterMountRoulette");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
-
-    private unsafe AgentMountNoteBook* AgentMountNoteBook;
+    
+    private MountNotebookContextMenu MountNotebookContextMenu { get; init; }
 
     public Plugin()
     {
@@ -88,15 +76,11 @@ public sealed class Plugin : IDalamudPlugin
         InteropGenerator.Runtime.Resolver.GetInstance.Setup();
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
-
-        unsafe
-        {
-            this.AgentMountNoteBook = (AgentMountNoteBook*)GameGui.GetAgentById((int)AgentId.MountNotebook).Address;
-        }
-
+        
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         // todo better way to ensure default exists
         Configuration.GetOrCreateDefaultMountList();
+        MountNotebookContextMenu = new MountNotebookContextMenu(Configuration);
 
         // You might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
@@ -149,8 +133,6 @@ public sealed class Plugin : IDalamudPlugin
         // Adds another button doing the same but for the main ui of the plugin
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
 
-        ContextMenu.OnMenuOpened += OnContextMenuOpened;
-
         // Add a simple message to the log with level set to information
         // Use /xllog to open the log window in-game
         // Example Output: 00:57:54.959 | INF | [BetterMountRoulette] ===A cool log message from Sample Plugin===
@@ -168,6 +150,8 @@ public sealed class Plugin : IDalamudPlugin
 
         ConfigWindow.Dispose();
         MainWindow.Dispose();
+
+        MountNotebookContextMenu.Dispose();
 
         CommandManager.RemoveHandler(CommandName);
     }
@@ -310,7 +294,7 @@ public sealed class Plugin : IDalamudPlugin
         var randomNumber = Random.Shared.Next(mountIdsForShuffle.Count);
         var mountIdToMount = mountIdsForShuffle[randomNumber];
 
-        if (GetMount(mountIdToMount) is not { } mount)
+        if (MountManager.GetMount(mountIdToMount) is not { } mount)
         {
             ChatGui.PrintError("Unexpected error occured: Mount not found by id", ChatTag, ChatTagColor);
 
@@ -319,7 +303,7 @@ public sealed class Plugin : IDalamudPlugin
 
         Log.Debug($"Trying to mount {mount.RowId} {mount.Singular.ExtractText()}");
 
-        this.CallMount(mount);
+        MountManager.SummonMount(mount);
     }
 
     private HashSet<uint> GetOwnedMountIds()
@@ -363,144 +347,6 @@ public sealed class Plugin : IDalamudPlugin
                        : ownedMountIds.Except(mountList.MountIds)).ToList();
 
         return ids;
-    }
-
-    private unsafe void CallMount(Mount mount)
-    {
-        ActionManager.Instance()->UseAction(ActionType.Mount, (uint)mount.RowId);
-    }
-
-    private void OnContextMenuOpened(IMenuOpenedArgs args)
-    {
-        if (args.AddonName != "MountNoteBook")
-        {
-            return;
-        }
-
-        uint mountOrderId;
-        unsafe
-        {
-            mountOrderId = (uint)AgentMountNoteBook->SelectedId;
-        }
-
-        if (GetMount(mountOrderId) is not { } mount)
-        {
-            Log.Error($"Mount with order {mountOrderId} not found");
-
-            return;
-        }
-
-        foreach (var mountListType in Enum.GetValues<MountListType>())
-        {
-            args.AddMenuItem(new MenuItem()
-            {
-                Name = mountListType == MountListType.Whitelist
-                           ? "---- Roulette WhiteLists: ----"
-                           : "---- Roulette BlackLists: ----",
-                IsEnabled = false,
-                PrefixChar = 'R',
-            });
-
-            foreach (var mountList in Configuration.GetMountLists(mountListType))
-            {
-                args.AddMenuItem(this.MountListToMenuItem(mountList, mount));
-            }
-        }
-    }
-
-    private Mount? GetMount(string mountName)
-    {
-        var mountSheet = DataManager.GetExcelSheet<Mount>();
-
-        return mountSheet
-               // Sheet includes empty values.
-               .Where((mount) => mount.Singular.ExtractText().Equals(mountName, StringComparison.OrdinalIgnoreCase))
-               .FirstOrNull();
-    }
-
-    private Mount? GetMount(uint mountId)
-    {
-        var mountSheet = DataManager.GetExcelSheet<Mount>();
-
-        var mount = mountSheet.GetRowOrDefault(mountId);
-
-        if (!mount.HasValue)
-        {
-            return null;
-        }
-
-        if (mount.Value.Singular.IsEmpty)
-        {
-            return null;
-        }
-
-        return mount;
-    }
-
-    private Mount? GetMountByOrderId(uint orderId)
-    {
-        var mountSheet = DataManager.GetExcelSheet<Mount>();
-
-        return mountSheet.FirstOrDefault(mount => mount.Order == orderId);
-    }
-
-    private MenuItem MountListToMenuItem(MountList mountList, Mount mount)
-    {
-        var mountId = mount.RowId;
-        var mountName = mount.Singular.ExtractText();
-
-        var isMountIdInList = mountList.MountIds.Contains(mountId);
-
-        /*
-        var colors = DataManager.GetExcelSheet<UIColor>();
-
-        foreach (UIColor color in colors)
-        {
-            ChatGui.Print($"Dark {color.RowId} {color.Dark:X}", "Some Tag", (ushort) color.RowId);
-        }
-        */
-
-        var isCurrentlySummonedInList = mountList.Type == MountListType.Whitelist ? isMountIdInList : !isMountIdInList;
-
-        string namePrefix;
-        SeIconChar prefixChar;
-        ColorMap prefixColor;
-
-        if (isCurrentlySummonedInList)
-        {
-            namePrefix = "Ignore in";
-            prefixChar = SeIconChar.Cross;
-            prefixColor = ColorMap.Red;
-        }
-        else
-        {
-            namePrefix = "Summon in";
-            prefixChar = SeIconChar.BoxedPlus;
-            prefixColor = ColorMap.Green;
-        }
-
-        return new MenuItem()
-        {
-            Name = $"{namePrefix} {mountList.Name}",
-            IsEnabled = true,
-            Prefix = prefixChar,
-            PrefixColor = (ushort)prefixColor,
-            OnClicked = (_) =>
-            {
-                if (!isMountIdInList)
-                {
-                    mountList.MountIds.Add(mountId);
-                    ChatGui.Print($"Added #{mountId} {mountName} to list {mountList.Name}", ChatTag, ChatTagColor);
-                }
-                else
-                {
-                    mountList.MountIds.Remove(mountId);
-                    ChatGui.Print($"Removed #{mountId} {mountName} from list {mountList.Name}", ChatTag, ChatTagColor);
-                }
-
-                Configuration.Save();
-            },
-        };
     }
 
     public void ToggleConfigUi() => ConfigWindow.Toggle();
