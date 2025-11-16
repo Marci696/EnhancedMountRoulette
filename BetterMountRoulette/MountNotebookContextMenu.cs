@@ -2,17 +2,11 @@
 using BetterMountRoulette.Configuration;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
-using Dalamud.IoC;
-using Dalamud.Plugin.Services;
-using Dalamud.Utility;
-using FFXIVClientStructs.FFXIV.Client.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using Lumina.Excel.Sheets;
-using Serilog;
 
 namespace BetterMountRoulette;
 
-public class MountNotebookContextMenu
+public class MountNotebookContextMenu : IDisposable
 {
     private readonly Configuration.Configuration configuration;
 

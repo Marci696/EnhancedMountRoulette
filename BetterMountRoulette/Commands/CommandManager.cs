@@ -6,7 +6,7 @@ using Dalamud.Game.Command;
 
 namespace BetterMountRoulette.Commands;
 
-internal class CommandManager
+internal class CommandManager : IDisposable
 {
     private List<ICommand> Commands { get; }
 
@@ -17,8 +17,9 @@ internal class CommandManager
             new SummonMountCommand(configuration),
             .. Enum.GetValues<MountListType>()
                 .Select(mountListType => new CreateMountListCommand(configuration, mountListType)),
+            new ClearMountListCommand(configuration),
+            new DeleteMountListCommand(configuration),
             new DeleteAllMountListsCommand(configuration),
-            new DeleteListCommand(configuration),
         ];
 
         foreach (var command in Commands)
@@ -32,6 +33,11 @@ internal class CommandManager
         foreach (var command in Commands)
         {
             Plugin.DalamudCommandManager.RemoveHandler(command.Command);
+
+            if (command is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
         }
     }
 }

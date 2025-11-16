@@ -57,15 +57,7 @@ public sealed class Plugin : IDalamudPlugin
 
     [PluginService]
     internal static IGameGui GameGui { get; private set; } = null!;
-
-
-    private const string CommandName = "/pmbmroulette";
-
-    private const string ChatTag = "BetterMountRoulette";
-
-    // todo pick different color
-    private const ushort ChatTagColor = (ushort)ColorMap.Lila;
-
+    
     private Configuration.Configuration Configuration { get; init; }
 
     private CommandManager CommandManager { get; init; }
@@ -99,16 +91,7 @@ public sealed class Plugin : IDalamudPlugin
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
-
-        DalamudCommandManager.AddHandler(
-            "/bmr-clear-list",
-            new CommandInfo(OnClearListCommand)
-            {
-                HelpMessage =
-                    "Clear mount list, resetting it to an empty list. Usage like /bm-clear-list myName"
-            }
-        );
-
+        
         // Tell the UI system that we want our windows to be drawn throught he window system
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
 
@@ -140,41 +123,12 @@ public sealed class Plugin : IDalamudPlugin
         MountNotebookContextMenu.Dispose();
 
         CommandManager.Dispose();
-
-        DalamudCommandManager.RemoveHandler(CommandName);
     }
 
     private void OnCommand(string command, string args)
     {
         // In response to the slash command, toggle the display status of our main ui
         MainWindow.Toggle();
-    }
-
-    private void OnClearListCommand(string command, string args)
-    {
-        var listName = args.Trim();
-
-        if (listName.Length == 0)
-        {
-            ChatGui.PrintError(
-                "You need to specify a name for the list do clear. For example: /bmr-clear-list myName",
-                ChatTag,
-                ChatTagColor
-            );
-
-            return;
-        }
-
-        if (Configuration.GetMountList(listName) is not { } mountList)
-        {
-            ChatGui.PrintError($"No mount list found for the name \"{listName}\"", ChatTag, ChatTagColor);
-
-            return;
-        }
-
-        Configuration.CleanMountList(mountList);
-
-        ChatGui.Print($"List \"{mountList.Name}\" was cleared.", ChatTag, ChatTagColor);
     }
     
     public void ToggleConfigUi() => ConfigWindow.Toggle();

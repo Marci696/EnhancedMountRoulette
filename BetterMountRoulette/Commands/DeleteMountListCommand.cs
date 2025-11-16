@@ -2,7 +2,7 @@
 
 namespace BetterMountRoulette.Commands;
 
-public class DeleteListCommand(Configuration.Configuration configuration) : ICommand
+internal class DeleteMountListCommand(Configuration.Configuration configuration) : ICommand
 {
     public string Command => "/bmr-delete-list";
 
@@ -33,7 +33,7 @@ public class DeleteListCommand(Configuration.Configuration configuration) : ICom
             return;
         }
 
-        configuration.CleanMountList(mountList);
+        configuration.RemoveMountList(mountList);
 
         Chat.Write($"List \"{mountList.Name}\" was deleted.");
     }
