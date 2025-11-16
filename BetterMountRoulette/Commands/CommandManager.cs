@@ -17,7 +17,8 @@ internal class CommandManager
             new SummonMountCommand(configuration),
             .. Enum.GetValues<MountListType>()
                 .Select(mountListType => new CreateMountListCommand(configuration, mountListType)),
-            new DeleteAllMountListsCommand(configuration)
+            new DeleteAllMountListsCommand(configuration),
+            new DeleteListCommand(configuration),
         ];
 
         foreach (var command in Commands)

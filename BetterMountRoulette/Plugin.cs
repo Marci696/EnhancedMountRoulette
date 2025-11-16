@@ -108,13 +108,6 @@ public sealed class Plugin : IDalamudPlugin
                     "Clear mount list, resetting it to an empty list. Usage like /bm-clear-list myName"
             }
         );
-        DalamudCommandManager.AddHandler(
-            "/bmr-delete-list",
-            new CommandInfo(OnDeleteListCommand)
-            {
-                HelpMessage = "Deletes a mount list. Usage like /bm-delete-list myName"
-            }
-        );
 
         // Tell the UI system that we want our windows to be drawn throught he window system
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
@@ -183,34 +176,7 @@ public sealed class Plugin : IDalamudPlugin
 
         ChatGui.Print($"List \"{mountList.Name}\" was cleared.", ChatTag, ChatTagColor);
     }
-
-    private void OnDeleteListCommand(string command, string args)
-    {
-        var listName = args.Trim();
-
-        if (listName.Length == 0)
-        {
-            ChatGui.PrintError(
-                "You need to specify a name for the list do delete. For example: /bmr-delete-list myName",
-                ChatTag,
-                ChatTagColor
-            );
-
-            return;
-        }
-
-        if (Configuration.GetMountList(listName) is not { } mountList)
-        {
-            ChatGui.PrintError($"No mount list found for the name \"{listName}\"", ChatTag, ChatTagColor);
-
-            return;
-        }
-
-        Configuration.CleanMountList(mountList);
-
-        ChatGui.Print($"List \"{mountList.Name}\" was deleted.", ChatTag, ChatTagColor);
-    }
-
+    
     public void ToggleConfigUi() => ConfigWindow.Toggle();
 
     public void ToggleMainUi() => MainWindow.Toggle();
