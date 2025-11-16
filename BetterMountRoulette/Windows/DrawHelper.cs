@@ -1,4 +1,6 @@
-﻿namespace BetterMountRoulette.Windows;
+﻿using System;
+
+namespace BetterMountRoulette.Windows;
 
 using Dalamud.Bindings.ImGui;
 
@@ -14,14 +16,14 @@ static class DrawHelper
 
         ImGui.SetWindowFontScale(scale);
     }
-    
+
     public static void PaddingY(float padding)
     {
         var scale = ImGui.GetIO().FontGlobalScale;
 
         ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (padding * scale));
     }
-    
+
     public static void PaddingX(float padding)
     {
         var scale = ImGui.GetIO().FontGlobalScale;
@@ -32,8 +34,32 @@ static class DrawHelper
     public static void NextItemWidth(float width)
     {
         var scale = ImGui.GetIO().FontGlobalScale;
-        
+
         ImGui.SetNextItemWidth(width * scale);
+    }
+}
+
+class Use : IDisposable
+{
+    private EndFunc End;
+
+    public delegate void BeginFunc();
+
+    public delegate void EndFunc();
+
+    public Use(
+        BeginFunc begin,
+        EndFunc end
+    )
+    {
+        End = end;
+
+        begin();
+    }
+
+    public void Dispose()
+    {
+        End();
     }
 }
 
