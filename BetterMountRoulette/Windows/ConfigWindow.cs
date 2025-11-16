@@ -57,8 +57,12 @@ public class ConfigWindow : Window, IDisposable
         ImGui.SetWindowFontScale(scale);
 
 
+        
         foreach (var mountListType in Enum.GetValues<MountListType>())
         {
+            ImGui.SameLine();
+            ImGui.BeginChild("mountListType_" + mountListType, new Vector2(500, 0), border: true);
+            
             ImGui.PushID("mountListType_" + mountListType);
             PaddingY(10);
 
@@ -87,6 +91,8 @@ public class ConfigWindow : Window, IDisposable
             RenderAddNewListSection(mountListType);
 
             ImGui.PopID();
+            
+            ImGui.EndChild();
         }
 
         // Can't ref a property, so use a local copy
