@@ -31,15 +31,15 @@ public class MainWindow : Window, IDisposable
         this.plugin = plugin;
 
         var allMounts = "";
-        
-        
+
+
         var mountSheet = Plugin.DataManager.GetExcelSheet<Mount>();
         foreach (var mount in mountSheet)
         {
-            allMounts += mount.RowId + ": " +  mount.Singular.ExtractText() + ", " + mount.Unknown3.ExtractText();
+            allMounts += mount.RowId + ": " + mount.Singular.ExtractText() + ", " + mount.Unknown3.ExtractText();
             allMounts += "\n";
         }
-        
+
         this.allMounts = allMounts;
     }
 
@@ -95,15 +95,19 @@ public class MainWindow : Window, IDisposable
                 }
 
                 // If you want to see the Macro representation of this SeString use `ToMacroString()`
-                ImGui.TextUnformatted($"Our current job is ({localPlayer.ClassJob.RowId}) \"{localPlayer.ClassJob.Value.Abbreviation}\"");
-                
+                ImGui.TextUnformatted(
+                    $"Our current job is ({localPlayer.ClassJob.RowId}) \"{localPlayer.ClassJob.Value.Abbreviation}\""
+                );
+
                 ImGui.TextUnformatted($"All mounts: {allMounts}");
 
                 // Example for quarrying Lumina directly, getting the name of our current area.
                 var territoryId = Plugin.ClientState.TerritoryType;
                 if (Plugin.DataManager.GetExcelSheet<TerritoryType>().TryGetRow(territoryId, out var territoryRow))
                 {
-                    ImGui.TextUnformatted($"We are currently in ({territoryId}) \"{territoryRow.PlaceName.Value.Name}\"");
+                    ImGui.TextUnformatted(
+                        $"We are currently in ({territoryId}) \"{territoryRow.PlaceName.Value.Name}\""
+                    );
                 }
                 else
                 {

@@ -15,7 +15,7 @@ namespace BetterMountRoulette;
 public class MountNotebookContextMenu
 {
     private readonly Configuration.Configuration configuration;
-    
+
     public MountNotebookContextMenu(Configuration.Configuration configuration)
     {
         this.configuration = configuration;
@@ -44,14 +44,16 @@ public class MountNotebookContextMenu
 
         foreach (var mountListType in Enum.GetValues<MountListType>())
         {
-            args.AddMenuItem(new MenuItem()
-            {
-                Name = mountListType == MountListType.Whitelist
-                           ? "---- Roulette WhiteLists: ----"
-                           : "---- Roulette BlackLists: ----",
-                IsEnabled = false,
-                PrefixChar = 'R',
-            });
+            args.AddMenuItem(
+                new MenuItem()
+                {
+                    Name = mountListType == MountListType.Whitelist
+                        ? "---- Roulette WhiteLists: ----"
+                        : "---- Roulette BlackLists: ----",
+                    IsEnabled = false,
+                    PrefixChar = 'R',
+                }
+            );
 
             foreach (var mountList in configuration.GetMountLists(mountListType))
             {

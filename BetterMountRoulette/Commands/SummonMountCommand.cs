@@ -18,8 +18,8 @@ public class SummonMountCommand(Configuration.Configuration configuration) : Bas
         var listName = arguments.Trim();
 
         var mountList = listName.Length > 0
-                            ? Configuration.GetMountList(listName)
-                            : Configuration.GetOrCreateDefaultMountList();
+            ? Configuration.GetMountList(listName)
+            : Configuration.GetOrCreateDefaultMountList();
 
         if (mountList == null)
         {

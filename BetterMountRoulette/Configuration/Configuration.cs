@@ -9,12 +9,12 @@ namespace BetterMountRoulette.Configuration;
 public class Configuration : IPluginConfiguration
 {
     public const string DefaultMountListName = "Default";
-    
+
     // todo did i just add it as test, or is needed?
     public int Version { get; set; } = 1;
 
     public bool IsConfigWindowMovable { get; set; } = true;
-    
+
     public Dictionary<string, MountList> MountLists { get; set; } = new([], StringComparer.CurrentCultureIgnoreCase);
 
     public List<MountList> GetMountLists()
@@ -73,7 +73,7 @@ public class Configuration : IPluginConfiguration
         MountLists.Clear();
         GetOrCreateDefaultMountList();
     }
-    
+
 
     /*
     public MountList? GetMountList()
@@ -81,7 +81,7 @@ public class Configuration : IPluginConfiguration
         return MountListHashTable.
     }
     */
-    
+
     // The below exist just to make saving less cumbersome
     public void Save()
     {

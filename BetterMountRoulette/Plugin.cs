@@ -83,8 +83,8 @@ public sealed class Plugin : IDalamudPlugin
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
 
-        Configuration = PluginInterface.GetPluginConfig() as Configuration.Configuration ??
-                        new Configuration.Configuration();
+        Configuration = PluginInterface.GetPluginConfig() as Configuration.Configuration
+            ?? new Configuration.Configuration();
         // todo better way to ensure default exists
         Configuration.GetOrCreateDefaultMountList();
 
@@ -100,32 +100,28 @@ public sealed class Plugin : IDalamudPlugin
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
 
-        DalamudCommandManager.AddHandler("/bmr-delete-all-lists", new CommandInfo(OnDeleteAllListsCommand)
-        {
-            HelpMessage = "Clears all lists."
-        });
-        DalamudCommandManager.AddHandler("/bmr-add-whitelist",
-                                         new CommandInfo(OnAddWhitelistCommand)
-                                         {
-                                             HelpMessage =
-                                                 "Add a new mount whitelist. Specify a name by calling it like /bmr-add-whitelist myName"
-                                         });
-        DalamudCommandManager.AddHandler("/bmr-add-blacklist",
-                                         new CommandInfo(OnAddBlacklistCommand)
-                                         {
-                                             HelpMessage =
-                                                 "Add a new mount blacklist. Specify a name by calling it like /bmr-add-blacklist myName"
-                                         });
-        DalamudCommandManager.AddHandler("/bmr-clear-list",
-                                         new CommandInfo(OnClearListCommand)
-                                         {
-                                             HelpMessage =
-                                                 "Clear mount list, resetting it to an empty list. Usage like /bm-clear-list myName"
-                                         });
-        DalamudCommandManager.AddHandler("/bmr-delete-list", new CommandInfo(OnDeleteListCommand)
-        {
-            HelpMessage = "Deletes a mount list. Usage like /bm-delete-list myName"
-        });
+        DalamudCommandManager.AddHandler(
+            "/bmr-delete-all-lists",
+            new CommandInfo(OnDeleteAllListsCommand)
+            {
+                HelpMessage = "Clears all lists."
+            }
+        );
+        DalamudCommandManager.AddHandler(
+            "/bmr-clear-list",
+            new CommandInfo(OnClearListCommand)
+            {
+                HelpMessage =
+                    "Clear mount list, resetting it to an empty list. Usage like /bm-clear-list myName"
+            }
+        );
+        DalamudCommandManager.AddHandler(
+            "/bmr-delete-list",
+            new CommandInfo(OnDeleteListCommand)
+            {
+                HelpMessage = "Deletes a mount list. Usage like /bm-delete-list myName"
+            }
+        );
 
         // Tell the UI system that we want our windows to be drawn throught he window system
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
@@ -168,52 +164,6 @@ public sealed class Plugin : IDalamudPlugin
         MainWindow.Toggle();
     }
 
-    private void OnAddWhitelistCommand(string command, string args)
-    {
-        var newMountListName = args.Trim();
-        if (newMountListName.Length == 0)
-        {
-            ChatGui.PrintError(
-                "You need to specify a name for your new mount list. Add it like this: /bmr-add-whitelist myName",
-                ChatTag, ChatTagColor);
-
-            return;
-        }
-
-        this.CreateNewMountList(newMountListName, MountListType.Whitelist);
-    }
-
-    private void OnAddBlacklistCommand(string command, string args)
-    {
-        var newMountListName = args.Trim();
-        if (newMountListName.Length == 0)
-        {
-            ChatGui.PrintError(
-                "You need to specify a name for your new mount list. Add it like this: /bmr-add-blacklist myName",
-                ChatTag, ChatTagColor);
-
-            return;
-        }
-
-        this.CreateNewMountList(newMountListName, MountListType.Blacklist);
-    }
-
-
-    private void CreateNewMountList(string mountListName, MountListType mountListType)
-    {
-        if (Configuration.GetMountList(mountListName) != null)
-        {
-            ChatGui.PrintError($"Mount list with the name \"{mountListName}\" already exists!", ChatTag, ChatTagColor);
-        }
-
-        Configuration.StoreMountList(new MountList()
-        {
-            Name = mountListName,
-            Type = MountListType.Whitelist,
-        });
-
-        ChatGui.Print($"Your new list \"{mountListName}\" was created.", ChatTag, ChatTagColor);
-    }
 
     private void OnDeleteAllListsCommand(string command, string args)
     {
@@ -230,7 +180,9 @@ public sealed class Plugin : IDalamudPlugin
         {
             ChatGui.PrintError(
                 "You need to specify a name for the list do clear. For example: /bmr-clear-list myName",
-                ChatTag, ChatTagColor);
+                ChatTag,
+                ChatTagColor
+            );
 
             return;
         }
@@ -255,7 +207,9 @@ public sealed class Plugin : IDalamudPlugin
         {
             ChatGui.PrintError(
                 "You need to specify a name for the list do delete. For example: /bmr-delete-list myName",
-                ChatTag, ChatTagColor);
+                ChatTag,
+                ChatTagColor
+            );
 
             return;
         }
@@ -270,89 +224,6 @@ public sealed class Plugin : IDalamudPlugin
         Configuration.CleanMountList(mountList);
 
         ChatGui.Print($"List \"{mountList.Name}\" was deleted.", ChatTag, ChatTagColor);
-    }
-
-
-    private void OnCallMountCommand(string command, string args)
-    {
-        var listName = args.Trim();
-
-        var mountList = listName.Length > 0
-                            ? Configuration.GetMountList(listName)
-                            : Configuration.GetOrCreateDefaultMountList();
-
-        if (mountList == null)
-        {
-            ChatGui.PrintError($"No mount list found for the name \"{listName}\"", ChatTag, ChatTagColor);
-
-            return;
-        }
-
-        var mountIdsForShuffle = this.GetAvailableMountsForList(mountList);
-
-        if (mountIdsForShuffle.Count == 0)
-        {
-            ChatGui.PrintError("No relevant mounts found for the list.", ChatTag, ChatTagColor);
-
-            return;
-        }
-
-        var randomNumber = Random.Shared.Next(mountIdsForShuffle.Count);
-        var mountIdToMount = mountIdsForShuffle[randomNumber];
-
-        if (MountManager.GetMount(mountIdToMount) is not { } mount)
-        {
-            ChatGui.PrintError("Unexpected error occured: Mount not found by id", ChatTag, ChatTagColor);
-
-            return;
-        }
-
-        Log.Debug($"Trying to mount {mount.RowId} {mount.Singular.ExtractText()}");
-
-        MountManager.SummonMount(mount);
-    }
-
-    private HashSet<uint> GetOwnedMountIds()
-    {
-        // TODO see if it can use memory hook to safe performance to not always check that;
-        HashSet<uint> ownedMountIds = [];
-        var mountSheet = DataManager.GetExcelSheet<Mount>();
-
-        foreach (var mount in mountSheet)
-        {
-            unsafe
-            {
-                // Skip invalid mounts
-                if (mount.Singular.IsEmpty || mount.Order < 0)
-                    continue;
-
-                var mountList = PlayerState.Instance();
-                var mounts = mountList->UnlockedMountsBitArray;
-
-                // Use mount.Order as the bit array index, not the row ID
-                bool isMountUnlocked = mounts.Get(mount.Order);
-
-                if (!isMountUnlocked)
-                {
-                    continue;
-                }
-
-                ownedMountIds.Add(mount.RowId);
-            }
-        }
-
-        return ownedMountIds;
-    }
-
-    private List<uint> GetAvailableMountsForList(MountList mountList)
-    {
-        var ownedMountIds = GetOwnedMountIds();
-
-        var ids = (mountList.Type == MountListType.Whitelist
-                       ? ownedMountIds.Intersect(mountList.MountIds)
-                       : ownedMountIds.Except(mountList.MountIds)).ToList();
-
-        return ids;
     }
 
     public void ToggleConfigUi() => ConfigWindow.Toggle();

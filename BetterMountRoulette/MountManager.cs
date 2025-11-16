@@ -32,10 +32,11 @@ public static class MountManager
     public static Mount? GetMount(string mountName)
     {
         var mount = MountSheet
-                    // Sheet includes empty values.
-                    .Where((mount) => mount.Singular.ExtractText()
-                                           .Equals(mountName, StringComparison.OrdinalIgnoreCase))
-                    .FirstOrNull();
+            // Sheet includes empty values.
+            .Where((mount) => mount.Singular.ExtractText()
+                .Equals(mountName, StringComparison.OrdinalIgnoreCase)
+            )
+            .FirstOrNull();
 
         if (mount is null)
         {
@@ -79,8 +80,8 @@ public static class MountManager
         var ownedMountIds = GetOwnedMountIds();
 
         var ids = (mountList.Type == MountListType.Whitelist
-                       ? ownedMountIds.Intersect(mountList.MountIds)
-                       : ownedMountIds.Except(mountList.MountIds)).ToList();
+            ? ownedMountIds.Intersect(mountList.MountIds)
+            : ownedMountIds.Except(mountList.MountIds)).ToList();
 
         return ids;
     }
