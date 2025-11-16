@@ -74,6 +74,15 @@ public class Configuration : IPluginConfiguration
         GetOrCreateDefaultMountList();
     }
 
+    public void RenameMountList(MountList mountList, string newName)
+    {
+        MountLists.Remove(mountList.Name);
+
+        mountList.Name = newName;
+        
+        StoreMountList(mountList);
+    }
+
 
     /*
     public MountList? GetMountList()

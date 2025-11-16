@@ -3,6 +3,7 @@ using System.Numerics;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
+using Dalamud.Utility;
 
 namespace BetterMountRoulette.Windows;
 
@@ -68,17 +69,27 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.SetWindowFontScale(scale);
 
-        Text("Whitelists", TextScale.H2);
 
-        foreach (var mountList in configuration.GetMountLists(MountListType.Whitelist))
+        foreach (var mountListType in Enum.GetValues<MountListType>())
         {
-            var mountName = mountList.Name;
+            PaddingY(10);
 
-            ImGui.InputText("Name###Name_" + mountList.GetHashCode(), ref mountName, 255);
+            Text(mountListType.AsString().FirstCharToUpper(), TextScale.H2);
 
-            if (ImGui.Button("Save###Save_" + mountList.GetHashCode()))
+            PaddingY(10);
+
+            uint mountListCounter = 0;
+            foreach (var mountList in configuration.GetMountLists(mountListType))
             {
-                Chat.Write("Clicked save");
+                // Add a separator between the row above.
+                if (mountListCounter++ > 0)
+                {
+                    PaddingY(5);
+                    ImGui.Separator();
+                    PaddingY(5);
+                }
+
+                RenderMountList(mountList);
             }
         }
 
@@ -98,6 +109,42 @@ public class ConfigWindow : Window, IDisposable
         }*/
     }
 
+    private void RenderMountList(MountList mountList)
+    {
+        // Needed so the inputs with the same label such as the button work for each entry.
+        ImGui.PushID(mountList.GetHashCode());
+
+        var mountName = mountList.Name;
+
+        // Goes into the if block when something changed.
+        if (ImGui.InputText("Name", ref mountName, 255))
+        {
+            if (mountName.Length == 0)
+            {
+                // TODO change color
+                Text("Name can not be empty.");
+            }
+            else if (configuration.MountLists.ContainsKey(mountName))
+            {
+                // TODO change color
+                Text("Mount list with this name already exists.");
+            }
+            else
+            {
+                configuration.RenameMountList(mountList, mountName);
+            }
+        }
+
+        ImGui.SameLine();
+        
+        if (ImGui.Button("Remove"))
+        {
+            configuration.RemoveMountList(mountList);
+        }
+
+        ImGui.PopID();
+    }
+
     private void Text(string text, TextScale textScale = TextScale.Normal)
     {
         var scale = ImGui.GetIO().FontGlobalScale;
@@ -107,5 +154,12 @@ public class ConfigWindow : Window, IDisposable
         ImGui.Text(text);
 
         ImGui.SetWindowFontScale(scale);
+    }
+
+    private void PaddingY(float padding)
+    {
+        var scale = ImGui.GetIO().FontGlobalScale;
+
+        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (padding * scale));
     }
 }
