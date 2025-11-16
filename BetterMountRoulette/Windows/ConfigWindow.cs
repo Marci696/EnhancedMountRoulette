@@ -2,31 +2,13 @@
 using System.Numerics;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface.Textures;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
+using Lumina.Excel.Sheets;
+using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows;
-
-enum TextScale
-{
-    H1,
-    H2,
-    H3,
-    H4,
-    Normal,
-}
-
-internal static class TextScaleExtensions
-{
-    public static float ToFloat(this TextScale textScale) => textScale switch
-    {
-        TextScale.H1 => 2f,
-        TextScale.H2 => 1.8f,
-        TextScale.H3 => 1.6f,
-        TextScale.H4 => 1.4f,
-        _ => 1f
-    };
-}
 
 public class ConfigWindow : Window, IDisposable
 {
@@ -116,8 +98,10 @@ public class ConfigWindow : Window, IDisposable
 
         var mountName = mountList.Name;
 
+        Text("Name:");
+
         // Goes into the if block when something changed.
-        if (ImGui.InputText("Name", ref mountName, 255))
+        if (ImGui.InputText("", ref mountName, 255))
         {
             if (mountName.Length == 0)
             {
@@ -136,30 +120,57 @@ public class ConfigWindow : Window, IDisposable
         }
 
         ImGui.SameLine();
-        
+
         if (ImGui.Button("Remove"))
         {
             configuration.RemoveMountList(mountList);
         }
 
+        RenderAvailableMountsSection(mountList);
+
         ImGui.PopID();
     }
 
-    private void Text(string text, TextScale textScale = TextScale.Normal)
+    private void RenderMountIcon(Mount mount)
     {
+        if (Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup() { IconId = mount.Icon }).GetWrapOrDefault() is
+            not { } texture)
+        {
+            return;
+        }
+
         var scale = ImGui.GetIO().FontGlobalScale;
 
-        ImGui.SetWindowFontScale(scale * textScale.ToFloat());
-
-        ImGui.Text(text);
-
-        ImGui.SetWindowFontScale(scale);
+        ImGui.Image(texture.Handle, new Vector2(20, 20) * new Vector2(scale, scale));
     }
 
-    private void PaddingY(float padding)
+    private void RenderAvailableMountsSection(MountList mountList)
     {
-        var scale = ImGui.GetIO().FontGlobalScale;
+        // TODO find way to cache between each draw
+        var availableMountsForList = MountManager.GetAvailableMountsForList(mountList);
 
-        ImGui.SetCursorPosY(ImGui.GetCursorPosY() + (padding * scale));
+        if (ImGui.CollapsingHeader($"Mounts currently in pool to be summoned ({availableMountsForList.Count})"))
+        {
+            foreach (var mountId in availableMountsForList)
+            {
+                if (MountManager.GetMount(mountId) is not { } mount)
+                {
+                    continue;
+                }
+
+                MountManager.GetAvailableMountsForList(mountList);
+
+                PaddingX(10);
+
+
+                ImGui.Bullet();
+
+                RenderMountIcon(mount);
+
+                ImGui.SameLine();
+
+                Text(mount.Singular.ExtractText());
+            }
+        }
     }
 }
