@@ -221,52 +221,65 @@ public class ConfigWindow : Window, IDisposable
     {
         // TODO find way to cache between each draw
         var availableMountsForList = MountManager.GetAvailableMountsForList(mountList);
+        var ownedIds = MountManager.GetOwnedMountIds();
 
-        if (ImGui.CollapsingHeader($"Mounts currently in pool to be summoned ({availableMountsForList.Count})"))
+        if (ImGui.CollapsingHeader($"{availableMountsForList.Count} / {ownedIds.Count}"))
         {
-            ImGui.BeginChild("availableMounts", new Vector2(0, 300), flags: ImGuiWindowFlags.AlwaysVerticalScrollbar);
-
-            ImGui.BeginTable(
-                "mountTable",
-                2,
-                ImGuiTableFlags.Borders
-            );
-
-            ImGui.TableSetupColumn("Mount");
-            ImGui.TableSetupColumn("");
-
-            ImGui.TableHeadersRow();
-
-            foreach (var mountId in availableMountsForList)
+            using (new Use(
+                    () =>
+                    {
+                        ImGui.BeginChild(
+                            "availableMounts",
+                            new Vector2(0, 300),
+                            flags: ImGuiWindowFlags.AlwaysVerticalScrollbar
+                        );
+                    },
+                    ImGui.EndChild
+                ))
             {
-                if (MountManager.GetMount(mountId) is not { } mount)
+                using (new Use(
+                        () =>
+                        {
+                            ImGui.BeginTable(
+                                "mountTable",
+                                2,
+                                ImGuiTableFlags.Borders
+                            );
+                        },
+                        ImGui.EndTable
+                    ))
                 {
-                    continue;
+                    ImGui.TableSetupColumn("Mount");
+                    ImGui.TableSetupColumn("");
+
+                    ImGui.TableHeadersRow();
+
+                    foreach (var mountId in availableMountsForList)
+                    {
+                        if (MountManager.GetMount(mountId) is not { } mount)
+                        {
+                            continue;
+                        }
+
+                        ImGui.TableNextRow();
+
+                        ImGui.TableSetColumnIndex(0);
+
+                        RenderMountIcon(mount);
+
+                        ImGui.SameLine();
+
+                        Text(mount.Singular.ExtractText());
+
+                        ImGui.TableSetColumnIndex(1);
+
+                        if (ImGui.Button("Remove###" + mountId))
+                        {
+                            Chat.Write("Clicked remove mount" + mount.RowId);
+                        }
+                    }
                 }
-
-                ImGui.TableNextRow();
-
-                ImGui.TableSetColumnIndex(0);
-
-                RenderMountIcon(mount);
-
-                ImGui.SameLine();
-
-                Text(mount.Singular.ExtractText());
-
-                ImGui.TableSetColumnIndex(1);
-
-                if (ImGui.Button("Remove###" + mountId))
-                {
-                    Chat.Write("Clicked remove mount" + mount.RowId);
-                }
-
-                ImGui.TableNextRow();
             }
-
-            ImGui.EndTable();
-
-            ImGui.EndChild();
         }
     }
 }

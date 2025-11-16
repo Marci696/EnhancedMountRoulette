@@ -10,11 +10,13 @@ static class DrawHelper
     {
         var scale = ImGui.GetIO().FontGlobalScale;
 
-        ImGui.SetWindowFontScale(scale * textScale.ToFloat());
-
-        ImGui.Text(text);
-
-        ImGui.SetWindowFontScale(scale);
+        using (new Use(
+                () => ImGui.SetWindowFontScale(scale * textScale.ToFloat()),
+                () => ImGui.SetWindowFontScale(scale)
+            ))
+        {
+            ImGui.Text(text);
+        }
     }
 
     public static void PaddingY(float padding)
