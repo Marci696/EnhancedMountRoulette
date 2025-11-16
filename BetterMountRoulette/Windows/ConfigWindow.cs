@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
@@ -14,6 +15,10 @@ public class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration.Configuration configuration;
 
+    private string WhitelistCreateInputString = "";
+
+    private string BlacklistCreateInputString = "";
+
     // We give this window a constant ID using ###.
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
@@ -23,7 +28,7 @@ public class ConfigWindow : Window, IDisposable
     {
         //  Flags |= ImGuiWindowFlags.AlwaysAutoResize;
 
-        Size = new Vector2(400, 400);
+        //    Size = new Vector2(800, 800);
         // Decides that size is used while opening, but is not static
         SizeCondition = ImGuiCond.Appearing;
 
@@ -54,6 +59,7 @@ public class ConfigWindow : Window, IDisposable
 
         foreach (var mountListType in Enum.GetValues<MountListType>())
         {
+            ImGui.PushID("mountListType_" + mountListType);
             PaddingY(10);
 
             Text(mountListType.AsString().FirstCharToUpper(), TextScale.H2);
@@ -73,6 +79,14 @@ public class ConfigWindow : Window, IDisposable
 
                 RenderMountList(mountList);
             }
+
+            PaddingY(10);
+
+            ImGui.Separator();
+
+            RenderAddNewListSection(mountListType);
+
+            ImGui.PopID();
         }
 
         // Can't ref a property, so use a local copy
@@ -89,6 +103,42 @@ public class ConfigWindow : Window, IDisposable
             configuration.IsConfigWindowMovable = movable;
             configuration.Save();
         }*/
+    }
+
+    private void RenderAddNewListSection(MountListType mountListType)
+    {
+        ref var inputString = ref (mountListType == MountListType.Whitelist
+            ? ref WhitelistCreateInputString
+            : ref BlacklistCreateInputString);
+
+
+        Text("Name of new entry:");
+
+        ImGui.SameLine();
+
+        ImGui.InputText(
+            "",
+            ref inputString,
+            255
+        );
+
+        if (inputString.Length == 0)
+        {
+            Text("Name can not be empty.");
+        }
+        else if (configuration.MountLists.ContainsKey(inputString))
+        {
+            // todo color
+            Text("Mount list with this name already exists.");
+        }
+        else
+        {
+            if (ImGui.Button("Add"))
+            {
+                configuration.StoreMountList(new MountList() { Name = inputString, Type = mountListType });
+                inputString = "";
+            }
+        }
     }
 
     private void RenderMountList(MountList mountList)
@@ -125,6 +175,8 @@ public class ConfigWindow : Window, IDisposable
         {
             configuration.RemoveMountList(mountList);
         }
+
+        PaddingY(10);
 
         RenderAvailableMountsSection(mountList);
 
