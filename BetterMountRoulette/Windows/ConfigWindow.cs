@@ -71,7 +71,7 @@ public class ConfigWindow : Window, IDisposable
                         {
                             ImGui.BeginTable(
                                 "mountListTable" + mountListType,
-                                3,
+                                4,
                                 ImGuiTableFlags.Borders | ImGuiTableFlags.Hideable,
                                 new Vector2(0, 0)
                             );
@@ -80,13 +80,12 @@ public class ConfigWindow : Window, IDisposable
                     ))
                 {
                     ImGui.TableSetupColumn("List Name", ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 3);
-
+                    ImGui.TableSetupColumn("Is Default?");
                     ImGui.TableSetupColumn(
                         "Considered during Mount action",
                         ImGuiTableColumnFlags.WidthStretch,
                         initWidthOrWeight: 3
                     );
-
                     ImGui.TableSetupColumn("", flags: ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 1);
 
                     ImGui.TableHeadersRow();
@@ -164,8 +163,10 @@ public class ConfigWindow : Window, IDisposable
     private void RenderMountList(MountList mountList)
     {
         ImGui.TableNextRow();
+        
+        var columnIndex = 0;
 
-        ImGui.TableSetColumnIndex(0);
+        ImGui.TableSetColumnIndex(columnIndex++);
 
         var mountName = mountList.Name;
 
@@ -190,16 +191,24 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        ImGui.TableSetColumnIndex(2);
+        ImGui.TableSetColumnIndex(columnIndex++);
+
+        var checkboxValue = mountList.IsDefault;
+        if (ImGui.Checkbox("###checkbox", ref checkboxValue))
+        {
+            configuration.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
+        }
+        
+        ImGui.TableSetColumnIndex(columnIndex++);
+
+        RenderAvailableMountsSection(mountList);
+
+        ImGui.TableSetColumnIndex(columnIndex++);
 
         if (ImGui.Button("Delete List"))
         {
             configuration.RemoveMountList(mountList);
         }
-
-        ImGui.TableSetColumnIndex(1);
-
-        RenderAvailableMountsSection(mountList);
 
         ImGui.TableNextRow();
     }

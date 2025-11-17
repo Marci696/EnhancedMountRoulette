@@ -52,12 +52,12 @@ public class Configuration
         {
             foreach (var currentEntry in MountLists.Where((current) => current.Value.IsDefault).ToList())
             {
-                _mountLists.Add(currentEntry.Key, new MountList(currentEntry.Value) { IsDefault = false });
+                _mountLists[currentEntry.Key] = new MountList(currentEntry.Value) { IsDefault = false };
             }
         }
 
         // Store new list as default.
-        _mountLists.Add(mountList.Name, mountList);
+        _mountLists[mountList.Name] = mountList;
 
         Save();
     }
