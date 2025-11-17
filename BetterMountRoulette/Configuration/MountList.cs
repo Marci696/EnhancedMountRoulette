@@ -23,6 +23,8 @@ public class MountList
     private HashSet<uint> _mountIds = [];
 
     public FetchNextType FetchNextType { get; init; } = FetchNextType.Random;
+    
+    public bool IsDefault { get; set; } = false;
 
     private Queue<uint> QueuedMountIds = [];
 
@@ -34,6 +36,7 @@ public class MountList
         MountIds = copyFrom.MountIds;
         FetchNextType = copyFrom.FetchNextType;
         Type = copyFrom.Type;
+        IsDefault = copyFrom.IsDefault;
     }
 
     public List<uint> GetAvailableMountsForList(HashSet<uint> ownedMountIds)

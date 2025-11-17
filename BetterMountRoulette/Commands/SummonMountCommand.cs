@@ -1,6 +1,7 @@
 ﻿using System;
 using BetterMountRoulette.Configuration;
 using Dalamud.Game.Command;
+using Dalamud.Utility;
 
 namespace BetterMountRoulette.Commands;
 
@@ -20,14 +21,29 @@ internal class SummonMountCommand(Configuration.Configuration configuration) : I
     {
         var listName = arguments.Trim();
 
-        var mountList =
-            Configuration.GetMountList(listName);
+        MountList mountList;
 
-        if (mountList == null)
+        if (listName.IsNullOrEmpty())
         {
-            Chat.Write($"No mount list found for the name \"{listName}\"", true);
+            if (Configuration.GetDefaultMountList() is not { } defaultMountList)
+            {
+                Chat.Write($"No default mount list exists", true);
 
-            return;
+                return;
+            }
+
+            mountList = defaultMountList;
+        }
+        else
+        {
+            if (Configuration.GetMountList(listName) is not { } mountListByName)
+            {
+                Chat.Write($"No mount list found for the name \"{listName}\"", true);
+
+                return;
+            }
+
+            mountList = mountListByName;
         }
 
         MountManager.SummonNextMountInList(mountList);

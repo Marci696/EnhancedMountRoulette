@@ -35,6 +35,11 @@ public class Configuration
         return MountLists.Values.Where(mountList => mountList.Type == type).ToList();
     }
 
+    public MountList? GetDefaultMountList()
+    {
+        return MountLists.Values.FirstOrDefault((mountList) => mountList.IsDefault);
+    }
+
     public MountList? GetMountList(string listName)
     {
         return MountLists.GetValueOrDefault(listName);
@@ -42,7 +47,18 @@ public class Configuration
 
     public void StoreMountList(MountList mountList)
     {
+        // Mark all others as not default.
+        if (mountList.IsDefault)
+        {
+            foreach (var currentEntry in MountLists.Where((current) => current.Value.IsDefault).ToList())
+            {
+                _mountLists.Add(currentEntry.Key, new MountList(currentEntry.Value) { IsDefault = false });
+            }
+        }
+
+        // Store new list as default.
         _mountLists.Add(mountList.Name, mountList);
+
         Save();
     }
 
@@ -61,6 +77,11 @@ public class Configuration
                 MountIds = [],
             }
         );
+    }
+
+    public void SetMountListAsDefault(MountList mountList)
+    {
+        StoreMountList(new MountList(mountList) { IsDefault = true });
     }
 
     public void ClearMountList()
@@ -103,6 +124,8 @@ public class Configuration
         public MountListType Type { get; set; } = MountListType.Blacklist;
 
         public FetchNextType FetchNextType { get; set; } = FetchNextType.Random;
+
+        public bool IsDefault { get; set; } = false;
     }
 
     [Serializable]
@@ -119,6 +142,7 @@ public class Configuration
                 [DefaultMountListName] = new SerializableMountList
                 {
                     Name = DefaultMountListName,
+                    IsDefault = true,
                 }
             };
     }
