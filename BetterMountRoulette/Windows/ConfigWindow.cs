@@ -64,7 +64,7 @@ public class ConfigWindow : Window, IDisposable
                 {
                     ImGui.BeginTable(
                         "mountListTable",
-                        5,
+                        6,
                         ImGuiTableFlags.Borders | ImGuiTableFlags.Hideable,
                         new Vector2(0, 0)
                     );
@@ -80,7 +80,8 @@ public class ConfigWindow : Window, IDisposable
                 ImGuiTableColumnFlags.WidthStretch,
                 initWidthOrWeight: 3
             );
-            ImGui.TableSetupColumn("", flags: ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 1);
+            ImGui.TableSetupColumn("Fetch Next Type");
+            ImGui.TableSetupColumn("###removeColumn", flags: ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 1);
 
             ImGui.TableHeadersRow();
 
@@ -184,7 +185,11 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableSetColumnIndex(columnIndex++);
 
-        ImGui.Text(mountList.Type.ToString());
+        int currentListTypeIndex = mountList.Type == MountListType.Whitelist ? 0 : 1;
+        if (ImGui.Combo("###Type", ref currentListTypeIndex, new[] { "Whitelist", "Blacklist" }))
+        {
+            // todo, must invert list when switching between those types   
+        }
 
         ImGui.TableSetColumnIndex(columnIndex++);
 
@@ -192,6 +197,17 @@ public class ConfigWindow : Window, IDisposable
         if (ImGui.Checkbox("###checkbox", ref checkboxValue))
         {
             configuration.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
+        }
+
+        ImGui.TableSetColumnIndex(columnIndex++);
+
+        // todo find better way to do this
+        int currentFetchTypeIndex = (int)mountList.FetchNextType;
+        if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
+        {
+            configuration.StoreMountList(
+                new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
+            );
         }
 
         ImGui.TableSetColumnIndex(columnIndex++);
