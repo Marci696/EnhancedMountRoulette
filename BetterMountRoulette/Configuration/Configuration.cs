@@ -11,9 +11,10 @@ namespace BetterMountRoulette.Configuration;
 public class Configuration
 {
     private static readonly IEqualityComparer<string> Comparer = StringComparer.OrdinalIgnoreCase;
-    
-    public ImmutableDictionary<string, MountList> MountLists =>
-        _mountLists.ToImmutableDictionary(Comparer);
+
+    public ImmutableDictionary<string, MountList> MountLists => _mountLists.ToImmutableDictionary(Comparer);
+
+    public List<MountList> OrderedMountList => _mountLists.Values.OrderBy(mountList => mountList.Id).ToList();
 
     private Dictionary<string, MountList> _mountLists;
 
@@ -63,7 +64,6 @@ public class Configuration
             }
         }
 
-        // Store new list as default.
         _mountLists[mountList.Name] = mountList;
 
         Save();

@@ -84,11 +84,9 @@ public class ConfigWindow : Window, IDisposable
 
             ImGui.TableHeadersRow();
 
-            uint mountListCounter = 0;
-            // todo now it jumps around whenever name is changed
-            foreach (var mountList in configuration.MountLists.Values.ToList())
+            foreach (var mountList in configuration.OrderedMountList)
             {
-                using (new Use(() => ImGui.PushID("mountList_" + mountListCounter++), ImGui.PopID))
+                using (new Use(() => ImGui.PushID("mountList_" + mountList.Id), ImGui.PopID))
                 {
                     RenderMountList(mountList);
                 }

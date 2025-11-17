@@ -10,6 +10,8 @@ namespace BetterMountRoulette.Configuration;
 
 public class MountList
 {
+    private static int MountListIdCounter = 0;
+
     public string Name { get; init; } = "";
 
     public MountListType Type { get; set; } = MountListType.Blacklist;
@@ -20,13 +22,22 @@ public class MountList
         init => _mountIds = [..value];
     }
 
+    public FetchNextType FetchNextType { get; init; } = FetchNextType.Random;
+
+    public bool IsDefault { get; init; } = false;
+
+    /// <summary>
+    /// Identifies the mount list, even when the name is changed.
+    /// </summary>
+    ///
+    /// <remarks>
+    /// Helpful when rendering in ImGui lists .e.g. that need an identifier for inputs.
+    /// </remarks>
+    public int Id { get; init; } = MountListIdCounter++;
+    
     private HashSet<uint> _mountIds = [];
 
-    public FetchNextType FetchNextType { get; init; } = FetchNextType.Random;
-    
-    public bool IsDefault { get; set; } = false;
-
-    private Queue<uint> QueuedMountIds = [];
+    private Queue<uint> queuedMountIds = [];
 
     public MountList() { }
 
@@ -37,6 +48,7 @@ public class MountList
         FetchNextType = copyFrom.FetchNextType;
         Type = copyFrom.Type;
         IsDefault = copyFrom.IsDefault;
+        Id = copyFrom.Id;
     }
 
     public List<uint> GetAvailableMountsForList(HashSet<uint> ownedMountIds)
@@ -57,7 +69,7 @@ public class MountList
     {
         return GetNextMountIdToSummon(ownedMountIds.ToList());
     }
-    
+
     public uint? GetNextMountIdToSummon(List<uint> ownedMountIds)
     {
         if (ownedMountIds.Count == 0)
@@ -79,22 +91,22 @@ public class MountList
             return availableMountsForList[randomNumber];
         }
 
-        if (QueuedMountIds.Count == 0)
+        if (queuedMountIds.Count == 0)
         {
             if (FetchNextType == FetchNextType.Shuffle)
             {
                 var mountIdSpan = CollectionsMarshal.AsSpan(_mountIds.ToList());
                 Random.Shared.Shuffle(mountIdSpan);
 
-                QueuedMountIds = new Queue<uint>([..mountIdSpan]);
+                queuedMountIds = new Queue<uint>([..mountIdSpan]);
             }
             else
             {
-                QueuedMountIds = new Queue<uint>(_mountIds);
+                queuedMountIds = new Queue<uint>(_mountIds);
             }
         }
 
-        return QueuedMountIds.Dequeue();
+        return queuedMountIds.Dequeue();
     }
 }
 
