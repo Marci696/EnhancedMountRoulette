@@ -1,48 +1,38 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Dalamud.Configuration;
 
 namespace BetterMountRoulette.Configuration;
 
-[Serializable]
-public class Configuration : IPluginConfiguration
+public class Configuration
 {
-    public const string DefaultMountListName = "Default";
+    public ImmutableDictionary<string, MountList> MountLists => _mountLists.ToImmutableDictionary();
 
-    // todo did i just add it as test, or is needed?
-    public int Version { get; set; } = 1;
+    private Dictionary<string, MountList> _mountLists;
 
-    public bool IsConfigWindowMovable { get; set; } = true;
-
-    public Dictionary<string, MountList> MountLists { get; set; } = new([], StringComparer.CurrentCultureIgnoreCase);
-
-    public List<MountList> GetMountLists()
+    public Configuration()
     {
-        return MountLists.Values.ToList();
+        var data = Plugin.PluginInterface.GetPluginConfig() as SerializableConfiguration
+            ?? new SerializableConfiguration();
+
+        _mountLists =
+            data.MountLists.ToDictionary(
+                (keyValuePair) => keyValuePair.Value.Name,
+                (keyValuePair) => new MountList()
+                {
+                    Name = keyValuePair.Value.Name,
+                    FetchNextType = keyValuePair.Value.FetchNextType,
+                    Type = keyValuePair.Value.Type,
+                    MountIds = ImmutableHashSet.CreateRange(keyValuePair.Value.MountIds)
+                }
+            );
     }
 
     public List<MountList> GetMountLists(MountListType type)
     {
         return MountLists.Values.Where(mountList => mountList.Type == type).ToList();
-    }
-
-    public MountList GetOrCreateDefaultMountList()
-    {
-        var defaultMountList = GetMountList(DefaultMountListName);
-        if (defaultMountList == null)
-        {
-            // TODO just hacked, find better way
-            defaultMountList = new MountList()
-            {
-                Name = DefaultMountListName,
-                Type = MountListType.Blacklist,
-            };
-            MountLists.Add(DefaultMountListName, defaultMountList);
-            Save();
-        }
-
-        return defaultMountList;
     }
 
     public MountList? GetMountList(string listName)
@@ -52,48 +42,84 @@ public class Configuration : IPluginConfiguration
 
     public void StoreMountList(MountList mountList)
     {
-        MountLists.Add(mountList.Name, mountList);
+        _mountLists.Add(mountList.Name, mountList);
         Save();
     }
 
     public void RemoveMountList(MountList mountList)
     {
-        MountLists.Remove(mountList.Name);
+        _mountLists.Remove(mountList.Name);
         Save();
     }
 
     public void CleanMountList(MountList mountList)
     {
-        mountList.MountIds.Clear();
-        Save();
+        StoreMountList(
+            new MountList(mountList)
+            {
+                // With empty MountIds
+                MountIds = [],
+            }
+        );
     }
 
     public void ClearMountList()
     {
-        MountLists.Clear();
-        GetOrCreateDefaultMountList();
+        _mountLists.Clear();
+        Save();
     }
 
     public void RenameMountList(MountList mountList, string newName)
     {
-        MountLists.Remove(mountList.Name);
+        _mountLists.Remove(mountList.Name);
 
-        mountList.Name = newName;
-        
-        StoreMountList(mountList);
+        StoreMountList(new MountList(mountList) { Name = newName });
     }
 
-
-    /*
-    public MountList? GetMountList()
-    {
-        return MountListHashTable.
-    }
-    */
-
-    // The below exist just to make saving less cumbersome
     public void Save()
     {
-        Plugin.PluginInterface.SavePluginConfig(this);
+        Plugin.PluginInterface.SavePluginConfig(
+            new SerializableConfiguration()
+            {
+                MountLists = _mountLists.ToDictionary(
+                    (pair => pair.Value.Name),
+                    pair => new SerializableMountList()
+                    {
+                        Name = pair.Value.Name, MountIds = pair.Value.MountIds.ToList(),
+                        FetchNextType = pair.Value.FetchNextType, Type = pair.Value.Type
+                    }
+                )
+            }
+        );
+    }
+
+    [Serializable]
+    private class SerializableMountList
+    {
+        public string Name { get; set; } = "";
+
+        public List<uint> MountIds { get; set; } = [];
+
+        public MountListType Type { get; set; } = MountListType.Blacklist;
+
+        public FetchNextType FetchNextType { get; set; } = FetchNextType.Random;
+    }
+
+    [Serializable]
+    private class SerializableConfiguration : IPluginConfiguration
+    {
+        public const string DefaultMountListName = "Default";
+
+        public int Version { get; set; } = 2;
+
+        // Default is only assigned when nothing else is found.
+        public Dictionary<string, SerializableMountList> MountLists { get; set; } =
+            new(StringComparer.CurrentCultureIgnoreCase)
+            {
+                [DefaultMountListName] = new SerializableMountList
+                {
+                    Name = DefaultMountListName,
+                }
+            };
     }
 }

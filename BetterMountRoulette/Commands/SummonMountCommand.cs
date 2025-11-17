@@ -20,9 +20,8 @@ internal class SummonMountCommand(Configuration.Configuration configuration) : I
     {
         var listName = arguments.Trim();
 
-        var mountList = listName.Length > 0
-            ? Configuration.GetMountList(listName)
-            : Configuration.GetOrCreateDefaultMountList();
+        var mountList =
+            Configuration.GetMountList(listName);
 
         if (mountList == null)
         {
@@ -31,26 +30,6 @@ internal class SummonMountCommand(Configuration.Configuration configuration) : I
             return;
         }
 
-        var mountIdsForShuffle = MountManager.GetAvailableMountsForList(mountList);
-
-        if (mountIdsForShuffle.Count == 0)
-        {
-            Chat.Write("No relevant mounts found for the list.", isError: true);
-
-            return;
-        }
-
-        var randomNumber = Random.Shared.Next(mountIdsForShuffle.Count);
-        var mountIdToMount = mountIdsForShuffle[randomNumber];
-
-        if (MountManager.GetMount(mountIdToMount) is not { } mount)
-        {
-            Chat.Write("Unexpected error occured: Mount not found by id", isError: true);
-            return;
-        }
-
-        Plugin.Log.Debug($"Trying to mount {mount.RowId} {mount.Singular.ExtractText()}");
-
-        MountManager.SummonMount(mount);
+        MountManager.SummonNextMountInList(mountList);
     }
 }

@@ -79,11 +79,24 @@ public static class MountManager
     {
         var ownedMountIds = GetOwnedMountIds();
 
-        var ids = (mountList.Type == MountListType.Whitelist
-            ? ownedMountIds.Intersect(mountList.MountIds)
-            : ownedMountIds.Except(mountList.MountIds)).ToList();
+        return mountList.GetAvailableMountsForList(ownedMountIds);
+    }
 
-        return ids;
+    public static void SummonNextMountInList(MountList mountList)
+    {
+        if (mountList.GetNextMountIdToSummon(GetOwnedMountIds()) is not { } nextMountIdToSummon)
+        {
+            Chat.Write("No relevant mounts found for the list.", isError: true);
+
+            return;
+        }
+
+        SummonMount(nextMountIdToSummon);
+    }
+
+    public static unsafe void SummonMount(uint mountId)
+    {
+        ActionManager->UseAction(ActionType.Mount, mountId);
     }
 
 

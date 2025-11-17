@@ -75,10 +75,7 @@ public sealed class Plugin : IDalamudPlugin
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
 
-        Configuration = PluginInterface.GetPluginConfig() as Configuration.Configuration
-            ?? new Configuration.Configuration();
-        // todo better way to ensure default exists
-        Configuration.GetOrCreateDefaultMountList();
+        Configuration = new Configuration.Configuration();
 
         MountNotebookContextMenu = new MountNotebookContextMenu(Configuration);
         CommandManager = new CommandManager(Configuration);
