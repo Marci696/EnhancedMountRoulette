@@ -61,6 +61,7 @@ public class MountNotebookContextMenu : IDisposable
         var mountId = mount.RowId;
         var mountName = mount.Singular.ExtractText();
 
+        // todo move logic so it can be reused in configWindow
         var isMountIdInList = mountList.MountIds.Contains(mountId);
         var isCurrentlySummonedInList = mountList.Type == MountListType.Whitelist ? isMountIdInList : !isMountIdInList;
 
@@ -91,16 +92,12 @@ public class MountNotebookContextMenu : IDisposable
             {
                 if (!isMountIdInList)
                 {
-                    mountList.MountIds.Add(mountId);
-                    Chat.Write($"Added #{mountId} {mountName} to list {mountList.Name}");
+                    configuration.AddMountToList(mountList, mount);
                 }
                 else
                 {
-                    mountList.MountIds.Remove(mountId);
-                    Chat.Write($"Removed #{mountId} {mountName} from list {mountList.Name}");
+                    configuration.RemoveMountFromList(mountList, mount);
                 }
-
-                configuration.Save();
             },
         };
     }
