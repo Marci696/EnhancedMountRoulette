@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -9,7 +10,10 @@ namespace BetterMountRoulette.Configuration;
 
 public class Configuration
 {
-    public ImmutableDictionary<string, MountList> MountLists => _mountLists.ToImmutableDictionary();
+    private static readonly IEqualityComparer<string> Comparer = StringComparer.OrdinalIgnoreCase;
+    
+    public ImmutableDictionary<string, MountList> MountLists =>
+        _mountLists.ToImmutableDictionary(Comparer);
 
     private Dictionary<string, MountList> _mountLists;
 
@@ -26,24 +30,26 @@ public class Configuration
                     Name = keyValuePair.Value.Name,
                     FetchNextType = keyValuePair.Value.FetchNextType,
                     Type = keyValuePair.Value.Type,
-                    MountIds = ImmutableHashSet.CreateRange(keyValuePair.Value.MountIds)
-                }
+                    MountIds = ImmutableHashSet.CreateRange(keyValuePair.Value.MountIds),
+                    IsDefault = keyValuePair.Value.IsDefault
+                },
+                comparer: Comparer
             );
     }
 
     public List<MountList> GetMountLists(MountListType type)
     {
-        return MountLists.Values.Where(mountList => mountList.Type == type).ToList();
+        return _mountLists.Values.Where(mountList => mountList.Type == type).ToList();
     }
 
     public MountList? GetDefaultMountList()
     {
-        return MountLists.Values.FirstOrDefault((mountList) => mountList.IsDefault);
+        return _mountLists.Values.FirstOrDefault((mountList) => mountList.IsDefault);
     }
 
     public MountList? GetMountList(string listName)
     {
-        return MountLists.GetValueOrDefault(listName);
+        return _mountLists.GetValueOrDefault(listName);
     }
 
     public void StoreMountList(MountList mountList)
@@ -51,7 +57,7 @@ public class Configuration
         // Mark all others as not default.
         if (mountList.IsDefault)
         {
-            foreach (var currentEntry in MountLists.Where((current) => current.Value.IsDefault).ToList())
+            foreach (var currentEntry in _mountLists.Where((current) => current.Value.IsDefault).ToList())
             {
                 _mountLists[currentEntry.Key] = new MountList(currentEntry.Value) { IsDefault = false };
             }
@@ -123,9 +129,13 @@ public class Configuration
                     (pair => pair.Value.Name),
                     pair => new SerializableMountList()
                     {
-                        Name = pair.Value.Name, MountIds = pair.Value.MountIds.ToList(),
-                        FetchNextType = pair.Value.FetchNextType, Type = pair.Value.Type
-                    }
+                        Name = pair.Value.Name,
+                        MountIds = pair.Value.MountIds.ToList(),
+                        FetchNextType = pair.Value.FetchNextType,
+                        Type = pair.Value.Type,
+                        IsDefault = pair.Value.IsDefault,
+                    },
+                    comparer: Comparer
                 )
             }
         );
@@ -154,7 +164,7 @@ public class Configuration
 
         // Default is only assigned when nothing else is found.
         public Dictionary<string, SerializableMountList> MountLists { get; set; } =
-            new(StringComparer.CurrentCultureIgnoreCase)
+            new(Comparer)
             {
                 [DefaultMountListName] = new SerializableMountList
                 {
