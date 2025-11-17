@@ -5,6 +5,7 @@ using System.Numerics;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
+using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
 using Lumina.Excel.Sheets;
@@ -59,29 +60,24 @@ public class ConfigWindow : Window, IDisposable
 
         PaddingY(10);
 
-        using (new Use(
-                () =>
-                {
-                    ImGui.BeginTable(
-                        "mountListTable",
-                        6,
-                        ImGuiTableFlags.Borders | ImGuiTableFlags.Hideable,
-                        new Vector2(0, 0)
-                    );
-                },
-                ImGui.EndTable
+        using (
+            ImRaii.Table(
+                "mountListTable",
+                6,
+                ImGuiTableFlags.Borders | ImGuiTableFlags.Hideable,
+                new Vector2(0, 0)
             ))
         {
-            ImGui.TableSetupColumn("List Name", ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 3);
-            ImGui.TableSetupColumn("Type");
-            ImGui.TableSetupColumn("Is Default?");
+            ImGui.TableSetupColumn("List Name", ImGuiTableColumnFlags.WidthStretch, 3);
+            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 2);
+            ImGui.TableSetupColumn("Is Default?", ImGuiTableColumnFlags.WidthStretch, 1);
             ImGui.TableSetupColumn(
                 "Considered during Mount action",
                 ImGuiTableColumnFlags.WidthStretch,
-                initWidthOrWeight: 3
+                5
             );
-            ImGui.TableSetupColumn("Fetch Next Type");
-            ImGui.TableSetupColumn("###removeColumn", flags: ImGuiTableColumnFlags.WidthStretch, initWidthOrWeight: 1);
+            ImGui.TableSetupColumn("Summon Type", ImGuiTableColumnFlags.WidthStretch, 2);
+            ImGui.TableSetupColumn("###removeColumn", ImGuiTableColumnFlags.WidthStretch, 1);
 
             ImGui.TableHeadersRow();
 
@@ -185,6 +181,10 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableSetColumnIndex(columnIndex++);
 
+
+        // Make it go full width.
+        ImGui.SetNextItemWidth(-1f);
+
         int currentListTypeIndex = mountList.Type == MountListType.Whitelist ? 0 : 1;
         if (ImGui.Combo("###Type", ref currentListTypeIndex, new[] { "Whitelist", "Blacklist" }))
         {
@@ -201,6 +201,13 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableSetColumnIndex(columnIndex++);
 
+        RenderAvailableMountsSection(mountList);
+
+        ImGui.TableSetColumnIndex(columnIndex++);
+
+        // Make it go full width.
+        ImGui.SetNextItemWidth(-1f);
+
         // todo find better way to do this
         int currentFetchTypeIndex = (int)mountList.FetchNextType;
         if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
@@ -209,10 +216,6 @@ public class ConfigWindow : Window, IDisposable
                 new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
             );
         }
-
-        ImGui.TableSetColumnIndex(columnIndex++);
-
-        RenderAvailableMountsSection(mountList);
 
         ImGui.TableSetColumnIndex(columnIndex++);
 
@@ -257,23 +260,17 @@ public class ConfigWindow : Window, IDisposable
                     ImGui.EndChild
                 ))
             {
-                using (new Use(
-                        () =>
-                        {
-                            ImGui.BeginTable(
-                                "mountTable",
-                                2,
-                                ImGuiTableFlags.Borders
-                            );
-                        },
-                        ImGui.EndTable
+                using (ImRaii.Table(
+                        "mountTable",
+                        2,
+                        ImGuiTableFlags.Borders
                     ))
                 {
-                    ImGui.TableSetupColumn("Mount");
-                    ImGui.TableSetupColumn("");
+                    ImGui.TableSetupColumn("##Mount", ImGuiTableColumnFlags.WidthStretch, 10);
+                    ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 2);
 
                     ImGui.TableHeadersRow();
-
+                    
                     foreach (var mountId in availableMountsForList)
                     {
                         if (MountManager.GetMount(mountId) is not { } mount)
