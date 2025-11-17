@@ -85,6 +85,7 @@ public class ConfigWindow : Window, IDisposable
             ImGui.TableHeadersRow();
 
             uint mountListCounter = 0;
+            // todo now it jumps around whenever name is changed
             foreach (var mountList in configuration.MountLists.Values.ToList())
             {
                 using (new Use(() => ImGui.PushID("mountList_" + mountListCounter++), ImGui.PopID))
@@ -109,22 +110,6 @@ public class ConfigWindow : Window, IDisposable
         {
             RenderAddNewListSection(MountListType.Blacklist);
         }
-
-
-        // Can't ref a property, so use a local copy
-        /*var configValue = configuration.SomePropertyToBeSavedAndWithADefault;
-        if (ImGui.Checkbox("Random Config Bool", ref configValue))
-        {
-            // Can save immediately on change if you don't want to provide a "Save and Close" button
-            configuration.Save();
-        }*/
-
-        /*var movable = configuration.IsConfigWindowMovable;
-        if (ImGui.Checkbox("Movable Config Window", ref movable))
-        {
-            configuration.IsConfigWindowMovable = movable;
-            configuration.Save();
-        }*/
     }
 
     private void RenderAddNewListSection(MountListType mountListType)
@@ -181,7 +166,7 @@ public class ConfigWindow : Window, IDisposable
         NextItemWidth(250);
 
         // Goes into the if block when something changed.
-        if (ImGui.InputText("", ref mountName, 50))
+        if (ImGui.InputText("###name", ref mountName, 50))
         {
             if (mountName.Length == 0)
             {
@@ -244,7 +229,7 @@ public class ConfigWindow : Window, IDisposable
         var availableMountsForList = MountManager.GetAvailableMountsForList(mountList);
         var ownedIds = MountManager.GetOwnedMountIds();
 
-        if (ImGui.CollapsingHeader($"{availableMountsForList.Count} / {ownedIds.Count}"))
+        if (ImGui.CollapsingHeader($"{availableMountsForList.Count} / {ownedIds.Count}###collapsedMounts"))
         {
             using (new Use(
                     () =>
