@@ -83,7 +83,7 @@ public class ConfigWindow : Window, IDisposable
 
             foreach (var mountList in configuration.OrderedMountList)
             {
-                using (new Use(() => ImGui.PushID("mountList_" + mountList.Id), ImGui.PopID))
+                using (ImRaii.PushId("mountList_" + mountList.Id))
                 {
                     RenderMountList(mountList);
                 }
@@ -96,12 +96,12 @@ public class ConfigWindow : Window, IDisposable
 
         // todo create better way to add new values
 
-        using (new Use(() => ImGui.PushID("add_whitelist"), ImGui.PopID))
+        using (ImRaii.PushId("add_whitelist"))
         {
             RenderAddNewListSection(MountListType.Whitelist);
         }
 
-        using (new Use(() => ImGui.PushID("add_blacklist"), ImGui.PopID))
+        using (ImRaii.PushId("add_blacklist"))
         {
             RenderAddNewListSection(MountListType.Blacklist);
         }
@@ -246,19 +246,17 @@ public class ConfigWindow : Window, IDisposable
         var availableMountsForList = MountManager.GetAvailableMountsForList(mountList);
         var ownedIds = MountManager.GetOwnedMountIds();
 
-        if (ImGui.CollapsingHeader($"{availableMountsForList.Count} / {ownedIds.Count}###collapsedMounts"))
+        if (ImGui.CollapsingHeader($"{availableMountsForList.Count} / {ownedIds.Count}###collapsedMounts")
+            && availableMountsForList.Count > 0)
         {
-            using (new Use(
-                    () =>
-                    {
-                        ImGui.BeginChild(
-                            "availableMounts",
-                            new Vector2(0, 300),
-                            flags: ImGuiWindowFlags.AlwaysVerticalScrollbar
-                        );
-                    },
-                    ImGui.EndChild
-                ))
+            using (
+                ImRaii.Child(
+                    "availableMounts",
+                    new Vector2(0, 300),
+                    border: false,
+                    flags: ImGuiWindowFlags.AlwaysVerticalScrollbar
+                )
+            )
             {
                 using (ImRaii.Table(
                         "mountTable",
@@ -270,7 +268,7 @@ public class ConfigWindow : Window, IDisposable
                     ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 2);
 
                     ImGui.TableHeadersRow();
-                    
+
                     foreach (var mountId in availableMountsForList)
                     {
                         if (MountManager.GetMount(mountId) is not { } mount)
