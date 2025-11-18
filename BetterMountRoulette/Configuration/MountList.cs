@@ -95,14 +95,14 @@ public class MountList
         {
             if (FetchNextType == FetchNextType.Shuffle)
             {
-                var mountIdSpan = CollectionsMarshal.AsSpan(_mountIds.ToList());
+                var mountIdSpan = CollectionsMarshal.AsSpan(availableMountsForList);
                 Random.Shared.Shuffle(mountIdSpan);
 
                 queuedMountIds = new Queue<uint>([..mountIdSpan]);
             }
             else
             {
-                queuedMountIds = new Queue<uint>(_mountIds);
+                queuedMountIds = new Queue<uint>(availableMountsForList);
             }
         }
 

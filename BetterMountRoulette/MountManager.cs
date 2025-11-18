@@ -29,6 +29,10 @@ public static class MountManager
     private static readonly unsafe PlayerState* PlayerState =
         FFXIVClientStructs.FFXIV.Client.Game.UI.PlayerState.Instance();
 
+    private static readonly unsafe Conditions* PlayerConditions = Conditions.Instance();
+
+    public static unsafe bool IsMounted => PlayerConditions->Mounted;
+
     public static Mount? GetMount(string mountName)
     {
         var mount = MountSheet
@@ -103,6 +107,22 @@ public static class MountManager
     public static unsafe void SummonMount(Mount mount)
     {
         ActionManager->UseAction(ActionType.Mount, (uint)mount.RowId);
+    }
+
+    /// <summary>
+    /// Will return true if player was mounted and will call unmount.
+    /// </summary>
+    public static unsafe bool UnmountIfMounted()
+    {
+        if (!IsMounted)
+        {
+            return false;
+        }
+
+        // ID should not matter for unmounting, use the mount id owned by every player (company chocobo) just in case.
+        ActionManager->UseAction(ActionType.Mount, 1);
+
+        return true;
     }
 
     public static HashSet<uint> GetOwnedMountIds()

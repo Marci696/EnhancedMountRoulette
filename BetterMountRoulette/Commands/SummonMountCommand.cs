@@ -1,5 +1,4 @@
-﻿using System;
-using BetterMountRoulette.Configuration;
+﻿using BetterMountRoulette.Configuration;
 using Dalamud.Game.Command;
 using Dalamud.Utility;
 
@@ -19,6 +18,11 @@ internal class SummonMountCommand(Configuration.Configuration configuration) : I
 
     private void Handler(string _, string arguments)
     {
+        if (MountManager.UnmountIfMounted())
+        {
+            return;
+        }
+
         var listName = arguments.Trim();
 
         MountList mountList;
