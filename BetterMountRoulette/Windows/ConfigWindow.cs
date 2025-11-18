@@ -154,7 +154,7 @@ public class ConfigWindow : Window, IDisposable
 
         var columnIndex = 0;
 
-        ImGui.TableSetColumnIndex(columnIndex++);
+        ImGui.TableNextColumn();
 
         var mountName = mountList.Name;
 
@@ -179,9 +179,8 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        ImGui.TableSetColumnIndex(columnIndex++);
-
-
+        ImGui.TableNextColumn();
+        
         // Make it go full width.
         ImGui.SetNextItemWidth(-1f);
 
@@ -191,7 +190,7 @@ public class ConfigWindow : Window, IDisposable
             // todo, must invert list when switching between those types   
         }
 
-        ImGui.TableSetColumnIndex(columnIndex++);
+        ImGui.TableNextColumn();
 
         var checkboxValue = mountList.IsDefault;
         if (ImGui.Checkbox("###checkbox", ref checkboxValue))
@@ -199,11 +198,11 @@ public class ConfigWindow : Window, IDisposable
             configuration.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
         }
 
-        ImGui.TableSetColumnIndex(columnIndex++);
+        ImGui.TableNextColumn();
 
         RenderAvailableMountsSection(mountList);
 
-        ImGui.TableSetColumnIndex(columnIndex++);
+        ImGui.TableNextColumn();
 
         // Make it go full width.
         ImGui.SetNextItemWidth(-1f);
@@ -217,7 +216,7 @@ public class ConfigWindow : Window, IDisposable
             );
         }
 
-        ImGui.TableSetColumnIndex(columnIndex++);
+        ImGui.TableNextColumn();
 
         if (ImGui.Button("Delete List"))
         {
