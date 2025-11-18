@@ -20,6 +20,7 @@ internal class CommandManager : IDisposable
             new ClearMountListCommand(configuration),
             new DeleteMountListCommand(configuration),
             new DeleteAllMountListsCommand(configuration),
+            // TODO add command to add and remove currently mounted mount
         ];
 
         foreach (var command in Commands)
