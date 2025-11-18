@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BetterMountRoulette.Configuration;
+using Dalamud.Game;
 using Dalamud.Plugin.Services;
 using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.Game;
@@ -21,7 +22,8 @@ public static class MountManager
     private static readonly unsafe AgentMountNoteBook* AgentMountNoteBook =
         (AgentMountNoteBook*)Plugin.GameGui.GetAgentById((int)AgentId.MountNotebook).Address;
 
-    private static readonly ExcelSheet<Mount> MountSheet = Plugin.DataManager.GetExcelSheet<Mount>();
+    private static readonly ExcelSheet<Mount> MountSheet =
+        Plugin.DataManager.GetExcelSheet<Mount>(Plugin.ClientState.ClientLanguage);
 
     private static readonly unsafe ActionManager* ActionManager =
         FFXIVClientStructs.FFXIV.Client.Game.ActionManager.Instance();

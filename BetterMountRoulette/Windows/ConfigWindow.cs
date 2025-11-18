@@ -156,26 +156,26 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
-        var mountName = mountList.Name;
+        var mountListName = mountList.Name;
 
         NextItemWidth(250);
 
         // Goes into the if block when something changed.
-        if (ImGui.InputText("###name", ref mountName, 50))
+        if (ImGui.InputText("###name", ref mountListName, 50))
         {
-            if (mountName.Length == 0)
+            if (mountListName.Length == 0)
             {
                 // TODO change color
                 Text("Name can not be empty.");
             }
-            else if (configuration.MountLists.ContainsKey(mountName))
+            else if (configuration.MountLists.ContainsKey(mountListName))
             {
                 // TODO change color
                 Text("Mount list with this name already exists.");
             }
             else
             {
-                configuration.RenameMountList(mountList, mountName);
+                configuration.RenameMountList(mountList, mountListName);
             }
         }
 
