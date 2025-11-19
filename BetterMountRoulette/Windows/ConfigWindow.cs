@@ -4,6 +4,9 @@ using System.Linq;
 using System.Numerics;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
+using Dalamud.Interface.Style;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
@@ -16,12 +19,6 @@ namespace BetterMountRoulette.Windows;
 public class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration.Configuration configuration;
-
-    private string WhitelistCreateInputString = "";
-
-    private string BlacklistCreateInputString = "";
-    
-    private MountList? NewMountList = null;
 
     // We give this window a constant ID using ###.
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
@@ -40,19 +37,6 @@ public class ConfigWindow : Window, IDisposable
     }
 
     public void Dispose() { }
-
-    public override void PreDraw()
-    {
-        /*// Flags must be added or removed before Draw() is being called, or they won't apply
-        if (configuration.IsConfigWindowMovable)
-        {
-            Flags &= ~ImGuiWindowFlags.NoMove;
-        }
-        else
-        {
-            Flags |= ImGuiWindowFlags.NoMove;
-        }*/
-    }
 
     public override void Draw()
     {
@@ -110,7 +94,7 @@ public class ConfigWindow : Window, IDisposable
 
         var mountListName = mountList.Name;
 
-        NextItemWidth(250);
+        FullWidth();
 
         // Goes into the if block when something changed.
         if (ImGui.InputText("###name", ref mountListName, 50))
@@ -132,9 +116,8 @@ public class ConfigWindow : Window, IDisposable
         }
 
         ImGui.TableNextColumn();
-        
-        // Make it go full width.
-        ImGui.SetNextItemWidth(-1f);
+
+        FullWidth();
 
         int currentListTypeIndex = mountList.Type == MountListType.Whitelist ? 0 : 1;
         if (ImGui.Combo("###Type", ref currentListTypeIndex, new[] { "Whitelist", "Blacklist" }))
@@ -156,8 +139,7 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
-        // Make it go full width.
-        ImGui.SetNextItemWidth(-1f);
+        FullWidth();
 
         // todo find better way to do this
         int currentFetchTypeIndex = (int)mountList.FetchNextType;
@@ -170,10 +152,24 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
-        if (ImGui.Button("Delete List"))
+        // Change X cross icon to red.
+        using (ImRaii.PushColor(ImGuiCol.Text, new Vector4(1, 0, 0, 1)))
         {
-            configuration.RemoveMountList(mountList);
+            if (ImGuiComponents.IconButton(
+                    "Delete List",
+                    // Looks like an X cross.
+                    icon: FontAwesomeIcon.Times,
+                    // Hide background
+                    defaultColor: new Vector4(0, 0, 0, 0),
+                    hoveredColor: new Vector4(0.3f, 0.3f, 0.3f, 1),
+                    // Color when it is clicked.
+                    activeColor: new Vector4(0.6f, 0.6f, 0.6f, 1)
+                ))
+            {
+                configuration.RemoveMountList(mountList);
+            }
         }
+
 
         ImGui.TableNextRow();
     }

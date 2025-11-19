@@ -101,12 +101,7 @@ public class Configuration
 
         Chat.Write($"Added #{mount.RowId} {mount.Singular.ExtractText()} to list {mountList.Name}");
     }
-
-    public void SetMountListAsDefault(MountList mountList)
-    {
-        StoreMountList(new MountList(mountList) { IsDefault = true });
-    }
-
+    
     public void ClearMountList()
     {
         _mountLists.Clear();

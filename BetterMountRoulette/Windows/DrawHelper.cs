@@ -39,6 +39,11 @@ static class DrawHelper
 
         ImGui.SetNextItemWidth(width * scale);
     }
+    
+    public static void FullWidth()
+    {
+        ImGui.SetNextItemWidth(-1f);
+    }
 }
 
 class Use : IDisposable
