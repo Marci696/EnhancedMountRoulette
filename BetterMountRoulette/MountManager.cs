@@ -85,7 +85,7 @@ public static class MountManager
     {
         var ownedMountIds = GetOwnedMountIds();
 
-        return mountList.GetAvailableMountsForList(ownedMountIds);
+        return mountList.GetAvailableMountsForSummoning(ownedMountIds);
     }
 
     public static void SummonNextMountInList(MountList mountList)

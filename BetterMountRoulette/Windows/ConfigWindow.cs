@@ -24,7 +24,7 @@ public class ConfigWindow : Window, IDisposable
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
     public ConfigWindow(Configuration.Configuration configuration) : base(
-        "Configuration Window"
+        "Better Mount Roulette Configuration"
     )
     {
         //  Flags |= ImGuiWindowFlags.AlwaysAutoResize;
@@ -40,21 +40,19 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        var scale = ImGui.GetIO().FontGlobalScale;
-
-        ImGui.SetWindowFontScale(scale);
-
         PaddingY(10);
 
         using (
             ImRaii.Table(
                 "mountListTable",
                 6,
-                ImGuiTableFlags.Borders | ImGuiTableFlags.Hideable,
+                (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuter) | ImGuiTableFlags.Hideable,
+                // Grow automatically to fit content.
                 new Vector2(0, 0)
             ))
         {
-            ImGui.TableSetupColumn("List Name", ImGuiTableColumnFlags.WidthStretch, 3);
+            // No idea why only the first item needs a space, all the others following are automatically padded.
+            ImGui.TableSetupColumn(" List Name", ImGuiTableColumnFlags.WidthStretch, 3);
             ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 2);
             ImGui.TableSetupColumn("Default?", ImGuiTableColumnFlags.WidthStretch, 0.7f);
             ImGui.TableSetupColumn(
@@ -76,9 +74,21 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        if (ImGui.Button("Add new mount list"))
+        if (ImGui.Button("Add new whitelist"))
         {
-            configuration.StoreMountList(new MountList() { Name = configuration.FindNewMountListName() });
+            configuration.StoreMountList(
+                new MountList() { Name = configuration.FindNewMountListName(), Type = MountListType.Whitelist }
+            );
+        }
+
+        PaddingX(10);
+        ImGui.SameLine();
+
+        if (ImGui.Button("Add new blacklist"))
+        {
+            configuration.StoreMountList(
+                new MountList() { Name = configuration.FindNewMountListName(), Type = MountListType.Blacklist }
+            );
         }
 
         PaddingY(10);
@@ -119,16 +129,16 @@ public class ConfigWindow : Window, IDisposable
 
         FullWidth();
 
-        int currentListTypeIndex = mountList.Type == MountListType.Whitelist ? 0 : 1;
+        int currentListTypeIndex = (int)mountList.Type;
         if (ImGui.Combo("###Type", ref currentListTypeIndex, new[] { "Whitelist", "Blacklist" }))
         {
-            // todo, must invert list when switching between those types   
+            configuration.ChangeMountListType(mountList, (MountListType)currentListTypeIndex);
         }
 
         ImGui.TableNextColumn();
-        
+
         CenterHorizontally();
-        
+
         var checkboxValue = mountList.IsDefault;
         if (ImGui.Checkbox("###checkbox", ref checkboxValue))
         {

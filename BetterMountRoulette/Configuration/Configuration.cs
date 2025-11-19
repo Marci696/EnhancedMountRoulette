@@ -101,7 +101,7 @@ public class Configuration
 
         Chat.Write($"Added #{mount.RowId} {mount.Singular.ExtractText()} to list {mountList.Name}");
     }
-    
+
     public void ClearMountList()
     {
         _mountLists.Clear();
@@ -113,6 +113,31 @@ public class Configuration
         _mountLists.Remove(mountList.Name);
 
         StoreMountList(new MountList(mountList) { Name = newName });
+    }
+
+    public void ChangeMountListType(MountList mountList, MountListType newMountListType)
+    {
+        if (mountList.Type == newMountListType)
+        {
+            return;
+        }
+
+        var ownedMountIds = MountManager.GetOwnedMountIds();
+
+        StoreMountList(
+            new MountList(mountList)
+            {
+                Type = newMountListType,
+                MountIds =
+                    MountList.GetMoundIdsForMountList(
+                            newMountListType,
+                            ownedMountIds: MountManager.GetOwnedMountIds(),
+                            mountIdsConsideredForSummoning: mountList.GetAvailableMountsForSummoning(ownedMountIds)
+                                .ToHashSet()
+                        )
+                        .ToImmutableHashSet()
+            }
+        );
     }
 
     public void Save()

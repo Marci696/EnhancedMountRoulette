@@ -22,7 +22,7 @@ public class MountList
         init => _mountIds = [..value];
     }
 
-    public FetchNextType FetchNextType { get; init; } = FetchNextType.Random;
+    public FetchNextType FetchNextType { get; init; } = FetchNextType.Shuffle;
 
     public bool IsDefault { get; init; } = false;
 
@@ -34,10 +34,23 @@ public class MountList
     /// Helpful when rendering in ImGui lists .e.g. that need an identifier for inputs.
     /// </remarks>
     public int Id { get; init; } = MountListIdCounter++;
-    
+
     private HashSet<uint> _mountIds = [];
 
     private Queue<uint> queuedMountIds = [];
+
+    public static HashSet<uint> GetMoundIdsForMountList(
+        MountListType type,
+        ISet<uint> ownedMountIds,
+        ISet<uint> mountIdsConsideredForSummoning
+    )
+    {
+        var result = type == MountListType.Whitelist
+            ? mountIdsConsideredForSummoning.ToHashSet()
+            : ownedMountIds.Except(mountIdsConsideredForSummoning).ToHashSet();
+
+        return result;
+    }
 
     public MountList() { }
 
@@ -51,12 +64,12 @@ public class MountList
         Id = copyFrom.Id;
     }
 
-    public List<uint> GetAvailableMountsForList(HashSet<uint> ownedMountIds)
+    public List<uint> GetAvailableMountsForSummoning(HashSet<uint> ownedMountIds)
     {
-        return GetAvailableMountsForList(ownedMountIds.ToList());
+        return GetAvailableMountsForSummoning(ownedMountIds.ToList());
     }
 
-    public List<uint> GetAvailableMountsForList(List<uint> ownedMountIds)
+    public List<uint> GetAvailableMountsForSummoning(List<uint> ownedMountIds)
     {
         var ids = (Type == MountListType.Whitelist
             ? ownedMountIds.Intersect(MountIds)
@@ -77,7 +90,7 @@ public class MountList
             return null;
         }
 
-        var availableMountsForList = GetAvailableMountsForList(ownedMountIds);
+        var availableMountsForList = GetAvailableMountsForSummoning(ownedMountIds);
 
         if (availableMountsForList.Count == 0)
         {
