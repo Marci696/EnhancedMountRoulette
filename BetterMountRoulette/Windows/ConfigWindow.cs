@@ -56,14 +56,14 @@ public class ConfigWindow : Window, IDisposable
         {
             ImGui.TableSetupColumn("List Name", ImGuiTableColumnFlags.WidthStretch, 3);
             ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 2);
-            ImGui.TableSetupColumn("Is Default?", ImGuiTableColumnFlags.WidthStretch, 1);
+            ImGui.TableSetupColumn("Default?", ImGuiTableColumnFlags.WidthStretch, 0.7f);
             ImGui.TableSetupColumn(
                 "Considered during Mount action",
                 ImGuiTableColumnFlags.WidthStretch,
                 5
             );
             ImGui.TableSetupColumn("Summon Type", ImGuiTableColumnFlags.WidthStretch, 2);
-            ImGui.TableSetupColumn("###removeColumn", ImGuiTableColumnFlags.WidthStretch, 1);
+            ImGui.TableSetupColumn("###removeColumn", ImGuiTableColumnFlags.WidthStretch, 0.3f);
 
             ImGui.TableHeadersRow();
 
@@ -126,7 +126,9 @@ public class ConfigWindow : Window, IDisposable
         }
 
         ImGui.TableNextColumn();
-
+        
+        CenterHorizontally();
+        
         var checkboxValue = mountList.IsDefault;
         if (ImGui.Checkbox("###checkbox", ref checkboxValue))
         {
@@ -155,10 +157,15 @@ public class ConfigWindow : Window, IDisposable
         // Change X cross icon to red.
         using (ImRaii.PushColor(ImGuiCol.Text, new Vector4(1, 0, 0, 1)))
         {
+            var standardSize = ImGui.GetFrameHeight();
+
+            CenterHorizontally(standardSize);
+
             if (ImGuiComponents.IconButton(
                     "Delete List",
                     // Looks like an X cross.
                     icon: FontAwesomeIcon.Times,
+                    size: new Vector2(standardSize, standardSize),
                     // Hide background
                     defaultColor: new Vector4(0, 0, 0, 0),
                     hoveredColor: new Vector4(0.3f, 0.3f, 0.3f, 1),

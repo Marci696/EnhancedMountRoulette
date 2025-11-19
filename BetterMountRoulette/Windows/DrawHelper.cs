@@ -1,4 +1,5 @@
 ﻿using System;
+using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace BetterMountRoulette.Windows;
 
@@ -39,10 +40,27 @@ static class DrawHelper
 
         ImGui.SetNextItemWidth(width * scale);
     }
-    
+
     public static void FullWidth()
     {
         ImGui.SetNextItemWidth(-1f);
+    }
+
+    public static void CenterHorizontally()
+    {
+        // Frame height is the standard size for a square for most things such as icons and checkboxes.
+        CenterHorizontally(ImGui.GetFrameHeight());
+    }
+
+    public static void CenterHorizontally(float itemWidth)
+    {
+        ImGui.SetCursorPosX(
+            ImGui.GetCursorPosX()
+            // Find out how much space is available and set position to the middle.
+            + (ImGui.GetContentRegionAvail().X / 2)
+            // Take item size into account, to start drawing earlier to center the middle of the item.
+            - itemWidth / 2.0f
+        );
     }
 }
 
