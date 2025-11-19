@@ -35,7 +35,12 @@
         <PackageReference Include="DalamudPackager" Version="11.0.0" />
 -->
         <Reference Include="Newtonsoft.Json" Private="false" />
-        <Reference Include="Dalamud" Private="false" />
+        <Reference Include="Dalamud">
+<!--
+            <HintPath>D:\macif\Documents\FF14 Modding Tools\OwnMods\Dalamud\bin\Debug\Dalamud.dll</HintPath>
+-->
+            <Private>false</Private>
+        </Reference>
         <Reference Include="ImGui.NET" Private="false" />
         <Reference Include="ImGuiScene" Private="false" />
         <Reference Include="Lumina" Private="false" />

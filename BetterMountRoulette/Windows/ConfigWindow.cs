@@ -20,6 +20,8 @@ public class ConfigWindow : Window, IDisposable
     private string WhitelistCreateInputString = "";
 
     private string BlacklistCreateInputString = "";
+    
+    private MountList? NewMountList = null;
 
     // We give this window a constant ID using ###.
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
@@ -90,62 +92,12 @@ public class ConfigWindow : Window, IDisposable
             }
         }
 
-        PaddingY(10);
-
-        ImGui.Separator();
-
-        // todo create better way to add new values
-
-        using (ImRaii.PushId("add_whitelist"))
+        if (ImGui.Button("Add new mount list"))
         {
-            RenderAddNewListSection(MountListType.Whitelist);
+            configuration.StoreMountList(new MountList() { Name = configuration.FindNewMountListName() });
         }
-
-        using (ImRaii.PushId("add_blacklist"))
-        {
-            RenderAddNewListSection(MountListType.Blacklist);
-        }
-    }
-
-    private void RenderAddNewListSection(MountListType mountListType)
-    {
-        ref var inputString = ref (mountListType == MountListType.Whitelist
-            ? ref WhitelistCreateInputString
-            : ref BlacklistCreateInputString);
 
         PaddingY(10);
-
-        Text($"Add new {mountListType.ToString()} mount list:", TextScale.H4);
-
-        PaddingY(10);
-
-        Text("Name of new entry:");
-
-        ImGui.SameLine();
-
-        ImGui.InputText(
-            "",
-            ref inputString,
-            255
-        );
-
-        if (inputString.Length == 0)
-        {
-            Text("Name can not be empty.");
-        }
-        else if (configuration.MountLists.ContainsKey(inputString))
-        {
-            // todo color
-            Text("Mount list with this name already exists.");
-        }
-        else
-        {
-            if (ImGui.Button("Add"))
-            {
-                configuration.StoreMountList(new MountList() { Name = inputString, Type = mountListType });
-                inputString = "";
-            }
-        }
     }
 
     private void RenderMountList(MountList mountList)

@@ -173,4 +173,19 @@ public class Configuration
                 }
             };
     }
+
+    public string FindNewMountListName()
+    {
+        var standardNewName = "New";
+
+        var newName = standardNewName;
+        var increment = 0;
+
+        while (_mountLists.ContainsKey(newName))
+        {
+            newName = $"{standardNewName} {++increment}";
+        }
+
+        return newName;
+    }
 }
