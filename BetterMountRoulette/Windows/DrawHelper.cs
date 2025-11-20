@@ -62,6 +62,24 @@ static class DrawHelper
             - itemWidth / 2.0f
         );
     }
+
+    // TODO maybe not working
+    public static void CenterVertically()
+    {
+        CenterVertically(ImGui.GetFrameHeight());
+    }
+
+    // TODO maybe not working
+    public static void CenterVertically(float itemHeight)
+    {
+        ImGui.SetCursorPosY(
+            ImGui.GetCursorPosY()
+            // Find out how much space is available and set position to the middle.
+            + (ImGui.GetContentRegionAvail().Y / 2)
+            // Take item size into account, to start drawing earlier to center the middle of the item.
+            - itemHeight / 2.0f
+        );
+    }
 }
 
 class Use : IDisposable

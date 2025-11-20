@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Net.WebSockets;
 using System.Numerics;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
@@ -20,6 +22,8 @@ public class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration.Configuration configuration;
 
+    private Dictionary<int, string> mountNameFilters = new();
+
     // We give this window a constant ID using ###.
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
@@ -37,6 +41,15 @@ public class ConfigWindow : Window, IDisposable
     }
 
     public void Dispose() { }
+
+    public override void PostDraw()
+    {
+        base.PostDraw();
+
+        // Cleanup the dictionary for filter strings;
+        var mountListIds = configuration.MountLists.Values.Select((mountList => mountList.Id)).ToHashSet();
+        mountNameFilters = mountNameFilters.Where((pair => mountListIds.Contains(pair.Key))).ToDictionary();
+    }
 
     public override void Draw()
     {
@@ -98,6 +111,7 @@ public class ConfigWindow : Window, IDisposable
     {
         ImGui.TableNextRow();
 
+        // todo get rid of index
         var columnIndex = 0;
 
         ImGui.TableNextColumn();
@@ -206,12 +220,26 @@ public class ConfigWindow : Window, IDisposable
 
     private void RenderAvailableMountsSection(MountList mountList)
     {
-        // TODO find way to cache between each draw
-        var availableMountsForList = MountManager.GetAvailableMountsForList(mountList);
+        // todo maybe set based on game language setting
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
+        
+        var mountNameFilter = mountNameFilters.GetValueOrDefault(mountList.Id, "");
+
+        var availableMountsForListEnumerator = MountManager.GetAvailableMountsForList(mountList)
+            .Select((MountManager.GetMount))
+            .OfType<Mount>();
+
+        var availableMountsForList = mountNameFilter.IsNullOrEmpty()
+            ? availableMountsForListEnumerator.ToList()
+            : availableMountsForListEnumerator.Where(mount =>
+                    mount.Singular.ExtractText().Contains(mountNameFilter, StringComparison.CurrentCultureIgnoreCase)
+                )
+                .ToList();
+
         var ownedIds = MountManager.GetOwnedMountIds();
 
         if (ImGui.CollapsingHeader($"{availableMountsForList.Count} / {ownedIds.Count}###collapsedMounts")
-            && availableMountsForList.Count > 0)
+            && (availableMountsForList.Count > 0 || !mountNameFilter.IsNullOrEmpty()))
         {
             using (
                 ImRaii.Child(
@@ -228,33 +256,55 @@ public class ConfigWindow : Window, IDisposable
                         ImGuiTableFlags.Borders
                     ))
                 {
-                    ImGui.TableSetupColumn("##Mount", ImGuiTableColumnFlags.WidthStretch, 10);
+                    ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
                     ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 2);
-
                     ImGui.TableHeadersRow();
 
-                    foreach (var mountId in availableMountsForList)
+                    #region Name Filter
+
+                    ImGui.TableNextRow();
+
+                    ImGui.TableSetColumnIndex(0);
+                    
+                  //  Text("Filter:");
+
+                  //  PaddingX(10);
+
+                 //   ImGui.SameLine();
+
+                    // Span input over half the width of the column.
+                    // ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
+                    
+                    FullWidth();
+
+                    if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
                     {
-                        if (MountManager.GetMount(mountId) is not { } mount)
+                        mountNameFilters[mountList.Id] = mountNameFilter;
+                    }
+
+                    #endregion
+
+                    foreach (var mount in availableMountsForList)
+                    {
+                        using (ImRaii.PushId("mount_" + mount.RowId))
                         {
-                            continue;
-                        }
+                            ImGui.TableNextRow();
 
-                        ImGui.TableNextRow();
+                            ImGui.TableSetColumnIndex(0);
 
-                        ImGui.TableSetColumnIndex(0);
+                            RenderMountIcon(mount);
 
-                        RenderMountIcon(mount);
+                            ImGui.SameLine();
+                            
+                            // todo only do it in english game language, as the others are correctly written already
+                            Text(textInfo.ToTitleCase(mount.Singular.ExtractText()));
 
-                        ImGui.SameLine();
+                            ImGui.TableSetColumnIndex(1);
 
-                        Text(mount.Singular.ExtractText());
-
-                        ImGui.TableSetColumnIndex(1);
-
-                        if (ImGui.Button("Remove###" + mountId))
-                        {
-                            Chat.Write("Clicked remove mount" + mount.RowId);
+                            if (ImGui.Button("Remove"))
+                            {
+                                Chat.Write("Clicked remove mount" + mount.RowId);
+                            }
                         }
                     }
                 }
