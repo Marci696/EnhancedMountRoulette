@@ -13,6 +13,7 @@ using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using Dalamud.Utility;
+using FFXIVClientStructs;
 using Lumina.Excel.Sheets;
 using static BetterMountRoulette.Windows.DrawHelper;
 
@@ -23,6 +24,8 @@ public class ConfigWindow : Window, IDisposable
     private readonly Configuration.Configuration configuration;
 
     private Dictionary<int, string> mountNameFilters = new();
+
+    private bool IsPopupOpen = false;
 
     // We give this window a constant ID using ###.
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
@@ -54,7 +57,8 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-        ImGui.ShowMetricsWindow();
+        //  ImGui.ShowMetricsWindow();
+
 
         PaddingY(10);
 
@@ -268,13 +272,23 @@ public class ConfigWindow : Window, IDisposable
                         mountNameFilters[mountList.Id] = mountNameFilter;
                     }
 
+                    var addConfirmationPopupName = ConfirmationWindow(
+                        "Confirm replacement###add-all",
+                        "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
+                        () => configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
+                    );
+                    var removeConfirmationPopupName = ConfirmationWindow(
+                        "Confirm replacement###remove-all",
+                        "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
+                        () => configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds)
+                    );
 
                     ImGui.SameLine();
                     PaddingX(15);
 
                     if (ImGui.Button("Add All"))
                     {
-                        configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds);
+                        ImGui.OpenPopup(addConfirmationPopupName);
                     }
 
                     ImGui.SameLine();
@@ -282,7 +296,7 @@ public class ConfigWindow : Window, IDisposable
 
                     if (ImGui.Button("Remove All"))
                     {
-                        configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds);
+                        ImGui.OpenPopup(removeConfirmationPopupName);
                     }
 
                     #endregion

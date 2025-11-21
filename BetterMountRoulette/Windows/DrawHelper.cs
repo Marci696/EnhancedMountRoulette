@@ -135,6 +135,35 @@ static class DrawHelper
             );
         }
     }
+
+    public static string ConfirmationWindow(string name, string confirmationQuestion, Action onConfirm)
+    {
+        ImGui.SetNextWindowSize(new Vector2(500, 0));
+        if (ImGui.BeginPopupModal(name, ImGuiWindowFlags.NoResize))
+        {
+            ImGui.TextWrapped(confirmationQuestion);
+
+            PaddingY(10);
+
+            if (ImGui.Button("Yes", new Vector2(225, 0)))
+            {
+                onConfirm.Invoke();
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.SameLine();
+
+            ImGui.SetCursorPosX(ImGui.GetContentRegionMax().X - 225);
+            if (ImGui.Button("No", new Vector2(225, 0)))
+            {
+                ImGui.CloseCurrentPopup();
+            }
+
+            ImGui.EndPopup();
+        }
+
+        return name;
+    }
 }
 
 class Use : IDisposable
