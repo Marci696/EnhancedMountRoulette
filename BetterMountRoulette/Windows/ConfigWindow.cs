@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Numerics;
 using BetterMountRoulette.Configuration;
+using BetterMountRoulette.Windows.MountListTable;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -23,10 +24,8 @@ public class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration.Configuration configuration;
 
-    private Dictionary<int, string> mountNameFilters = new();
-
-    private bool IsPopupOpen = false;
-
+    private Dictionary<int, OwnedMountsTable> ownedMountsTables = new();
+    
     // We give this window a constant ID using ###.
     // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
     // and the window ID will always be "###XYZ counter window" for ImGui
@@ -52,7 +51,7 @@ public class ConfigWindow : Window, IDisposable
 
         // Cleanup the dictionary for filter strings;
         var mountListIds = configuration.MountLists.Values.Select((mountList => mountList.Id)).ToHashSet();
-        mountNameFilters = mountNameFilters.Where((pair => mountListIds.Contains(pair.Key))).ToDictionary();
+        ownedMountsTables = ownedMountsTables.Where((pair => mountListIds.Contains(pair.Key))).ToDictionary();
     }
 
     public override void Draw()
@@ -168,7 +167,9 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
-        RenderAvailableMountsSection(mountList);
+        var ownedMountsTable = GetOwnedMountsTable(mountList);
+
+        ownedMountsTable.Draw();
 
         ImGui.TableNextColumn();
 
@@ -196,6 +197,19 @@ public class ConfigWindow : Window, IDisposable
         ImGui.TableNextRow();
     }
 
+    private OwnedMountsTable GetOwnedMountsTable(MountList mountList)
+    {
+        if (ownedMountsTables.GetValueOrDefault(mountList.Id) is { } table)
+        {
+            return table;
+        }
+
+        var ownedMountsTable = new OwnedMountsTable(configuration, mountList);
+        ownedMountsTables[mountList.Id] = ownedMountsTable;
+
+        return ownedMountsTable;
+    }
+
     private void RenderMountIcon(Mount mount, Vector4 tintColor)
     {
         if (Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup() { IconId = mount.Icon }).GetWrapOrDefault() is
@@ -207,118 +221,6 @@ public class ConfigWindow : Window, IDisposable
         var scale = ImGui.GetIO().FontGlobalScale;
 
         ImGui.Image(texture.Handle, size: new Vector2(20, 20) * new Vector2(scale, scale), tintCol: tintColor);
-    }
-
-    private void RenderAvailableMountsSection(MountList mountList)
-    {
-        // todo maybe set based on game language setting
-        var textInfo = CultureInfo.CurrentCulture.TextInfo;
-
-        var mountNameFilter = mountNameFilters.GetValueOrDefault(mountList.Id, "");
-
-        var ownedMountIds = MountManager.GetOwnedMountIds();
-
-        var availableMountsForSummoning = mountList.GetAvailableMountsForSummoning(ownedMountIds).ToList();
-
-        var filteredAvailableMountsForSummoning = MapMountIdsToFilteredMounts(
-                mountList.GetAvailableMountsForSummoning(ownedMountIds),
-                mountNameFilter
-            )
-            .ToList();
-        var filteredOwnedButUnavailableMountsForList =
-            MapMountIdsToFilteredMounts(
-                mountList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds),
-                mountNameFilter
-            );
-
-        if (ImGui.CollapsingHeader(
-                $"{availableMountsForSummoning.Count} / {ownedMountIds.Count}###collapsedMounts_" + mountList.Id
-            ))
-        {
-            /*using (
-                ImRaii.Child(
-                    "ownedMountsList_" + mountList.Id,
-                    new Vector2(0, 300),
-                    border: false,
-                    flags: ImGuiWindowFlags.AlwaysVerticalScrollbar
-                )
-            )*/
-            {
-                using (ImRaii.Table(
-                        "mountTable_" + mountList.Id,
-                        2,
-                        ImGuiTableFlags.ScrollY | ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV,
-                        new Vector2(0, 300)
-                    ))
-                {
-                    ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
-                    ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 1);
-                    ImGui.TableHeadersRow();
-
-                    #region Name Filter
-
-                    ImGui.TableNextRow();
-
-                    ImGui.TableSetColumnIndex(0);
-
-                    Text("Filter:");
-
-                    ImGui.SameLine();
-
-                    ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
-
-                    if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
-                    {
-                        mountNameFilters[mountList.Id] = mountNameFilter;
-                    }
-
-                    var addConfirmationPopupName = ConfirmationWindow(
-                        "Confirm replacement###add-all",
-                        "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
-                        () => configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
-                    );
-                    var removeConfirmationPopupName = ConfirmationWindow(
-                        "Confirm replacement###remove-all",
-                        "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
-                        () => configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds)
-                    );
-
-                    ImGui.SameLine();
-                    PaddingX(15);
-
-                    if (ImGui.Button("Add All"))
-                    {
-                        ImGui.OpenPopup(addConfirmationPopupName);
-                    }
-
-                    ImGui.SameLine();
-                    PaddingX(5);
-
-                    if (ImGui.Button("Remove All"))
-                    {
-                        ImGui.OpenPopup(removeConfirmationPopupName);
-                    }
-
-                    #endregion
-
-                    foreach (var mount in filteredAvailableMountsForSummoning)
-                    {
-                        using (ImRaii.PushId("mount_available_" + mount.RowId))
-                        {
-                            RenderMountItem(mountList, mount, isInSummonList: true, textInfo);
-                        }
-                    }
-
-                    foreach (var mount in filteredOwnedButUnavailableMountsForList)
-                    {
-                        using (ImRaii.PushId("mount_unavailable_" + mount.RowId))
-                        {
-                            RenderMountItem(mountList, mount, isInSummonList: false, textInfo);
-                        }
-                    }
-                }
-            }
-        }
     }
 
     public void RenderMountItem(MountList mountList, Mount mount, bool isInSummonList, TextInfo textInfo)
