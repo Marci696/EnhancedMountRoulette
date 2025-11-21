@@ -32,8 +32,9 @@ public class ConfigWindow : Window, IDisposable
     )
     {
         //  Flags |= ImGuiWindowFlags.AlwaysAutoResize;
+        // Flags |= ImGuiWindowFlags.NoResize;
 
-        //    Size = new Vector2(800, 800);
+        //      Size = new Vector2(1200, 800);
         // Decides that size is used while opening, but is not static
         SizeCondition = ImGuiCond.Appearing;
 
@@ -53,6 +54,8 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
+        ImGui.ShowMetricsWindow();
+
         PaddingY(10);
 
         using (
@@ -61,19 +64,19 @@ public class ConfigWindow : Window, IDisposable
                 6,
                 (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuter) | ImGuiTableFlags.Hideable,
                 // Grow automatically to fit content.
-                new Vector2(0, 0)
+                new Vector2(1400, 0)
             ))
         {
             // No idea why only the first item needs a space, all the others following are automatically padded.
             ImGui.TableSetupColumn(" List Name", ImGuiTableColumnFlags.WidthStretch, 3);
-            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 2);
+            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 1.5f);
             ImGui.TableSetupColumn("Default?", ImGuiTableColumnFlags.WidthStretch, 0.7f);
             ImGui.TableSetupColumn(
                 "Considered during Mount action",
                 ImGuiTableColumnFlags.WidthStretch,
                 5
             );
-            ImGui.TableSetupColumn("Summon Type", ImGuiTableColumnFlags.WidthStretch, 2);
+            ImGui.TableSetupColumn("Summon Type", ImGuiTableColumnFlags.WidthStretch, 1.5f);
             ImGui.TableSetupColumn("###removeColumn", ImGuiTableColumnFlags.WidthStretch, 0.3f);
 
             ImGui.TableHeadersRow();
@@ -224,21 +227,24 @@ public class ConfigWindow : Window, IDisposable
                 mountNameFilter
             );
 
-        if (ImGui.CollapsingHeader($"{availableMountsForSummoning.Count} / {ownedMountIds.Count}###collapsedMounts"))
+        if (ImGui.CollapsingHeader(
+                $"{availableMountsForSummoning.Count} / {ownedMountIds.Count}###collapsedMounts_" + mountList.Id
+            ))
         {
-            using (
+            /*using (
                 ImRaii.Child(
-                    "availableMounts",
+                    "ownedMountsList_" + mountList.Id,
                     new Vector2(0, 300),
                     border: false,
                     flags: ImGuiWindowFlags.AlwaysVerticalScrollbar
                 )
-            )
+            )*/
             {
                 using (ImRaii.Table(
-                        "mountTable",
+                        "mountTable_" + mountList.Id,
                         2,
-                        ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV
+                        ImGuiTableFlags.ScrollY | ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV,
+                        new Vector2(0, 300)
                     ))
                 {
                     ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
@@ -251,18 +257,39 @@ public class ConfigWindow : Window, IDisposable
 
                     ImGui.TableSetColumnIndex(0);
 
-                    FullWidth();
+                    Text("Filter:");
+
+                    ImGui.SameLine();
+
+                    ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
 
                     if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
                     {
                         mountNameFilters[mountList.Id] = mountNameFilter;
                     }
 
+
+                    ImGui.SameLine();
+                    PaddingX(15);
+
+                    if (ImGui.Button("Add All"))
+                    {
+                        configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds);
+                    }
+
+                    ImGui.SameLine();
+                    PaddingX(5);
+
+                    if (ImGui.Button("Remove All"))
+                    {
+                        configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds);
+                    }
+
                     #endregion
 
                     foreach (var mount in filteredAvailableMountsForSummoning)
                     {
-                        using (ImRaii.PushId("mount_available" + mount.RowId))
+                        using (ImRaii.PushId("mount_available_" + mount.RowId))
                         {
                             RenderMountItem(mountList, mount, isInSummonList: true, textInfo);
                         }
@@ -270,7 +297,7 @@ public class ConfigWindow : Window, IDisposable
 
                     foreach (var mount in filteredOwnedButUnavailableMountsForList)
                     {
-                        using (ImRaii.PushId("mount_unavailable" + mount.RowId))
+                        using (ImRaii.PushId("mount_unavailable_" + mount.RowId))
                         {
                             RenderMountItem(mountList, mount, isInSummonList: false, textInfo);
                         }

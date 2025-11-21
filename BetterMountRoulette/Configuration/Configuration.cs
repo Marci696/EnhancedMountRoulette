@@ -102,6 +102,30 @@ public class Configuration
         Chat.Write($"Added #{mount.RowId} {mount.Singular.ExtractText()} to list {mountList.Name}");
     }
 
+    public void ConsiderAllMountsForSummoning(MountList mountList, IEnumerable<uint> mountIds)
+    {
+        StoreMountList(
+            new MountList(mountList)
+            {
+                MountIds = mountList.Type == MountListType.Whitelist
+                    ? mountIds.ToImmutableHashSet()
+                    : ImmutableHashSet<uint>.Empty
+            }
+        );
+    }
+
+    public void OverlookAllMountsForSummoning(MountList mountList, IEnumerable<uint> mountIds)
+    {
+        StoreMountList(
+            new MountList(mountList)
+            {
+                MountIds = mountList.Type == MountListType.Whitelist
+                    ? ImmutableHashSet<uint>.Empty
+                    : mountIds.ToImmutableHashSet()
+            }
+        );
+    }
+
     public void ConsiderMountForSummoning(MountList mountList, Mount mount)
     {
         var newMountIds = mountList.Type == MountListType.Whitelist

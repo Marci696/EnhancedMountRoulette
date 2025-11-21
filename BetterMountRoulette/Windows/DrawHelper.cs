@@ -99,13 +99,13 @@ static class DrawHelper
         );
     }
 
-    public static bool RemoveIconButton(string label, Vector2? size = null)
+    public static bool RemoveIconButton(string id, Vector2? size = null)
     {
         // Change X cross icon to red.
         using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(183, 29, 6, 1)))
         {
             return ImGuiComponents.IconButton(
-                label,
+                id,
                 // Looks like an X cross.
                 icon: FontAwesomeIcon.Times,
                 size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
@@ -125,7 +125,7 @@ static class DrawHelper
         {
             return ImGuiComponents.IconButton(
                 label,
-                icon: FontAwesomeIcon.PlusCircle,
+                icon: FontAwesomeIcon.HeartCirclePlus,
                 size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
                 // Hide background
                 defaultColor: new Vector4(0, 0, 0, 0),
