@@ -178,27 +178,11 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
-        // Change X cross icon to red.
-        using (ImRaii.PushColor(ImGuiCol.Text, new Vector4(1, 0, 0, 1)))
+        CenterHorizontally();
+
+        if (RemoveIconButton("Delete mount list"))
         {
-            var standardSize = ImGui.GetFrameHeight();
-
-            CenterHorizontally(standardSize);
-
-            if (ImGuiComponents.IconButton(
-                    "Delete List",
-                    // Looks like an X cross.
-                    icon: FontAwesomeIcon.Times,
-                    size: new Vector2(standardSize, standardSize),
-                    // Hide background
-                    defaultColor: new Vector4(0, 0, 0, 0),
-                    hoveredColor: new Vector4(0.3f, 0.3f, 0.3f, 1),
-                    // Color when it is clicked.
-                    activeColor: new Vector4(0.6f, 0.6f, 0.6f, 1)
-                ))
-            {
-                configuration.RemoveMountList(mountList);
-            }
+            configuration.RemoveMountList(mountList);
         }
 
 
@@ -258,7 +242,7 @@ public class ConfigWindow : Window, IDisposable
                     ))
                 {
                     ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
-                    ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 2);
+                    ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 1);
                     ImGui.TableHeadersRow();
 
                     #region Name Filter
@@ -314,16 +298,18 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableSetColumnIndex(1);
 
+        CenterHorizontally();
+
         if (!isInSummonList)
         {
-            if (ImGui.Button("Add"))
+            if (AddIconButton("Add"))
             {
                 configuration.ConsiderMountForSummoning(mountList, mount);
             }
         }
         else
         {
-            if (ImGui.Button("Remove"))
+            if (RemoveIconButton("Remove"))
             {
                 configuration.OverlookMountFromSummoning(mountList, mount);
             }

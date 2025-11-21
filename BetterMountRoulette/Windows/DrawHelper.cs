@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Numerics;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
+using Dalamud.Interface.ImGuiSeStringRenderer;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
@@ -9,6 +12,9 @@ using Dalamud.Bindings.ImGui;
 
 static class DrawHelper
 {
+    public static Vector4 RgbaToImgGuiVector(byte red, byte green, byte blue, float alpha) =>
+        new(red / 255f, green / 255f, blue / 255f, alpha);
+
     public static void Text(string text, TextScale textScale = TextScale.Normal, Vector4? color = null)
     {
         var scale = ImGui.GetIO().FontGlobalScale;
@@ -71,7 +77,7 @@ static class DrawHelper
             // Find out how much space is available and set position to the middle.
             + (ImGui.GetContentRegionAvail().X / 2)
             // Take item size into account, to start drawing earlier to center the middle of the item.
-            - itemWidth / 2.0f
+            - (itemWidth / 2.0f)
         );
     }
 
@@ -89,8 +95,45 @@ static class DrawHelper
             // Find out how much space is available and set position to the middle.
             + (ImGui.GetContentRegionAvail().Y / 2)
             // Take item size into account, to start drawing earlier to center the middle of the item.
-            - itemHeight / 2.0f
+            - (itemHeight / 2.0f)
         );
+    }
+
+    public static bool RemoveIconButton(string label, Vector2? size = null)
+    {
+        // Change X cross icon to red.
+        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(183, 29, 6, 1)))
+        {
+            return ImGuiComponents.IconButton(
+                label,
+                // Looks like an X cross.
+                icon: FontAwesomeIcon.Times,
+                size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
+                // Hide background
+                defaultColor: new Vector4(0, 0, 0, 0),
+                hoveredColor: RgbaToImgGuiVector(76, 76, 76, 1),
+                // Color when it is clicked.
+                activeColor: RgbaToImgGuiVector(153, 153, 153, 1)
+            );
+        }
+    }
+
+    public static bool AddIconButton(string label, Vector2? size = null)
+    {
+        // Change X cross icon to green.
+        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(21, 146, 21, 1)))
+        {
+            return ImGuiComponents.IconButton(
+                label,
+                icon: FontAwesomeIcon.PlusCircle,
+                size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
+                // Hide background
+                defaultColor: new Vector4(0, 0, 0, 0),
+                hoveredColor: RgbaToImgGuiVector(76, 76, 76, 1),
+                // Color when it is clicked.
+                activeColor: RgbaToImgGuiVector(153, 153, 153, 1)
+            );
+        }
     }
 }
 
