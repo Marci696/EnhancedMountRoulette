@@ -16,6 +16,8 @@ namespace BetterMountRoulette.Windows.MountListTable;
 public class OwnedMountsTable(Configuration.Configuration configuration)
 {
     private static Dictionary<int, string> MountNameFilters = new();
+    
+    private static readonly Vector2 TableSize = new(0, 300);
 
     public static void ClearMountNameFilters(IEnumerable<int> mountListIds)
     {
@@ -48,8 +50,8 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
                 using (ImRaii.Table(
                         "mountTable_" + mountList.Id,
                         2,
-                        ImGuiTableFlags.ScrollY | ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV,
-                        new Vector2(0, 300)
+                        ImGuiTableFlags.ScrollY | (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV),
+                        TableSize
                     ))
                 {
                     DrawHeadersRow();
