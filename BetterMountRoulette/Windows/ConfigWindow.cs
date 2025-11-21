@@ -240,8 +240,7 @@ public class ConfigWindow : Window, IDisposable
                 mountNameFilter
             );
 
-        if (ImGui.CollapsingHeader($"{availableMountsForSummoning.Count} / {ownedMountIds.Count}###collapsedMounts")
-            && (availableMountsForSummoning.Count > 0 || !mountNameFilter.IsNullOrEmpty()))
+        if (ImGui.CollapsingHeader($"{availableMountsForSummoning.Count} / {ownedMountIds.Count}###collapsedMounts"))
         {
             using (
                 ImRaii.Child(
@@ -255,7 +254,7 @@ public class ConfigWindow : Window, IDisposable
                 using (ImRaii.Table(
                         "mountTable",
                         2,
-                        ImGuiTableFlags.Borders
+                        ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV
                     ))
                 {
                     ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
@@ -267,15 +266,6 @@ public class ConfigWindow : Window, IDisposable
                     ImGui.TableNextRow();
 
                     ImGui.TableSetColumnIndex(0);
-
-                    //  Text("Filter:");
-
-                    //  PaddingX(10);
-
-                    //   ImGui.SameLine();
-
-                    // Span input over half the width of the column.
-                    // ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
 
                     FullWidth();
 
@@ -290,7 +280,7 @@ public class ConfigWindow : Window, IDisposable
                     {
                         using (ImRaii.PushId("mount_available" + mount.RowId))
                         {
-                            RenderMountItem(mount, isInSummonList: true, textInfo);
+                            RenderMountItem(mountList, mount, isInSummonList: true, textInfo);
                         }
                     }
 
@@ -298,7 +288,7 @@ public class ConfigWindow : Window, IDisposable
                     {
                         using (ImRaii.PushId("mount_unavailable" + mount.RowId))
                         {
-                            RenderMountItem(mount, isInSummonList: false, textInfo);
+                            RenderMountItem(mountList, mount, isInSummonList: false, textInfo);
                         }
                     }
                 }
@@ -306,7 +296,7 @@ public class ConfigWindow : Window, IDisposable
         }
     }
 
-    public void RenderMountItem(Mount mount, bool isInSummonList, TextInfo textInfo)
+    public void RenderMountItem(MountList mountList, Mount mount, bool isInSummonList, TextInfo textInfo)
     {
         ImGui.TableNextRow();
 
@@ -328,19 +318,19 @@ public class ConfigWindow : Window, IDisposable
         {
             if (ImGui.Button("Add"))
             {
-                Chat.Write("Clicked add mount" + mount.RowId);
+                configuration.ConsiderMountForSummoning(mountList, mount);
             }
         }
         else
         {
             if (ImGui.Button("Remove"))
             {
-                Chat.Write("Clicked remove mount" + mount.RowId);
+                configuration.OverlookMountFromSummoning(mountList, mount);
             }
         }
     }
 
-    private IEnumerable<Mount> MapMountIdsToFilteredMounts(IEnumerable<uint> mountIds, string mountNameFilter)
+    private static IEnumerable<Mount> MapMountIdsToFilteredMounts(IEnumerable<uint> mountIds, string mountNameFilter)
     {
         var availableMountsForListEnumerator = mountIds
             .Select((MountManager.GetMount))

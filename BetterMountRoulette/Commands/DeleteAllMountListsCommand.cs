@@ -10,7 +10,7 @@ internal class DeleteAllMountListsCommand(Configuration.Configuration configurat
 
     private void Handler(string _, string __)
     {
-        configuration.ClearMountList();
+        configuration.ClearMountLists();
 
         Chat.Write("All lists were removed.");
     }
