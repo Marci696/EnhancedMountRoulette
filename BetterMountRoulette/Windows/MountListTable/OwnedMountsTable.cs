@@ -13,25 +13,30 @@ using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.MountListTable;
 
-public class OwnedMountsTable(Configuration.Configuration configuration, MountList mountList) : IDrawable
+public class OwnedMountsTable(Configuration.Configuration configuration)
 {
-    private string mountNameFilter = "";
+    private static Dictionary<int, string> MountNameFilters = new();
 
-    public void Draw()
+    public static void ClearMountNameFilters(IEnumerable<int> mountListIds)
     {
-        // todo maybe set based on game language setting
-        var textInfo = CultureInfo.CurrentCulture.TextInfo;
+        MountNameFilters = MountNameFilters.Where(pair => mountListIds.Contains(pair.Key))
+            .ToDictionary();
+    }
 
+    public void Draw(MountList mountList)
+    {
+        var mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
         var ownedMountIds = MountManager.GetOwnedMountIds();
-
         var availableMountsForSummoning = mountList.GetAvailableMountsForSummoning(ownedMountIds).ToList();
 
         var filteredAvailableMountsForSummoning = MapMountIdsToFilteredMounts(
+                mountNameFilter,
                 mountList.GetAvailableMountsForSummoning(ownedMountIds)
             )
             .ToList();
         var filteredOwnedButUnavailableMountsForList =
             MapMountIdsToFilteredMounts(
+                mountNameFilter,
                 mountList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds)
             );
 
@@ -47,61 +52,15 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
                         new Vector2(0, 300)
                     ))
                 {
-                    ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
-                    ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 1);
-                    ImGui.TableHeadersRow();
+                    DrawHeadersRow();
 
-                    #region Name Filter
-
-                    ImGui.TableNextRow();
-
-                    ImGui.TableSetColumnIndex(0);
-
-                    Text("Filter:");
-
-                    ImGui.SameLine();
-
-                    ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
-
-                    if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
-                    {
-                        // todo need to reassign name?
-                    }
-
-                    var addConfirmationPopupName = ConfirmationWindow(
-                        "Confirm replacement###add-all",
-                        "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
-                        () => configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
-                    );
-                    var removeConfirmationPopupName = ConfirmationWindow(
-                        "Confirm replacement###remove-all",
-                        "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
-                        () => configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds)
-                    );
-
-                    ImGui.SameLine();
-                    PaddingX(15);
-
-                    if (ImGui.Button("Add All"))
-                    {
-                        ImGui.OpenPopup(addConfirmationPopupName);
-                    }
-
-                    ImGui.SameLine();
-                    PaddingX(5);
-
-                    if (ImGui.Button("Remove All"))
-                    {
-                        ImGui.OpenPopup(removeConfirmationPopupName);
-                    }
-
-                    #endregion
+                    DrawFilterAndActionsRow(mountList, ownedMountIds);
 
                     foreach (var mount in filteredAvailableMountsForSummoning)
                     {
                         using (ImRaii.PushId("mount_available_" + mount.RowId))
                         {
-                            RenderMountItem(mount, isInSummonList: true, textInfo);
+                            DrawMountItem(mountList, mount, isInSummonList: true);
                         }
                     }
 
@@ -109,7 +68,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
                     {
                         using (ImRaii.PushId("mount_unavailable_" + mount.RowId))
                         {
-                            RenderMountItem(mount, isInSummonList: false, textInfo);
+                            DrawMountItem(mountList, mount, isInSummonList: false);
                         }
                     }
                 }
@@ -117,23 +76,77 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
         }
     }
 
-    public void RenderMountItem(Mount mount, bool isInSummonList, TextInfo textInfo)
+    private static void DrawHeadersRow()
+    {
+        ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
+        ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 1);
+        ImGui.TableHeadersRow();
+    }
+
+    private void DrawFilterAndActionsRow(MountList mountList, HashSet<uint> ownedMountIds)
     {
         ImGui.TableNextRow();
 
-        ImGui.TableSetColumnIndex(0);
+        ImGui.TableNextColumn();
+
+        Text("Filter:");
+
+        ImGui.SameLine();
+
+        ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
+
+        var mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
+
+        if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
+        {
+            MountNameFilters[mountList.Id] = mountNameFilter;
+        }
+
+        var addConfirmationPopupName = ConfirmationWindow(
+            "Confirm replacement###add-all",
+            "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
+            () => configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
+        );
+        var removeConfirmationPopupName = ConfirmationWindow(
+            "Confirm replacement###remove-all",
+            "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
+            () => configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds)
+        );
+
+        ImGui.SameLine();
+        PaddingX(15);
+
+        if (ImGui.Button("Add All"))
+        {
+            ImGui.OpenPopup(addConfirmationPopupName);
+        }
+
+        ImGui.SameLine();
+        PaddingX(5);
+
+        if (ImGui.Button("Remove All"))
+        {
+            ImGui.OpenPopup(removeConfirmationPopupName);
+        }
+    }
+
+    public void DrawMountItem(MountList mountList, Mount mount, bool isInSummonList)
+    {
+        ImGui.TableNextRow();
+
+        ImGui.TableNextColumn();
 
         var tintColor = !isInSummonList ? new Vector4(1, 1, 1, .3f) : new Vector4(1, 1, 1, 1);
-        RenderMountIcon(mount, tintColor);
+        DrawMountIcon(mount, tintColor);
 
         ImGui.SameLine();
 
         // todo only do it in english game language, as the others are correctly written already
         Vector4? textColor = !isInSummonList ? new Vector4(0.6f, 0.6f, 0.6f, 1) : null;
 
-        Text(textInfo.ToTitleCase(mount.Singular.ExtractText()), color: textColor);
+        Text(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(mount.Singular.ExtractText()), color: textColor);
 
-        ImGui.TableSetColumnIndex(1);
+        ImGui.TableNextColumn();
 
         CenterHorizontally();
 
@@ -153,7 +166,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
         }
     }
 
-    private IEnumerable<Mount> MapMountIdsToFilteredMounts(IEnumerable<uint> mountIds)
+    private IEnumerable<Mount> MapMountIdsToFilteredMounts(string mountNameFilter, IEnumerable<uint> mountIds)
     {
         var availableMountsForListEnumerator = mountIds
             .Select((MountManager.GetMount))
@@ -169,7 +182,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
         );
     }
 
-    private void RenderMountIcon(Mount mount, Vector4 tintColor)
+    private void DrawMountIcon(Mount mount, Vector4 tintColor)
     {
         if (Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup() { IconId = mount.Icon }).GetWrapOrDefault() is
             not { } texture)

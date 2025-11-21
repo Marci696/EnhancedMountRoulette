@@ -1,21 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Numerics;
 using BetterMountRoulette.Configuration;
 using BetterMountRoulette.Windows.MountListTable;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface;
-using Dalamud.Interface.Components;
-using Dalamud.Interface.Style;
-using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
-using Dalamud.Utility;
-using FFXIVClientStructs;
-using Lumina.Excel.Sheets;
 using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows;
@@ -24,11 +14,6 @@ public class ConfigWindow : Window, IDisposable
 {
     private readonly Configuration.Configuration configuration;
 
-    private Dictionary<int, OwnedMountsTable> ownedMountsTables = new();
-    
-    // We give this window a constant ID using ###.
-    // This allows for labels to be dynamic, like "{FPS Counter}fps###XYZ counter window",
-    // and the window ID will always be "###XYZ counter window" for ImGui
     public ConfigWindow(Configuration.Configuration configuration) : base(
         "Better Mount Roulette Configuration"
     )
@@ -49,9 +34,8 @@ public class ConfigWindow : Window, IDisposable
     {
         base.PostDraw();
 
-        // Cleanup the dictionary for filter strings;
-        var mountListIds = configuration.MountLists.Values.Select((mountList => mountList.Id)).ToHashSet();
-        ownedMountsTables = ownedMountsTables.Where((pair => mountListIds.Contains(pair.Key))).ToDictionary();
+        // Cleanup the dictionary for filter strings
+        OwnedMountsTable.ClearMountNameFilters(configuration.MountLists.Values.Select((mountList => mountList.Id)));
     }
 
     public override void Draw()
@@ -116,16 +100,12 @@ public class ConfigWindow : Window, IDisposable
     private void RenderMountList(MountList mountList)
     {
         ImGui.TableNextRow();
-
-        // todo get rid of index
-        var columnIndex = 0;
-
         ImGui.TableNextColumn();
 
-        var mountListName = mountList.Name;
 
         FullWidth();
 
+        var mountListName = mountList.Name;
         // Goes into the if block when something changed.
         if (ImGui.InputText("###name", ref mountListName, 50))
         {
@@ -167,9 +147,7 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
-        var ownedMountsTable = GetOwnedMountsTable(mountList);
-
-        ownedMountsTable.Draw();
+        new OwnedMountsTable(configuration).Draw(mountList);
 
         ImGui.TableNextColumn();
 
@@ -195,83 +173,5 @@ public class ConfigWindow : Window, IDisposable
 
 
         ImGui.TableNextRow();
-    }
-
-    private OwnedMountsTable GetOwnedMountsTable(MountList mountList)
-    {
-        if (ownedMountsTables.GetValueOrDefault(mountList.Id) is { } table)
-        {
-            return table;
-        }
-
-        var ownedMountsTable = new OwnedMountsTable(configuration, mountList);
-        ownedMountsTables[mountList.Id] = ownedMountsTable;
-
-        return ownedMountsTable;
-    }
-
-    private void RenderMountIcon(Mount mount, Vector4 tintColor)
-    {
-        if (Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup() { IconId = mount.Icon }).GetWrapOrDefault() is
-            not { } texture)
-        {
-            return;
-        }
-
-        var scale = ImGui.GetIO().FontGlobalScale;
-
-        ImGui.Image(texture.Handle, size: new Vector2(20, 20) * new Vector2(scale, scale), tintCol: tintColor);
-    }
-
-    public void RenderMountItem(MountList mountList, Mount mount, bool isInSummonList, TextInfo textInfo)
-    {
-        ImGui.TableNextRow();
-
-        ImGui.TableSetColumnIndex(0);
-
-        var tintColor = !isInSummonList ? new Vector4(1, 1, 1, .3f) : new Vector4(1, 1, 1, 1);
-        RenderMountIcon(mount, tintColor);
-
-        ImGui.SameLine();
-
-        // todo only do it in english game language, as the others are correctly written already
-        Vector4? textColor = !isInSummonList ? new Vector4(0.6f, 0.6f, 0.6f, 1) : null;
-
-        Text(textInfo.ToTitleCase(mount.Singular.ExtractText()), color: textColor);
-
-        ImGui.TableSetColumnIndex(1);
-
-        CenterHorizontally();
-
-        if (!isInSummonList)
-        {
-            if (AddIconButton("Add"))
-            {
-                configuration.ConsiderMountForSummoning(mountList, mount);
-            }
-        }
-        else
-        {
-            if (RemoveIconButton("Remove"))
-            {
-                configuration.OverlookMountFromSummoning(mountList, mount);
-            }
-        }
-    }
-
-    private static IEnumerable<Mount> MapMountIdsToFilteredMounts(IEnumerable<uint> mountIds, string mountNameFilter)
-    {
-        var availableMountsForListEnumerator = mountIds
-            .Select((MountManager.GetMount))
-            .OfType<Mount>();
-
-        if (mountNameFilter.IsNullOrEmpty())
-        {
-            return availableMountsForListEnumerator;
-        }
-
-        return availableMountsForListEnumerator.Where(mount =>
-            mount.Singular.ExtractText().Contains(mountNameFilter, StringComparison.CurrentCultureIgnoreCase)
-        );
     }
 }
