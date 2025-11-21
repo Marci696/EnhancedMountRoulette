@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Numerics;
+using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 
 namespace BetterMountRoulette.Windows;
@@ -7,7 +9,7 @@ using Dalamud.Bindings.ImGui;
 
 static class DrawHelper
 {
-    public static void Text(string text, TextScale textScale = TextScale.Normal)
+    public static void Text(string text, TextScale textScale = TextScale.Normal, Vector4? color = null)
     {
         var scale = ImGui.GetIO().FontGlobalScale;
 
@@ -16,7 +18,17 @@ static class DrawHelper
                 () => ImGui.SetWindowFontScale(scale)
             ))
         {
-            ImGui.Text(text);
+            if (color is { } textColor)
+            {
+                using (ImRaii.PushColor(ImGuiCol.Text, textColor))
+                {
+                    ImGui.Text(text);
+                }
+            }
+            else
+            {
+                ImGui.Text(text);
+            }
         }
     }
 

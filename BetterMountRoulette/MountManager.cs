@@ -81,11 +81,14 @@ public static class MountManager
     }
 
 
-    public static List<uint> GetAvailableMountsForList(MountList mountList)
+    public static IEnumerable<uint> GetAvailableMountsFromListForSummoning(MountList mountList)
     {
-        var ownedMountIds = GetOwnedMountIds();
+        return mountList.GetAvailableMountsForSummoning(GetOwnedMountIds());
+    }
 
-        return mountList.GetAvailableMountsForSummoning(ownedMountIds);
+    public static IEnumerable<uint> GetOwnedButUnavailableMountsFromListForSummoning(MountList mountList)
+    {
+        return mountList.GetOwnedButUnavailableMountsForSummoning(GetOwnedMountIds());
     }
 
     public static void SummonNextMountInList(MountList mountList)

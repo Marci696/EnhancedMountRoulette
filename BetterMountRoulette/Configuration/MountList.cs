@@ -64,33 +64,33 @@ public class MountList
         Id = copyFrom.Id;
     }
 
-    public List<uint> GetAvailableMountsForSummoning(HashSet<uint> ownedMountIds)
-    {
-        return GetAvailableMountsForSummoning(ownedMountIds.ToList());
-    }
-
-    public List<uint> GetAvailableMountsForSummoning(List<uint> ownedMountIds)
+    // TODO change return value to always hashset? and do calculation with Hashset instead of List
+    public IEnumerable<uint> GetAvailableMountsForSummoning(IEnumerable<uint> ownedMountIds)
     {
         var ids = (Type == MountListType.Whitelist
             ? ownedMountIds.Intersect(MountIds)
-            : ownedMountIds.Except(MountIds)).ToList();
+            : ownedMountIds.Except(MountIds));
 
         return ids;
     }
 
-    public uint? GetNextMountIdToSummon(HashSet<uint> ownedMountIds)
+    public IEnumerable<uint> GetOwnedButUnavailableMountsForSummoning(IEnumerable<uint> ownedMountIds)
     {
-        return GetNextMountIdToSummon(ownedMountIds.ToList());
+        var ownedMountIdsSet = ownedMountIds.ToHashSet();
+
+        return ownedMountIdsSet.Except(GetAvailableMountsForSummoning(ownedMountIdsSet));
     }
 
-    public uint? GetNextMountIdToSummon(List<uint> ownedMountIds)
+    public uint? GetNextMountIdToSummon(IEnumerable<uint> ownedMountIds)
     {
-        if (ownedMountIds.Count == 0)
+        var ownedMountIdsSet = ownedMountIds.ToList();
+
+        if (ownedMountIdsSet.Count == 0)
         {
             return null;
         }
 
-        var availableMountsForList = GetAvailableMountsForSummoning(ownedMountIds);
+        var availableMountsForList = GetAvailableMountsForSummoning(ownedMountIdsSet).ToList();
 
         if (availableMountsForList.Count == 0)
         {

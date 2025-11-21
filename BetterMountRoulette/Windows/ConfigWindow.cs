@@ -205,7 +205,7 @@ public class ConfigWindow : Window, IDisposable
         ImGui.TableNextRow();
     }
 
-    private void RenderMountIcon(Mount mount)
+    private void RenderMountIcon(Mount mount, Vector4 tintColor)
     {
         if (Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup() { IconId = mount.Icon }).GetWrapOrDefault() is
             not { } texture)
@@ -215,31 +215,33 @@ public class ConfigWindow : Window, IDisposable
 
         var scale = ImGui.GetIO().FontGlobalScale;
 
-        ImGui.Image(texture.Handle, new Vector2(20, 20) * new Vector2(scale, scale));
+        ImGui.Image(texture.Handle, size: new Vector2(20, 20) * new Vector2(scale, scale), tintCol: tintColor);
     }
 
     private void RenderAvailableMountsSection(MountList mountList)
     {
         // todo maybe set based on game language setting
         var textInfo = CultureInfo.CurrentCulture.TextInfo;
-        
+
         var mountNameFilter = mountNameFilters.GetValueOrDefault(mountList.Id, "");
 
-        var availableMountsForListEnumerator = MountManager.GetAvailableMountsForList(mountList)
-            .Select((MountManager.GetMount))
-            .OfType<Mount>();
+        var ownedMountIds = MountManager.GetOwnedMountIds();
 
-        var availableMountsForList = mountNameFilter.IsNullOrEmpty()
-            ? availableMountsForListEnumerator.ToList()
-            : availableMountsForListEnumerator.Where(mount =>
-                    mount.Singular.ExtractText().Contains(mountNameFilter, StringComparison.CurrentCultureIgnoreCase)
-                )
-                .ToList();
+        var availableMountsForSummoning = mountList.GetAvailableMountsForSummoning(ownedMountIds).ToList();
 
-        var ownedIds = MountManager.GetOwnedMountIds();
+        var filteredAvailableMountsForSummoning = MapMountIdsToFilteredMounts(
+                mountList.GetAvailableMountsForSummoning(ownedMountIds),
+                mountNameFilter
+            )
+            .ToList();
+        var filteredOwnedButUnavailableMountsForList =
+            MapMountIdsToFilteredMounts(
+                mountList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds),
+                mountNameFilter
+            );
 
-        if (ImGui.CollapsingHeader($"{availableMountsForList.Count} / {ownedIds.Count}###collapsedMounts")
-            && (availableMountsForList.Count > 0 || !mountNameFilter.IsNullOrEmpty()))
+        if (ImGui.CollapsingHeader($"{availableMountsForSummoning.Count} / {ownedMountIds.Count}###collapsedMounts")
+            && (availableMountsForSummoning.Count > 0 || !mountNameFilter.IsNullOrEmpty()))
         {
             using (
                 ImRaii.Child(
@@ -265,16 +267,16 @@ public class ConfigWindow : Window, IDisposable
                     ImGui.TableNextRow();
 
                     ImGui.TableSetColumnIndex(0);
-                    
-                  //  Text("Filter:");
 
-                  //  PaddingX(10);
+                    //  Text("Filter:");
 
-                 //   ImGui.SameLine();
+                    //  PaddingX(10);
+
+                    //   ImGui.SameLine();
 
                     // Span input over half the width of the column.
                     // ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
-                    
+
                     FullWidth();
 
                     if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
@@ -284,31 +286,73 @@ public class ConfigWindow : Window, IDisposable
 
                     #endregion
 
-                    foreach (var mount in availableMountsForList)
+                    foreach (var mount in filteredAvailableMountsForSummoning)
                     {
-                        using (ImRaii.PushId("mount_" + mount.RowId))
+                        using (ImRaii.PushId("mount_available" + mount.RowId))
                         {
-                            ImGui.TableNextRow();
+                            RenderMountItem(mount, isInSummonList: true, textInfo);
+                        }
+                    }
 
-                            ImGui.TableSetColumnIndex(0);
-
-                            RenderMountIcon(mount);
-
-                            ImGui.SameLine();
-                            
-                            // todo only do it in english game language, as the others are correctly written already
-                            Text(textInfo.ToTitleCase(mount.Singular.ExtractText()));
-
-                            ImGui.TableSetColumnIndex(1);
-
-                            if (ImGui.Button("Remove"))
-                            {
-                                Chat.Write("Clicked remove mount" + mount.RowId);
-                            }
+                    foreach (var mount in filteredOwnedButUnavailableMountsForList)
+                    {
+                        using (ImRaii.PushId("mount_unavailable" + mount.RowId))
+                        {
+                            RenderMountItem(mount, isInSummonList: false, textInfo);
                         }
                     }
                 }
             }
         }
+    }
+
+    public void RenderMountItem(Mount mount, bool isInSummonList, TextInfo textInfo)
+    {
+        ImGui.TableNextRow();
+
+        ImGui.TableSetColumnIndex(0);
+
+        var tintColor = !isInSummonList ? new Vector4(1, 1, 1, .3f) : new Vector4(1, 1, 1, 1);
+        RenderMountIcon(mount, tintColor);
+
+        ImGui.SameLine();
+
+        // todo only do it in english game language, as the others are correctly written already
+        Vector4? textColor = !isInSummonList ? new Vector4(0.6f, 0.6f, 0.6f, 1) : null;
+
+        Text(textInfo.ToTitleCase(mount.Singular.ExtractText()), color: textColor);
+
+        ImGui.TableSetColumnIndex(1);
+
+        if (!isInSummonList)
+        {
+            if (ImGui.Button("Add"))
+            {
+                Chat.Write("Clicked add mount" + mount.RowId);
+            }
+        }
+        else
+        {
+            if (ImGui.Button("Remove"))
+            {
+                Chat.Write("Clicked remove mount" + mount.RowId);
+            }
+        }
+    }
+
+    private IEnumerable<Mount> MapMountIdsToFilteredMounts(IEnumerable<uint> mountIds, string mountNameFilter)
+    {
+        var availableMountsForListEnumerator = mountIds
+            .Select((MountManager.GetMount))
+            .OfType<Mount>();
+
+        if (mountNameFilter.IsNullOrEmpty())
+        {
+            return availableMountsForListEnumerator;
+        }
+
+        return availableMountsForListEnumerator.Where(mount =>
+            mount.Singular.ExtractText().Contains(mountNameFilter, StringComparison.CurrentCultureIgnoreCase)
+        );
     }
 }
