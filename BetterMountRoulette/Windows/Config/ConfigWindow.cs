@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Linq;
-using System.Numerics;
 using BetterMountRoulette.Configuration;
-using BetterMountRoulette.Windows.MountListTable;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
 using static BetterMountRoulette.Windows.DrawHelper;
 
-namespace BetterMountRoulette.Windows;
+namespace BetterMountRoulette.Windows.Config;
 
 public class ConfigWindow : Window, IDisposable
 {
+    private readonly MountListTable mountListTable = new MountListTable();
+    
     public ConfigWindow() : base(
         "Better Mount Roulette Configuration"
     )
@@ -41,8 +40,7 @@ public class ConfigWindow : Window, IDisposable
 
         PaddingY(10);
 
-        // todo find out why this double name is needed
-        new MountListTable.MountListTable().Draw();
+        mountListTable.Draw();
 
         if (ImGui.Button("Add new whitelist"))
         {

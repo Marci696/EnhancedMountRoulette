@@ -12,7 +12,7 @@ using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using static BetterMountRoulette.Windows.DrawHelper;
 
-namespace BetterMountRoulette.Windows.MountListTable;
+namespace BetterMountRoulette.Windows.Config;
 
 public class OwnedMountsTable(MountList mountList)
     : Table
@@ -116,14 +116,15 @@ public class OwnedMountsTable(MountList mountList)
                     MountNameFilters[mountList.Id] = mountNameFilter;
                 }
 
-                var addConfirmationPopupName = ConfirmationWindow(
+                var openAddAllPopup = ConfirmationWindow(
                     "Confirm replacement###add-all",
-                    "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
+                    $"Are you sure you want to overwrite your list \"{mountList.Name}\",\nby adding all mounts to it?",
                     () => ConfigManager.Instance.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
                 );
-                var removeConfirmationPopupName = ConfirmationWindow(
+                var openRemoveAllPopup = ConfirmationWindow(
                     "Confirm replacement###remove-all",
-                    "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
+                    $"Are you sure you want to overwrite your current list \"{mountList.Name}\","
+                    + "\nby removing all mounts from it?",
                     () => ConfigManager.Instance.OverlookAllMountsForSummoning(mountList, ownedMountIds)
                 );
 
@@ -132,7 +133,7 @@ public class OwnedMountsTable(MountList mountList)
 
                 if (ImGui.Button("Add All"))
                 {
-                    ImGui.OpenPopup(addConfirmationPopupName);
+                    openAddAllPopup();
                 }
 
                 ImGui.SameLine();
@@ -140,7 +141,7 @@ public class OwnedMountsTable(MountList mountList)
 
                 if (ImGui.Button("Remove All"))
                 {
-                    ImGui.OpenPopup(removeConfirmationPopupName);
+                    openRemoveAllPopup();
                 }
             }
         };

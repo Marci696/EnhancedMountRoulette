@@ -7,7 +7,7 @@ using Dalamud.Interface.Utility.Raii;
 using static BetterMountRoulette.Windows.DrawHelper;
 
 
-namespace BetterMountRoulette.Windows.MountListTable;
+namespace BetterMountRoulette.Windows.Config;
 
 public class MountListTable : Table
 {
@@ -142,9 +142,15 @@ public class MountListTable : Table
     {
         CenterHorizontally();
 
+        var open = ConfirmationWindow(
+            "Delete Confirmation",
+            $"Are you sure you want to delete your list \"{mountList.Name}\"?",
+            () => ConfigManager.Instance.RemoveMountList(mountList)
+        );
+
         if (RemoveIconButton("Delete mount list"))
         {
-            ConfigManager.Instance.RemoveMountList(mountList);
+            open();
         }
     }
 }

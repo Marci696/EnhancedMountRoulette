@@ -137,7 +137,13 @@ public static class DrawHelper
         }
     }
 
-    public static string ConfirmationWindow(string name, string confirmationQuestion, Action onConfirm)
+    public delegate void OpenPopup();
+
+    public static OpenPopup ConfirmationWindow(
+        string name,
+        string confirmationQuestion,
+        Action onConfirm
+    )
     {
         ImGui.SetNextWindowSize(new Vector2(500, 0));
         if (ImGui.BeginPopupModal(name, ImGuiWindowFlags.NoResize))
@@ -163,7 +169,7 @@ public static class DrawHelper
             ImGui.EndPopup();
         }
 
-        return name;
+        return () => ImGui.OpenPopup(name);
     }
 }
 

@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using Dalamud.Game.Command;
-using Dalamud.IoC;
+﻿using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.JavaScript;
 using BetterMountRoulette.Commands;
-using BetterMountRoulette.Configuration;
 using BetterMountRoulette.Windows;
+using BetterMountRoulette.Windows.Config;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using Lumina.Excel.Sheets;
-using FFXIVClientStructs.FFXIV.Client.Game.UI;
-using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 
 namespace BetterMountRoulette;
 
@@ -58,11 +50,10 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IGameGui GameGui { get; private set; } = null!;
     
-    private Configuration.ConfigManager ConfigManager { get; init; }
-
+    public readonly WindowSystem WindowSystem = new("BetterMountRoulette");
+    
     private CommandManager CommandManager { get; init; }
 
-    public readonly WindowSystem WindowSystem = new("BetterMountRoulette");
     private ConfigWindow ConfigWindow { get; init; }
     private MainWindow MainWindow { get; init; }
 
@@ -118,12 +109,6 @@ public sealed class Plugin : IDalamudPlugin
         MountNotebookContextMenu.Dispose();
 
         CommandManager.Dispose();
-    }
-
-    private void OnCommand(string command, string args)
-    {
-        // In response to the slash command, toggle the display status of our main ui
-        MainWindow.Toggle();
     }
     
     public void ToggleConfigUi() => ConfigWindow.Toggle();
