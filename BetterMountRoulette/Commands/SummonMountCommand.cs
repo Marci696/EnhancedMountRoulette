@@ -9,11 +9,20 @@ internal class SummonMountCommand : ICommand
     public const string CommandName = "/bmr";
 
     public string Command => CommandName;
-
-    public static string GetMacro(MountList? mountList = null)
+    
+    public static string GetMacro(MountList mountList)
     {
-        return $"/micon \"flying mount roulette\"\n{SummonMountCommand.CommandName}"
-            + (mountList is not null ? $" {mountList.Name}" : string.Empty);
+        return GetMacro(mountList.Name);
+    }
+
+    public static string GetMacro(string? mountListName = null)
+    {
+        return $"/micon \"flying mount roulette\"\n{GetCommandWithListName(mountListName)}";
+    }
+
+    public static string GetCommandWithListName(string? mountListName)
+    {
+        return CommandName + (mountListName is not null ? $" {mountListName}" : string.Empty);
     }
 
     public CommandInfo CommandInfo => new(Handler)

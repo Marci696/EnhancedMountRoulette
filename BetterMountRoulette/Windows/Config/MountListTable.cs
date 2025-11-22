@@ -16,13 +16,13 @@ namespace BetterMountRoulette.Windows.Config;
 public class MountListTable : Table
 {
     // No idea why only the first item needs a space, all the others following are automatically padded.
-    private const string NameColumn = " List Name";
-    private const string TypeColumn = "Type";
-    private const string DefaultColumn = "Default?";
-    private const string OwnedMountsTableColumn = "Considered during Mount action";
-    private const string FetchTypeColumn = "Summon Type";
-    private const string RemoveColumn = "###removeColumn";
-    private const string CopyToClipboardColumn = "###clipboard";
+    public const string NameColumn = " List Name";
+    public const string TypeColumn = "Type";
+    public const string DefaultColumn = "Default?";
+    public const string OwnedMountsTableColumn = "Considered during Mount action";
+    public const string FetchTypeColumn = "Summon Type";
+    public const string RemoveColumn = "###removeColumn";
+    public const string CopyToClipboardColumn = "###clipboard";
 
     public static readonly Vector2 TableSize = new(1400, 0);
 
@@ -42,7 +42,7 @@ public class MountListTable : Table
     protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
         "mountListTable",
         OrderedColumnIds.Length,
-        (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuter) | ImGuiTableFlags.Hideable,
+        ImGuiTableFlags.Borders,
         // Grow automatically to fit content.
         TableSize
     );

@@ -17,6 +17,8 @@ public static class DrawHelper
 {
     public static Vector4 RgbaToImgGuiVector(byte red, byte green, byte blue, float alpha) =>
         new(red / 255f, green / 255f, blue / 255f, alpha);
+    
+    public static readonly Vector4 CommandColor = RgbaToImgGuiVector(222, 121, 7, 1);
 
     public static void Text(string text, TextScale textScale = TextScale.Normal, Vector4? color = null)
     {

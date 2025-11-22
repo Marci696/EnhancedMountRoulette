@@ -10,21 +10,31 @@ namespace BetterMountRoulette.Windows.Config;
 
 public class Explanation : IDrawable
 {
-    private static readonly Vector4 CommandColor = RgbaToImgGuiVector(222, 121, 7, 1);
+    private readonly MountListExplanationTable mountListExplanationTable = new MountListExplanationTable();
 
     public void Draw()
     {
         if (ImGui.CollapsingHeader("Explanation"))
         {
             ImGui.TextWrapped(
-                "This plugin adds a new way to control, what mounts you will call upon during mount roulette."
+                "This plugin adds a new way to control, what mounts you will call upon during mount roulette.\n\n"
+                + "You can have one default list and multiple custom ones for use cases such as "
+                + "PVP, for showing off, etc."
             );
 
             PaddingY(ImGui.GetTextLineHeight());
 
-            using (ImRaii.PushIndent(1))
+            using (ImRaii.PushIndent())
             {
                 DrawCommandUsage();
+
+                PaddingY(ImGui.GetTextLineHeight());
+
+                DrawTableUsage();
+                
+                PaddingY(ImGui.GetTextLineHeight());
+                
+                mountListExplanationTable.Draw();
             }
         }
     }
@@ -61,6 +71,16 @@ public class Explanation : IDrawable
                     new ToastOptions() { Position = ToastPosition.Bottom, Speed = ToastSpeed.Fast }
                 );
             }
+        }
+    }
+
+    private static void DrawTableUsage()
+    {
+        if (ImGui.CollapsingHeader("Table usage", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.TextWrapped(
+                "In the table below you can create and edit different lists depending on your needs.\n\n"
+            );
         }
     }
 }
