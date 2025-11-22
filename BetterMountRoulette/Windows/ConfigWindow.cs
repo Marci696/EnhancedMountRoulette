@@ -147,7 +147,7 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
-        new OwnedMountsTable(configuration).Draw(mountList);
+        new OwnedMountsTable(configuration, mountList).Draw();
 
         ImGui.TableNextColumn();
 

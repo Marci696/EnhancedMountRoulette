@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -133,6 +134,15 @@ static class DrawHelper
                 // Color when it is clicked.
                 activeColor: RgbaToImgGuiVector(153, 153, 153, 1)
             );
+        }
+    }
+
+    public static void DrawColumns(IEnumerable<Action> columnCallbacks)
+    {
+        foreach (var columnCallback in columnCallbacks)
+        {
+            ImGui.TableNextColumn();
+            columnCallback();
         }
     }
 

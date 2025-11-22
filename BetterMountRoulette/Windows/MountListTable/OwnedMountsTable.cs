@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
@@ -13,11 +14,21 @@ using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.MountListTable;
 
-public class OwnedMountsTable(Configuration.Configuration configuration)
+public class OwnedMountsTable(Configuration.Configuration configuration, MountList mountList)
 {
     private static Dictionary<int, string> MountNameFilters = new();
-    
+
     private static readonly Vector2 TableSize = new(0, 300);
+
+    private static readonly ReadOnlyCollection<ColorsForInList> ColorsMapForIsInList = Array.AsReadOnly(
+        [
+            new ColorsForInList(
+                new Vector4(0.6f, 0.6f, 0.6f, 1),
+                RgbaToImgGuiVector(255, 255, 255, .3f)
+            ),
+            new ColorsForInList(null, RgbaToImgGuiVector(255, 255, 255, 1))
+        ]
+    );
 
     public static void ClearMountNameFilters(IEnumerable<int> mountListIds)
     {
@@ -25,7 +36,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
             .ToDictionary();
     }
 
-    public void Draw(MountList mountList)
+    public void Draw()
     {
         var mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
         var ownedMountIds = MountManager.GetOwnedMountIds();
@@ -56,13 +67,13 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
                 {
                     DrawHeadersRow();
 
-                    DrawFilterAndActionsRow(mountList, ownedMountIds);
+                    DrawFilterAndActionsRow(ownedMountIds);
 
                     foreach (var mount in filteredAvailableMountsForSummoning)
                     {
                         using (ImRaii.PushId("mount_available_" + mount.RowId))
                         {
-                            DrawMountItem(mountList, mount, isInSummonList: true);
+                            DrawMountRow(mount, isInSummonList: true);
                         }
                     }
 
@@ -70,7 +81,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
                     {
                         using (ImRaii.PushId("mount_unavailable_" + mount.RowId))
                         {
-                            DrawMountItem(mountList, mount, isInSummonList: false);
+                            DrawMountRow(mount, isInSummonList: false);
                         }
                     }
                 }
@@ -85,7 +96,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
         ImGui.TableHeadersRow();
     }
 
-    private void DrawFilterAndActionsRow(MountList mountList, HashSet<uint> ownedMountIds)
+    private void DrawFilterAndActionsRow(HashSet<uint> ownedMountIds)
     {
         ImGui.TableNextRow();
 
@@ -132,24 +143,20 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
         }
     }
 
-    public void DrawMountItem(MountList mountList, Mount mount, bool isInSummonList)
+    public void DrawMountRow(Mount mount, bool isInSummonList)
     {
+        var colors = ColorsMapForIsInList[Convert.ToInt32(isInSummonList)];
+
         ImGui.TableNextRow();
+        
+        DrawColumns([
+            () => DrawIconAndTextColumn(mount, isInSummonList, colors),
+            () => DrawListActions(mount, isInSummonList)
+        ]);
+    }
 
-        ImGui.TableNextColumn();
-
-        var tintColor = !isInSummonList ? new Vector4(1, 1, 1, .3f) : new Vector4(1, 1, 1, 1);
-        DrawMountIcon(mount, tintColor);
-
-        ImGui.SameLine();
-
-        // todo only do it in english game language, as the others are correctly written already
-        Vector4? textColor = !isInSummonList ? new Vector4(0.6f, 0.6f, 0.6f, 1) : null;
-
-        Text(CultureInfo.CurrentCulture.TextInfo.ToTitleCase(mount.Singular.ExtractText()), color: textColor);
-
-        ImGui.TableNextColumn();
-
+    private void DrawListActions(Mount mount, bool isInSummonList)
+    {
         CenterHorizontally();
 
         if (!isInSummonList)
@@ -168,6 +175,18 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
         }
     }
 
+    private void DrawIconAndTextColumn(Mount mount, bool isInSummonList, ColorsForInList colors)
+    {
+        DrawMountIcon(mount, colors);
+
+        ImGui.SameLine();
+
+        Text(
+            CultureInfo.CurrentCulture.TextInfo.ToTitleCase(mount.Singular.ExtractText()),
+            color: colors.NameText
+        );
+    }
+
     private IEnumerable<Mount> MapMountIdsToFilteredMounts(string mountNameFilter, IEnumerable<uint> mountIds)
     {
         var availableMountsForListEnumerator = mountIds
@@ -184,7 +203,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
         );
     }
 
-    private void DrawMountIcon(Mount mount, Vector4 tintColor)
+    private void DrawMountIcon(Mount mount, ColorsForInList colors)
     {
         if (Plugin.TextureProvider.GetFromGameIcon(new GameIconLookup() { IconId = mount.Icon }).GetWrapOrDefault() is
             not { } texture)
@@ -194,6 +213,12 @@ public class OwnedMountsTable(Configuration.Configuration configuration)
 
         var scale = ImGui.GetIO().FontGlobalScale;
 
-        ImGui.Image(texture.Handle, size: new Vector2(20, 20) * new Vector2(scale, scale), tintCol: tintColor);
+        ImGui.Image(
+            texture.Handle,
+            size: new Vector2(20, 20) * new Vector2(scale, scale),
+            tintCol: colors.MountIconTint
+        );
     }
+
+    private record ColorsForInList(Vector4? NameText, Vector4 MountIconTint);
 }
