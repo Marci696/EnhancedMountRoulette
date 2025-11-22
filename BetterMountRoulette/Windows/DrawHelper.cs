@@ -6,12 +6,13 @@ using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiSeStringRenderer;
 using Dalamud.Interface.Utility.Raii;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
+using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 
 namespace BetterMountRoulette.Windows;
 
 using Dalamud.Bindings.ImGui;
 
-static class DrawHelper
+public static class DrawHelper
 {
     public static Vector4 RgbaToImgGuiVector(byte red, byte green, byte blue, float alpha) =>
         new(red / 255f, green / 255f, blue / 255f, alpha);
@@ -137,15 +138,33 @@ static class DrawHelper
         }
     }
 
-    public static void DrawColumns(IEnumerable<Action> columnCallbacks)
+    public static void DrawTable(
+        ImRaii.IEndObject tableBegin,
+        Action setupColumns,
+        IEnumerable<IEnumerable<DrawColumnCallback>> rowCallbacks
+    )
     {
-        foreach (var columnCallback in columnCallbacks)
+        using (tableBegin)
         {
-            ImGui.TableNextColumn();
-            columnCallback();
+            setupColumns();
+
+            ImGui.TableHeadersRow();
+
+            foreach (var rowCallback in rowCallbacks)
+            {
+                ImGui.TableNextRow();
+
+                foreach (var columnCallback in rowCallback)
+                {
+                    ImGui.TableNextColumn();
+                    columnCallback();
+                }
+            }
         }
     }
 
+    public delegate void DrawColumnCallback();
+    
     public static string ConfirmationWindow(string name, string confirmationQuestion, Action onConfirm)
     {
         ImGui.SetNextWindowSize(new Vector2(500, 0));
@@ -200,7 +219,7 @@ class Use : IDisposable
     }
 }
 
-enum TextScale
+public enum TextScale
 {
     H1,
     H2,
