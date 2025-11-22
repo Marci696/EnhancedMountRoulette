@@ -35,6 +35,7 @@ public class ConfigWindow : Window, IDisposable
         base.PostDraw();
 
         // Cleanup the dictionary for filter strings
+        // todo call from somewhere else?
         OwnedMountsTable.ClearMountNameFilters(configuration.MountLists.Values.Select((mountList => mountList.Id)));
     }
 
@@ -65,98 +66,5 @@ public class ConfigWindow : Window, IDisposable
         }
 
         PaddingY(10);
-    }
-
-    private void RenderMountList(MountList mountList)
-    {
-        ImGui.TableNextRow();
-        ImGui.TableNextColumn();
-
-
-        FullWidth();
-
-        var mountListName = mountList.Name;
-        // Goes into the if block when something changed.
-        if (ImGui.InputText("###name", ref mountListName, 50))
-        {
-            if (mountListName.Length == 0)
-            {
-                // TODO change color
-                Text("Name can not be empty.");
-            }
-            else if (configuration.MountLists.ContainsKey(mountListName))
-            {
-                // TODO change color
-                Text("Mount list with this name already exists.");
-            }
-            else
-            {
-                configuration.RenameMountList(mountList, mountListName);
-            }
-        }
-
-        ImGui.TableNextColumn();
-
-        DrawTypeColumn(mountList);
-
-        ImGui.TableNextColumn();
-
-        new OwnedMountsTable(configuration, mountList).Draw();
-
-        ImGui.TableNextColumn();
-
-        DrawFetchTypeColumn(mountList);
-
-        ImGui.TableNextColumn();
-
-        DeleteListColumn(mountList);
-
-
-        ImGui.TableNextRow();
-    }
-
-    private void DeleteListColumn(MountList mountList)
-    {
-        CenterHorizontally();
-
-        if (RemoveIconButton("Delete mount list"))
-        {
-            configuration.RemoveMountList(mountList);
-        }
-    }
-
-    private void DrawFetchTypeColumn(MountList mountList)
-    {
-        FullWidth();
-
-        // todo find better way to do this
-        int currentFetchTypeIndex = (int)mountList.FetchNextType;
-        if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
-        {
-            configuration.StoreMountList(
-                new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
-            );
-        }
-    }
-
-    private void DrawTypeColumn(MountList mountList)
-    {
-        FullWidth();
-
-        int currentListTypeIndex = (int)mountList.Type;
-        if (ImGui.Combo("###Type", ref currentListTypeIndex, new[] { "Whitelist", "Blacklist" }))
-        {
-            configuration.ChangeMountListType(mountList, (MountListType)currentListTypeIndex);
-        }
-
-        ImGui.TableNextColumn();
-
-        CenterHorizontally();
-
-        var checkboxValue = mountList.IsDefault;
-        if (ImGui.Checkbox("###checkbox", ref checkboxValue))
-        {
-            configuration.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
-        }
     }
 }
