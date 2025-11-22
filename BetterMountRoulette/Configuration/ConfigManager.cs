@@ -8,9 +8,21 @@ using Lumina.Excel.Sheets;
 
 namespace BetterMountRoulette.Configuration;
 
-public class Configuration
+public sealed class ConfigManager
 {
     private static readonly IEqualityComparer<string> Comparer = StringComparer.OrdinalIgnoreCase;
+
+    private static ConfigManager? _instance;
+
+    public static ConfigManager Instance
+    {
+        get
+        {
+            _instance ??= new();
+
+            return _instance;
+        }
+    }
 
     public ImmutableDictionary<string, MountList> MountLists => _mountLists.ToImmutableDictionary(Comparer);
 
@@ -18,7 +30,7 @@ public class Configuration
 
     private Dictionary<string, MountList> _mountLists;
 
-    public Configuration()
+    private ConfigManager()
     {
         var data = Plugin.PluginInterface.GetPluginConfig() as SerializableConfiguration
             ?? new SerializableConfiguration();

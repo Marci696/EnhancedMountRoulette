@@ -64,7 +64,6 @@ public class MountList
         Id = copyFrom.Id;
     }
 
-    // TODO change return value to always hashset? and do calculation with Hashset instead of List
     public IEnumerable<uint> GetAvailableMountsForSummoning(IEnumerable<uint> ownedMountIds)
     {
         var ids = (Type == MountListType.Whitelist
