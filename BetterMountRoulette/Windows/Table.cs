@@ -27,8 +27,6 @@ public abstract class Table : IDrawable
 
             foreach (var columnId in OrderedColumnIds)
             {
-                var column = setupColumns.GetValueOrDefault(columnId);
-                
                 setupColumns[columnId]();
             }
 
@@ -38,7 +36,7 @@ public abstract class Table : IDrawable
             {
                 ImGui.TableNextRow();
 
-                using (row.Id is null ? ImRaii.PushId(row.Id) : null)
+                using (row.Id is not null ? ImRaii.PushId(row.Id) : null)
                 {
                     foreach (var columnId in OrderedColumnIds)
                     {

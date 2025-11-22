@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
@@ -138,33 +137,6 @@ public static class DrawHelper
         }
     }
 
-    public static void DrawTable(
-        ImRaii.IEndObject tableBegin,
-        Action setupColumns,
-        IEnumerable<IEnumerable<DrawColumnCallback>> rowCallbacks
-    )
-    {
-        using (tableBegin)
-        {
-            setupColumns();
-
-            ImGui.TableHeadersRow();
-
-            foreach (var rowCallback in rowCallbacks)
-            {
-                ImGui.TableNextRow();
-
-                foreach (var columnCallback in rowCallback)
-                {
-                    ImGui.TableNextColumn();
-                    columnCallback();
-                }
-            }
-        }
-    }
-
-    public delegate void DrawColumnCallback();
-    
     public static string ConfirmationWindow(string name, string confirmationQuestion, Action onConfirm)
     {
         ImGui.SetNextWindowSize(new Vector2(500, 0));

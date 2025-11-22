@@ -11,11 +11,11 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using Lumina.Excel.Sheets;
 using static BetterMountRoulette.Windows.DrawHelper;
-using Action = System.Action;
 
 namespace BetterMountRoulette.Windows.MountListTable;
 
-public class OwnedMountsTable : Table
+public class OwnedMountsTable(Configuration.Configuration configuration, MountList mountList)
+    : Table
 {
     private const string NameColumn = "Name";
     private const string RemoveColumn = "###Remove";
@@ -34,18 +34,11 @@ public class OwnedMountsTable : Table
         ]
     );
 
-    public override string[] OrderedColumnIds => [
-        NameColumn,
-        RemoveColumn,
-    ];
-
-    private readonly Configuration.Configuration configuration;
-
-    private readonly MountList mountList;
+    public override string[] OrderedColumnIds => [NameColumn, RemoveColumn,];
 
     private readonly HashSet<uint> ownedMountIds = MountManager.GetOwnedMountIds();
 
-    private string mountNameFilter;
+    private string mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
 
     public static void ClearMountNameFilters(IEnumerable<int> mountListIds)
     {
@@ -53,14 +46,6 @@ public class OwnedMountsTable : Table
             .ToDictionary();
     }
 
-
-    public OwnedMountsTable(Configuration.Configuration configuration, MountList mountList)
-    {
-        this.configuration = configuration;
-        this.mountList = mountList;
-
-        mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
-    }
 
     public override void Draw()
     {
