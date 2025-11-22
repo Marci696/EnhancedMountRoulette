@@ -19,13 +19,16 @@ public class MountListTable : Table
     private const string FetchTypeColumn = "Summon Type";
     private const string RemoveColumn = "###removeColumn";
 
+    public static readonly Vector2 TableSize = new Vector2(1400, 0);
+
+    private static readonly Vector4 ErrorMessageColor = RgbaToImgGuiVector(186, 6, 6, 1);
+
     public override string[] OrderedColumnIds =>
     [
         NameColumn,
-        TypeColumn,
         DefaultColumn,
         OwnedMountsTableColumn,
-        // todo keep in line
+        TypeColumn,
         FetchTypeColumn,
         RemoveColumn,
     ];
@@ -35,7 +38,7 @@ public class MountListTable : Table
         6,
         (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuter) | ImGuiTableFlags.Hideable,
         // Grow automatically to fit content.
-        new Vector2(1400, 0)
+        TableSize
     );
 
     protected override Dictionary<string, SetupColumn> GetSetupColumns()
@@ -87,13 +90,11 @@ public class MountListTable : Table
         {
             if (mountListName.Length == 0)
             {
-                // TODO change color
-                Text("Name can not be empty.");
+                Text("Name can not be empty.", color: ErrorMessageColor);
             }
             else if (ConfigManager.Instance.MountLists.ContainsKey(mountListName))
             {
-                // TODO change color
-                Text("Mount list with this name already exists.");
+                Text("List with this name already exists.", color: ErrorMessageColor);
             }
             else
             {

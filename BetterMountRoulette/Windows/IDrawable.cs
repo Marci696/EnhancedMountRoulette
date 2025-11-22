@@ -2,5 +2,5 @@
 
 public interface IDrawable
 {
-    public void Draw() { }
+    public virtual void Draw() { }
 }

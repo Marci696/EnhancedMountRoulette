@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Numerics;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
@@ -10,17 +11,19 @@ namespace BetterMountRoulette.Windows.Config;
 public class ConfigWindow : Window, IDisposable
 {
     private readonly MountListTable mountListTable = new MountListTable();
-    
+
     public ConfigWindow() : base(
         "Better Mount Roulette Configuration"
     )
     {
-        //  Flags |= ImGuiWindowFlags.AlwaysAutoResize;
+        // Flags |= ImGuiWindowFlags.AlwaysAutoResize;
         // Flags |= ImGuiWindowFlags.NoResize;
-
-        //      Size = new Vector2(1200, 800);
-        // Decides that size is used while opening, but is not static
+        
+         
+        // Auto resize when it is opened.
         SizeCondition = ImGuiCond.Appearing;
+
+        Size = MountListTable.TableSize with { Y = 500 };
     }
 
     public void Dispose() { }
@@ -28,10 +31,10 @@ public class ConfigWindow : Window, IDisposable
     public override void PostDraw()
     {
         base.PostDraw();
-
-        // Cleanup the dictionary for filter strings
-        // todo call from somewhere else?
-        OwnedMountsTable.ClearMountNameFilters(ConfigManager.Instance.MountLists.Values.Select((mountList => mountList.Id)));
+        
+        OwnedMountsTable.ClearMountNameFilters(
+            ConfigManager.Instance.MountLists.Values.Select((mountList => mountList.Id))
+        );
     }
 
     public override void Draw()

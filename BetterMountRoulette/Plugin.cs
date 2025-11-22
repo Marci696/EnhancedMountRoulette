@@ -49,9 +49,9 @@ public sealed class Plugin : IDalamudPlugin
 
     [PluginService]
     internal static IGameGui GameGui { get; private set; } = null!;
-    
+
     public readonly WindowSystem WindowSystem = new("BetterMountRoulette");
-    
+
     private CommandManager CommandManager { get; init; }
 
     private ConfigWindow ConfigWindow { get; init; }
@@ -65,7 +65,7 @@ public sealed class Plugin : IDalamudPlugin
         InteropGenerator.Runtime.Resolver.GetInstance.Setup();
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
-        
+
         MountNotebookContextMenu = new MountNotebookContextMenu();
         CommandManager = new CommandManager();
 
@@ -77,7 +77,7 @@ public sealed class Plugin : IDalamudPlugin
 
         WindowSystem.AddWindow(ConfigWindow);
         WindowSystem.AddWindow(MainWindow);
-        
+
         // Tell the UI system that we want our windows to be drawn throught he window system
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
 
@@ -110,7 +110,7 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.Dispose();
     }
-    
+
     public void ToggleConfigUi() => ConfigWindow.Toggle();
 
     public void ToggleMainUi() => MainWindow.Toggle();

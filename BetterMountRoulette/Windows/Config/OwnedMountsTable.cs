@@ -105,13 +105,11 @@ public class OwnedMountsTable(MountList mountList)
         {
             [NameColumn] = () =>
             {
-                Text("Filter:");
-
-                ImGui.SameLine();
+         
 
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
 
-                if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
+                if (ImGui.InputTextWithHint("###Filter", "Search...", ref mountNameFilter, 50))
                 {
                     MountNameFilters[mountList.Id] = mountNameFilter;
                 }
