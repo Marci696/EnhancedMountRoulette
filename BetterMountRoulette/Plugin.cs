@@ -49,6 +49,9 @@ public sealed class Plugin : IDalamudPlugin
 
     [PluginService]
     internal static IGameGui GameGui { get; private set; } = null!;
+    
+    [PluginService]
+    internal static IToastGui ToastGui { get; private set; } = null!;
 
     public readonly WindowSystem WindowSystem = new("BetterMountRoulette");
 

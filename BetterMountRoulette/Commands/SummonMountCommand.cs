@@ -6,7 +6,9 @@ namespace BetterMountRoulette.Commands;
 
 internal class SummonMountCommand : ICommand
 {
-    public string Command => "/bmr";
+    public const string CommandName = "/bmr";
+
+    public string Command => CommandName;
 
     public CommandInfo CommandInfo => new(Handler)
     {

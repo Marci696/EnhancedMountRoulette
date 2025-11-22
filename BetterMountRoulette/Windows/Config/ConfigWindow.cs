@@ -8,9 +8,10 @@ using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.Config;
 
-public class ConfigWindow : Window, IDisposable
+public class ConfigWindow : Window, IDisposable, IDrawable
 {
     private readonly MountListTable mountListTable = new MountListTable();
+    private readonly Explanation explanation = new();
 
     public ConfigWindow() : base(
         "Better Mount Roulette Configuration"
@@ -18,8 +19,8 @@ public class ConfigWindow : Window, IDisposable
     {
         // Flags |= ImGuiWindowFlags.AlwaysAutoResize;
         // Flags |= ImGuiWindowFlags.NoResize;
-        
-         
+
+
         // Auto resize when it is opened.
         SizeCondition = ImGuiCond.Appearing;
 
@@ -31,7 +32,7 @@ public class ConfigWindow : Window, IDisposable
     public override void PostDraw()
     {
         base.PostDraw();
-        
+
         OwnedMountsTable.ClearMountNameFilters(
             ConfigManager.Instance.MountLists.Values.Select((mountList => mountList.Id))
         );
@@ -42,6 +43,10 @@ public class ConfigWindow : Window, IDisposable
         //     ImGui.ShowMetricsWindow();
 
         PaddingY(10);
+
+        explanation.Draw();
+
+        PaddingY(20);
 
         mountListTable.Draw();
 
