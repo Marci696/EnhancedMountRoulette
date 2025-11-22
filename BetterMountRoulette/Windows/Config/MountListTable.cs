@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using BetterMountRoulette.Commands;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Game.Gui.Toast;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using static BetterMountRoulette.Windows.DrawHelper;
 
@@ -18,8 +22,9 @@ public class MountListTable : Table
     private const string OwnedMountsTableColumn = "Considered during Mount action";
     private const string FetchTypeColumn = "Summon Type";
     private const string RemoveColumn = "###removeColumn";
+    private const string CopyToClipboardColumn = "###clipboard";
 
-    public static readonly Vector2 TableSize = new Vector2(1400, 0);
+    public static readonly Vector2 TableSize = new(1400, 0);
 
     private static readonly Vector4 ErrorMessageColor = RgbaToImgGuiVector(186, 6, 6, 1);
 
@@ -30,12 +35,13 @@ public class MountListTable : Table
         OwnedMountsTableColumn,
         TypeColumn,
         FetchTypeColumn,
+        CopyToClipboardColumn,
         RemoveColumn,
     ];
 
     protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
         "mountListTable",
-        6,
+        OrderedColumnIds.Length,
         (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuter) | ImGuiTableFlags.Hideable,
         // Grow automatically to fit content.
         TableSize
@@ -45,7 +51,7 @@ public class MountListTable : Table
     {
         return new Dictionary<string, SetupColumn>()
         {
-            [NameColumn] = () => ImGui.TableSetupColumn(NameColumn, ImGuiTableColumnFlags.WidthStretch, 3),
+            [NameColumn] = () => ImGui.TableSetupColumn(NameColumn, ImGuiTableColumnFlags.WidthStretch, 2.7f),
             [TypeColumn] = () => ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 1.5f),
             [DefaultColumn] = () => ImGui.TableSetupColumn(DefaultColumn, ImGuiTableColumnFlags.WidthStretch, 0.7f),
             [OwnedMountsTableColumn] = () => ImGui.TableSetupColumn(
@@ -59,6 +65,11 @@ public class MountListTable : Table
                 1.5f
             ),
             [RemoveColumn] = () => ImGui.TableSetupColumn(RemoveColumn, ImGuiTableColumnFlags.WidthStretch, 0.3f),
+            [CopyToClipboardColumn] = () => ImGui.TableSetupColumn(
+                CopyToClipboardColumn,
+                ImGuiTableColumnFlags.WidthStretch,
+                0.3f
+            ),
         };
     }
 
@@ -78,6 +89,7 @@ public class MountListTable : Table
         [OwnedMountsTableColumn] = new OwnedMountsTable(mountList).Draw,
         [FetchTypeColumn] = () => DrawFetchTypeColumn(mountList),
         [RemoveColumn] = () => DrawDeleteListColumn(mountList),
+        [CopyToClipboardColumn] = () => DrawCopyToClipboardColumn(mountList),
     };
 
     private void DrawNameColumn(MountList mountList)
@@ -149,9 +161,24 @@ public class MountListTable : Table
             () => ConfigManager.Instance.RemoveMountList(mountList)
         );
 
-        if (RemoveIconButton("Delete mount list"))
+        if (RemoveIconButton("deleteMountList", tooltip: "Delete list"))
         {
             open();
+        }
+    }
+
+    private void DrawCopyToClipboardColumn(MountList mountList)
+    {
+        CenterHorizontally();
+
+        if (CopyClipboardButton("Copy to clipboard", tooltip: "Copy macro to clipboard"))
+        {
+            ImGui.SetClipboardText(SummonMountCommand.GetMacro(mountList));
+
+            Plugin.ToastGui.ShowNormal(
+                "Copied to clipboard",
+                new ToastOptions { Position = ToastPosition.Bottom, Speed = ToastSpeed.Fast }
+            );
         }
     }
 }

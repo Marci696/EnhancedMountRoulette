@@ -3,23 +3,37 @@ using BetterMountRoulette.Commands;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Components;
+using Dalamud.Interface.Utility.Raii;
 using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.Config;
 
 public class Explanation : IDrawable
 {
-    private static readonly Vector4 CommandColor = RgbaToImgGuiVector(219, 4, 198, 255);
-    private static readonly Vector4 MacroColor = RgbaToImgGuiVector(222, 121, 7, 1);
+    private static readonly Vector4 CommandColor = RgbaToImgGuiVector(222, 121, 7, 1);
 
     public void Draw()
     {
         if (ImGui.CollapsingHeader("Explanation"))
         {
             ImGui.TextWrapped(
-                "This plugin adds a new way to control, what mounts you will call upon during mount roulette.\n\n"
-                + "You can summon your as default marked list via:"
+                "This plugin adds a new way to control, what mounts you will call upon during mount roulette."
             );
+
+            PaddingY(ImGui.GetTextLineHeight());
+
+            using (ImRaii.PushIndent(1))
+            {
+                DrawCommandUsage();
+            }
+        }
+    }
+
+    private static void DrawCommandUsage()
+    {
+        if (ImGui.CollapsingHeader("Command usage", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            Text("You can summon your as default marked list via:");
 
             Text(SummonMountCommand.CommandName, color: CommandColor);
 
@@ -31,11 +45,11 @@ public class Explanation : IDrawable
 
             ImGui.TextWrapped("To get it into your hotbar, create a macro with a content such as:");
 
-            var macroText = $"/micon \"flying mount roulette\"\n{SummonMountCommand.CommandName}";
+            var macroText = SummonMountCommand.GetMacro();
 
             Text(
                 macroText,
-                color: MacroColor
+                color: CommandColor
             );
 
             if (ImGui.Button("Copy to clipboard"))

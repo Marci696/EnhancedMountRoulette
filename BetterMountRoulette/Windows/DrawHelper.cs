@@ -5,6 +5,7 @@ using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiSeStringRenderer;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 
@@ -101,12 +102,14 @@ public static class DrawHelper
         );
     }
 
-    public static bool RemoveIconButton(string id, Vector2? size = null)
+    public static bool RemoveIconButton(string id, string tooltip = "", Vector2? size = null)
     {
+        bool wasClicked;
+
         // Change X cross icon to red.
-        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(183, 29, 6, 1)))
+        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(183, 29, 6, 0.8f)))
         {
-            return ImGuiComponents.IconButton(
+            wasClicked = ImGuiComponents.IconButton(
                 id,
                 // Looks like an X cross.
                 icon: FontAwesomeIcon.Times,
@@ -118,12 +121,50 @@ public static class DrawHelper
                 activeColor: RgbaToImgGuiVector(153, 153, 153, 1)
             );
         }
+
+        if (!tooltip.IsNullOrEmpty() && ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(tooltip);
+        }
+
+        return wasClicked;
+    }
+
+    public static bool CopyClipboardButton(string id, string tooltip = "", Vector2? size = null)
+    {
+        bool wasClicked;
+
+        // orange
+        // RgbaToImgGuiVector(222, 121, 7, 1)
+
+        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(33, 186, 188, 0.5f)))
+        {
+            wasClicked = ImGuiComponents.IconButton(
+                id,
+                // Looks like an X cross.
+                // icon: FontAwesomeIcon.Clipboard,
+                icon: FontAwesomeIcon.Copy,
+                size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
+                // Hide background
+                defaultColor: new Vector4(0, 0, 0, 0),
+                hoveredColor: RgbaToImgGuiVector(76, 76, 76, 1),
+                // Color when it is clicked.
+                activeColor: RgbaToImgGuiVector(153, 153, 153, 1)
+            );
+        }
+
+        if (!tooltip.IsNullOrEmpty() && ImGui.IsItemHovered())
+        {
+            ImGui.SetTooltip(tooltip);
+        }
+
+        return wasClicked;
     }
 
     public static bool AddIconButton(string label, Vector2? size = null)
     {
         // Change X cross icon to green.
-        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(21, 146, 21, 1)))
+        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(21, 146, 21, 0.8f)))
         {
             return ImGuiComponents.IconButton(
                 label,

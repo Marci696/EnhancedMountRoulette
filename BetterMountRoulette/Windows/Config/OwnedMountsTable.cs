@@ -61,7 +61,7 @@ public class OwnedMountsTable(MountList mountList)
 
     protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
         "mountTable_" + mountList.Id,
-        2,
+        OrderedColumnIds.Length,
         ImGuiTableFlags.ScrollY | (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV),
         TableSize
     );

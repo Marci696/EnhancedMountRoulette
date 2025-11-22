@@ -10,6 +10,12 @@ internal class SummonMountCommand : ICommand
 
     public string Command => CommandName;
 
+    public static string GetMacro(MountList? mountList = null)
+    {
+        return $"/micon \"flying mount roulette\"\n{SummonMountCommand.CommandName}"
+            + (mountList is not null ? $" {mountList.Name}" : string.Empty);
+    }
+
     public CommandInfo CommandInfo => new(Handler)
     {
         HelpMessage =
