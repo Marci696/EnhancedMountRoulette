@@ -3,7 +3,7 @@ using Dalamud.Game.Command;
 
 namespace BetterMountRoulette.Commands;
 
-internal class CreateMountListCommand(Configuration.Configuration configuration, MountListType mountListType) : ICommand
+internal class CreateMountListCommand(MountListType mountListType) : ICommand
 {
     public string Command => "/bmr-add-" + mountListType.AsString();
 
@@ -39,7 +39,7 @@ internal class CreateMountListCommand(Configuration.Configuration configuration,
 
     protected void CreateNewMountList(string mountListName)
     {
-        if (configuration.GetMountList(mountListName) != null)
+        if (ConfigManager.Instance.GetMountList(mountListName) != null)
         {
             Chat.Write(
                 $"Mount list with the name \"{mountListName}\" already exists!",
@@ -53,7 +53,7 @@ internal class CreateMountListCommand(Configuration.Configuration configuration,
             Type = mountListType,
         };
 
-        configuration.StoreMountList(newMountList);
+        ConfigManager.Instance.StoreMountList(newMountList);
 
         Chat.Write($"Your new list \"{mountListName}\" was created.");
     }

@@ -9,7 +9,7 @@ using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.MountListTable;
 
-public class MountListTable(Configuration.Configuration configuration) : Table
+public class MountListTable : Table
 {
     // No idea why only the first item needs a space, all the others following are automatically padded.
     private const string NameColumn = " List Name";
@@ -61,7 +61,7 @@ public class MountListTable(Configuration.Configuration configuration) : Table
 
     protected override IEnumerable<Row> GetRows()
     {
-        foreach (var mountList in configuration.OrderedMountList)
+        foreach (var mountList in ConfigManager.Instance.OrderedMountList)
         {
             yield return new Row(GetRowColumns(mountList), "mountList_" + mountList.Id);
         }
@@ -72,7 +72,7 @@ public class MountListTable(Configuration.Configuration configuration) : Table
         [NameColumn] = () => DrawNameColumn(mountList),
         [TypeColumn] = () => DrawTypeColumn(mountList),
         [DefaultColumn] = () => DrawIsDefaultColumn(mountList),
-        [OwnedMountsTableColumn] = new OwnedMountsTable(configuration, mountList).Draw,
+        [OwnedMountsTableColumn] = new OwnedMountsTable(mountList).Draw,
         [FetchTypeColumn] = () => DrawFetchTypeColumn(mountList),
         [RemoveColumn] = () => DrawDeleteListColumn(mountList),
     };
@@ -90,14 +90,14 @@ public class MountListTable(Configuration.Configuration configuration) : Table
                 // TODO change color
                 Text("Name can not be empty.");
             }
-            else if (configuration.MountLists.ContainsKey(mountListName))
+            else if (ConfigManager.Instance.MountLists.ContainsKey(mountListName))
             {
                 // TODO change color
                 Text("Mount list with this name already exists.");
             }
             else
             {
-                configuration.RenameMountList(mountList, mountListName);
+                ConfigManager.Instance.RenameMountList(mountList, mountListName);
             }
         }
     }
@@ -109,7 +109,7 @@ public class MountListTable(Configuration.Configuration configuration) : Table
         int currentListTypeIndex = (int)mountList.Type;
         if (ImGui.Combo("###Type", ref currentListTypeIndex, new[] { "Whitelist", "Blacklist" }))
         {
-            configuration.ChangeMountListType(mountList, (MountListType)currentListTypeIndex);
+            ConfigManager.Instance.ChangeMountListType(mountList, (MountListType)currentListTypeIndex);
         }
     }
 
@@ -120,7 +120,7 @@ public class MountListTable(Configuration.Configuration configuration) : Table
         var checkboxValue = mountList.IsDefault;
         if (ImGui.Checkbox("###checkbox", ref checkboxValue))
         {
-            configuration.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
+            ConfigManager.Instance.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
         }
     }
 
@@ -132,7 +132,7 @@ public class MountListTable(Configuration.Configuration configuration) : Table
         int currentFetchTypeIndex = (int)mountList.FetchNextType;
         if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
         {
-            configuration.StoreMountList(
+            ConfigManager.Instance.StoreMountList(
                 new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
             );
         }
@@ -144,7 +144,7 @@ public class MountListTable(Configuration.Configuration configuration) : Table
 
         if (RemoveIconButton("Delete mount list"))
         {
-            configuration.RemoveMountList(mountList);
+            ConfigManager.Instance.RemoveMountList(mountList);
         }
     }
 }

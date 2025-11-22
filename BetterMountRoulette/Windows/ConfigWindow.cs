@@ -12,9 +12,7 @@ namespace BetterMountRoulette.Windows;
 
 public class ConfigWindow : Window, IDisposable
 {
-    private readonly Configuration.Configuration configuration;
-
-    public ConfigWindow(Configuration.Configuration configuration) : base(
+    public ConfigWindow() : base(
         "Better Mount Roulette Configuration"
     )
     {
@@ -24,8 +22,6 @@ public class ConfigWindow : Window, IDisposable
         //      Size = new Vector2(1200, 800);
         // Decides that size is used while opening, but is not static
         SizeCondition = ImGuiCond.Appearing;
-
-        this.configuration = configuration;
     }
 
     public void Dispose() { }
@@ -36,7 +32,7 @@ public class ConfigWindow : Window, IDisposable
 
         // Cleanup the dictionary for filter strings
         // todo call from somewhere else?
-        OwnedMountsTable.ClearMountNameFilters(configuration.MountLists.Values.Select((mountList => mountList.Id)));
+        OwnedMountsTable.ClearMountNameFilters(ConfigManager.Instance.MountLists.Values.Select((mountList => mountList.Id)));
     }
 
     public override void Draw()
@@ -46,12 +42,12 @@ public class ConfigWindow : Window, IDisposable
         PaddingY(10);
 
         // todo find out why this double name is needed
-        new MountListTable.MountListTable(configuration).Draw();
+        new MountListTable.MountListTable().Draw();
 
         if (ImGui.Button("Add new whitelist"))
         {
-            configuration.StoreMountList(
-                new MountList() { Name = configuration.FindNewMountListName(), Type = MountListType.Whitelist }
+            ConfigManager.Instance.StoreMountList(
+                new MountList() { Name = ConfigManager.Instance.FindNewMountListName(), Type = MountListType.Whitelist }
             );
         }
 
@@ -60,8 +56,8 @@ public class ConfigWindow : Window, IDisposable
 
         if (ImGui.Button("Add new blacklist"))
         {
-            configuration.StoreMountList(
-                new MountList() { Name = configuration.FindNewMountListName(), Type = MountListType.Blacklist }
+            ConfigManager.Instance.StoreMountList(
+                new MountList() { Name = ConfigManager.Instance.FindNewMountListName(), Type = MountListType.Blacklist }
             );
         }
 

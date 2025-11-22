@@ -4,7 +4,7 @@ using Dalamud.Utility;
 
 namespace BetterMountRoulette.Commands;
 
-internal class SummonMountCommand(Configuration.Configuration configuration) : ICommand
+internal class SummonMountCommand : ICommand
 {
     public string Command => "/bmr";
 
@@ -13,8 +13,6 @@ internal class SummonMountCommand(Configuration.Configuration configuration) : I
         HelpMessage =
             "Calls a random mount from a list. /bmr will use the default use. To use mount from your custom list use /bmr listName"
     };
-
-    private Configuration.Configuration Configuration { get; } = configuration;
 
     private void Handler(string _, string arguments)
     {
@@ -29,7 +27,7 @@ internal class SummonMountCommand(Configuration.Configuration configuration) : I
 
         if (listName.IsNullOrEmpty())
         {
-            if (Configuration.GetDefaultMountList() is not { } defaultMountList)
+            if (ConfigManager.Instance.GetDefaultMountList() is not { } defaultMountList)
             {
                 Chat.Write($"No default mount list exists", true);
 
@@ -40,7 +38,7 @@ internal class SummonMountCommand(Configuration.Configuration configuration) : I
         }
         else
         {
-            if (Configuration.GetMountList(listName) is not { } mountListByName)
+            if (ConfigManager.Instance.GetMountList(listName) is not { } mountListByName)
             {
                 Chat.Write($"No mount list found for the name \"{listName}\"", true);
 

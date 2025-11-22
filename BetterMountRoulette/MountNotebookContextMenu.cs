@@ -8,12 +8,8 @@ namespace BetterMountRoulette;
 
 public class MountNotebookContextMenu : IDisposable
 {
-    private readonly Configuration.Configuration configuration;
-
-    public MountNotebookContextMenu(Configuration.Configuration configuration)
+    public MountNotebookContextMenu()
     {
-        this.configuration = configuration;
-
         Plugin.ContextMenu.OnMenuOpened += OnContextMenuOpened;
     }
 
@@ -49,7 +45,7 @@ public class MountNotebookContextMenu : IDisposable
                 }
             );
 
-            foreach (var mountList in configuration.GetMountLists(mountListType))
+            foreach (var mountList in ConfigManager.Instance.GetMountLists(mountListType))
             {
                 args.AddMenuItem(MountListToMenuItem(mountList, selectedMount));
             }
@@ -92,11 +88,11 @@ public class MountNotebookContextMenu : IDisposable
             {
                 if (!isMountIdInList)
                 {
-                    configuration.AddMountToList(mountList, mount);
+                    ConfigManager.Instance.AddMountToList(mountList, mount);
                 }
                 else
                 {
-                    configuration.RemoveMountFromList(mountList, mount);
+                    ConfigManager.Instance.RemoveMountFromList(mountList, mount);
                 }
             },
         };

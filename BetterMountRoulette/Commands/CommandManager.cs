@@ -10,16 +10,16 @@ internal class CommandManager : IDisposable
 {
     private List<ICommand> Commands { get; }
 
-    public CommandManager(Configuration.Configuration configuration)
+    public CommandManager()
     {
         Commands =
         [
-            new SummonMountCommand(configuration),
+            new SummonMountCommand(),
             .. Enum.GetValues<MountListType>()
-                .Select(mountListType => new CreateMountListCommand(configuration, mountListType)),
-            new ClearMountListCommand(configuration),
-            new DeleteMountListCommand(configuration),
-            new DeleteAllMountListsCommand(configuration),
+                .Select(mountListType => new CreateMountListCommand(mountListType)),
+            new ClearMountListCommand(),
+            new DeleteMountListCommand(),
+            new DeleteAllMountListsCommand(),
             // TODO add command to add and remove currently mounted mount
         ];
 

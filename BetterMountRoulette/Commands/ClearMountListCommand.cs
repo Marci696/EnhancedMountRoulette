@@ -1,8 +1,9 @@
-﻿using Dalamud.Game.Command;
+﻿using BetterMountRoulette.Configuration;
+using Dalamud.Game.Command;
 
 namespace BetterMountRoulette.Commands;
 
-internal class ClearMountListCommand(Configuration.Configuration configuration) : ICommand
+internal class ClearMountListCommand : ICommand
 {
     public string Command => "/bmr-clear-list";
 
@@ -23,7 +24,7 @@ internal class ClearMountListCommand(Configuration.Configuration configuration) 
             return;
         }
 
-        if (configuration.GetMountList(listName) is not { } mountList)
+        if (ConfigManager.Instance.GetMountList(listName) is not { } mountList)
         {
             Chat.Write(
                 $"No mount list found for the name \"{listName}\"",
@@ -33,7 +34,7 @@ internal class ClearMountListCommand(Configuration.Configuration configuration) 
             return;
         }
 
-        configuration.CleanMountList(mountList);
+        ConfigManager.Instance.CleanMountList(mountList);
 
         Chat.Write($"List \"{mountList.Name}\" was cleared.");
     }

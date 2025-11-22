@@ -58,7 +58,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IGameGui GameGui { get; private set; } = null!;
     
-    private Configuration.Configuration Configuration { get; init; }
+    private Configuration.ConfigManager ConfigManager { get; init; }
 
     private CommandManager CommandManager { get; init; }
 
@@ -74,16 +74,14 @@ public sealed class Plugin : IDalamudPlugin
         InteropGenerator.Runtime.Resolver.GetInstance.Setup();
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
-
-        Configuration = new Configuration.Configuration();
-
-        MountNotebookContextMenu = new MountNotebookContextMenu(Configuration);
-        CommandManager = new CommandManager(Configuration);
+        
+        MountNotebookContextMenu = new MountNotebookContextMenu();
+        CommandManager = new CommandManager();
 
         // You might normally want to embed resources and load them from the manifest stream
         var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
 
-        ConfigWindow = new ConfigWindow(Configuration);
+        ConfigWindow = new ConfigWindow();
         MainWindow = new MainWindow(this, goatImagePath);
 
         WindowSystem.AddWindow(ConfigWindow);

@@ -14,7 +14,7 @@ using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.MountListTable;
 
-public class OwnedMountsTable(Configuration.Configuration configuration, MountList mountList)
+public class OwnedMountsTable(MountList mountList)
     : Table
 {
     private const string NameColumn = "Name";
@@ -119,12 +119,12 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
                 var addConfirmationPopupName = ConfirmationWindow(
                     "Confirm replacement###add-all",
                     "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
-                    () => configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
+                    () => ConfigManager.Instance.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
                 );
                 var removeConfirmationPopupName = ConfirmationWindow(
                     "Confirm replacement###remove-all",
                     "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
-                    () => configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds)
+                    () => ConfigManager.Instance.OverlookAllMountsForSummoning(mountList, ownedMountIds)
                 );
 
                 ImGui.SameLine();
@@ -165,14 +165,14 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
         {
             if (AddIconButton("Add"))
             {
-                configuration.ConsiderMountForSummoning(mountList, mount);
+                ConfigManager.Instance.ConsiderMountForSummoning(mountList, mount);
             }
         }
         else
         {
             if (RemoveIconButton("Remove"))
             {
-                configuration.OverlookMountFromSummoning(mountList, mount);
+                ConfigManager.Instance.OverlookMountFromSummoning(mountList, mount);
             }
         }
     }

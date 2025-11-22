@@ -1,8 +1,9 @@
-﻿using Dalamud.Game.Command;
+﻿using BetterMountRoulette.Configuration;
+using Dalamud.Game.Command;
 
 namespace BetterMountRoulette.Commands;
 
-internal class DeleteAllMountListsCommand(Configuration.Configuration configuration) : ICommand
+internal class DeleteAllMountListsCommand : ICommand
 {
     public string Command => "/bmr-delete-all-lists";
 
@@ -10,7 +11,7 @@ internal class DeleteAllMountListsCommand(Configuration.Configuration configurat
 
     private void Handler(string _, string __)
     {
-        configuration.ClearMountLists();
+        ConfigManager.Instance.ClearMountLists();
 
         Chat.Write("All lists were removed.");
     }
