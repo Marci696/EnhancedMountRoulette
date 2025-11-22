@@ -48,23 +48,28 @@ public class ConfigWindow : Window, IDisposable, IDrawable
 
         PaddingY(20);
 
-        mountListTable.Draw();
-
-        if (ImGui.Button("Add new whitelist"))
+        if (ImGui.CollapsingHeader("Mount Lists", ImGuiTreeNodeFlags.DefaultOpen))
         {
-            ConfigManager.Instance.StoreMountList(
-                new MountList() { Name = ConfigManager.Instance.FindNewMountListName(), Type = MountListType.Whitelist }
-            );
-        }
+            mountListTable.Draw();
 
-        PaddingX(10);
-        ImGui.SameLine();
+            if (ImGui.Button("Add new whitelist"))
+            {
+                ConfigManager.Instance.StoreMountList(
+                    new MountList()
+                        { Name = ConfigManager.Instance.FindNewMountListName(), Type = MountListType.Whitelist }
+                );
+            }
 
-        if (ImGui.Button("Add new blacklist"))
-        {
-            ConfigManager.Instance.StoreMountList(
-                new MountList() { Name = ConfigManager.Instance.FindNewMountListName(), Type = MountListType.Blacklist }
-            );
+            PaddingX(10);
+            ImGui.SameLine();
+
+            if (ImGui.Button("Add new blacklist"))
+            {
+                ConfigManager.Instance.StoreMountList(
+                    new MountList()
+                        { Name = ConfigManager.Instance.FindNewMountListName(), Type = MountListType.Blacklist }
+                );
+            }
         }
 
         PaddingY(10);

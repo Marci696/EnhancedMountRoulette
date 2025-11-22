@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net.Mime;
 using System.Numerics;
 using BetterMountRoulette.Commands;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Interface.Utility.Table;
 using Dalamud.Plugin.Services;
 using static BetterMountRoulette.Windows.DrawHelper;
 
@@ -19,30 +21,37 @@ public class MountListExplanationTable : Table
     protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
         "mountListTable",
         OrderedColumnIds.Length,
-        flags: 0,
+        flags: ImGuiTableFlags.BordersInnerH,
         // Grow automatically to fit content.
         outerSize: new Vector2(1200, 0)
     );
 
     protected override Dictionary<string, SetupColumn> GetSetupColumns() => new()
     {
-        [NameColumn] = () => ImGui.TableSetupColumn(NameColumn, ImGuiTableColumnFlags.WidthStretch, 1),
+        [NameColumn] = () => ImGui.TableSetupColumn(NameColumn, ImGuiTableColumnFlags.WidthStretch, 1.8f),
         [ExplanationColumn] = () => ImGui.TableSetupColumn(ExplanationColumn, ImGuiTableColumnFlags.WidthStretch, 10),
     };
 
     protected override IEnumerable<Row> GetRows()
     {
-        return
+        (string MountListTableColumnName, DrawColumnCallback DrawExplanation)[] rows =
         [
-            new Row(
-                new Dictionary<string, DrawColumnCallback>()
+            (MountListTable.NameColumn, DrawNameExplanation),
+            (MountListTable.DefaultColumn, DrawDefaultCheckboxExplanation),
+            (MountListTable.OwnedMountsTableColumn, DrawOwnedMountsExplanation),
+        ];
+
+        foreach (var (mountListTableColumnName, drawExplanation) in rows)
+        {
+            yield return new Row(
+                new Dictionary<string, DrawColumnCallback>
                 {
-                    [NameColumn] = () => ImGui.Text(MountListTable.NameColumn),
-                    [ExplanationColumn] = DrawNameExplanation
+                    [NameColumn] = () => ImGui.TextWrapped(mountListTableColumnName),
+                    [ExplanationColumn] = drawExplanation
                 },
                 "mountListExplanation"
-            )
-        ];
+            );
+        }
     }
 
     private void DrawNameExplanation()
@@ -59,5 +68,24 @@ public class MountListExplanationTable : Table
 
         ImGui.SameLine();
         ImGui.Text("(note that it is case insensitive)");
+    }
+
+    private void DrawDefaultCheckboxExplanation()
+    {
+        ImGui.TextWrapped(
+            "Only one list can be set as default. The defaults only purpose is to be used "
+            + "when no list is specified in the command:"
+        );
+
+        ImGui.TextColoredWrapped(CommandColor, SummonMountCommand.GetCommandWithListName());
+    }
+
+    private void DrawOwnedMountsExplanation()
+    {
+        ImGui.TextWrapped(
+            "This table shows which of your currently owned mounts will be used when summoning your mount.\n\n"
+            + "While you can remove and all all your mounts to the list from the Context Menu (Right Click)"
+            + " of your Mount Guide, you can also do it from here,"
+        );
     }
 }

@@ -20,7 +20,7 @@ internal class SummonMountCommand : ICommand
         return $"/micon \"flying mount roulette\"\n{GetCommandWithListName(mountListName)}";
     }
 
-    public static string GetCommandWithListName(string? mountListName)
+    public static string GetCommandWithListName(string? mountListName = null)
     {
         return CommandName + (mountListName is not null ? $" {mountListName}" : string.Empty);
     }

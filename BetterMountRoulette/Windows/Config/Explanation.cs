@@ -10,7 +10,7 @@ namespace BetterMountRoulette.Windows.Config;
 
 public class Explanation : IDrawable
 {
-    private readonly MountListExplanationTable mountListExplanationTable = new MountListExplanationTable();
+    private readonly MountListExplanationTable mountListExplanationTable = new();
 
     public void Draw()
     {
@@ -28,13 +28,7 @@ public class Explanation : IDrawable
             {
                 DrawCommandUsage();
 
-                PaddingY(ImGui.GetTextLineHeight());
-
                 DrawTableUsage();
-                
-                PaddingY(ImGui.GetTextLineHeight());
-                
-                mountListExplanationTable.Draw();
             }
         }
     }
@@ -71,16 +65,24 @@ public class Explanation : IDrawable
                     new ToastOptions() { Position = ToastPosition.Bottom, Speed = ToastSpeed.Fast }
                 );
             }
+            
+            PaddingY(ImGui.GetTextLineHeight());
         }
     }
 
-    private static void DrawTableUsage()
+    private void DrawTableUsage()
     {
-        if (ImGui.CollapsingHeader("Table usage", ImGuiTreeNodeFlags.DefaultOpen))
+        if (ImGui.CollapsingHeader("Mount Lists table usage", ImGuiTreeNodeFlags.DefaultOpen))
         {
             ImGui.TextWrapped(
-                "In the table below you can create and edit different lists depending on your needs.\n\n"
+                "In the Mount Lists table below you can create and edit different lists depending on your needs."
             );
+
+            PaddingY(ImGui.GetTextLineHeight());
+
+            mountListExplanationTable.Draw();
+            
+            PaddingY(ImGui.GetTextLineHeight());
         }
     }
 }
