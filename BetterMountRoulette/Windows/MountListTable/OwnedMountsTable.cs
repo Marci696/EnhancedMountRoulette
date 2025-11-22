@@ -15,8 +15,11 @@ using Action = System.Action;
 
 namespace BetterMountRoulette.Windows.MountListTable;
 
-public class OwnedMountsTable(Configuration.Configuration configuration, MountList mountList)
+public class OwnedMountsTable : Table
 {
+    private const string NameColumn = "Name";
+    private const string RemoveColumn = "###Remove";
+
     private static Dictionary<int, string> MountNameFilters = new();
 
     private static readonly Vector2 TableSize = new(0, 300);
@@ -24,12 +27,25 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
     private static readonly ReadOnlyCollection<ColorsForInList> ColorsMapForIsInList = Array.AsReadOnly(
         [
             new ColorsForInList(
-                new Vector4(0.6f, 0.6f, 0.6f, 1),
+                RgbaToImgGuiVector(153, 153, 153, 1),
                 RgbaToImgGuiVector(255, 255, 255, .3f)
             ),
             new ColorsForInList(null, RgbaToImgGuiVector(255, 255, 255, 1))
         ]
     );
+
+    public override string[] OrderedColumnIds => [
+        NameColumn,
+        RemoveColumn,
+    ];
+
+    private readonly Configuration.Configuration configuration;
+
+    private readonly MountList mountList;
+
+    private readonly HashSet<uint> ownedMountIds = MountManager.GetOwnedMountIds();
+
+    private string mountNameFilter;
 
     public static void ClearMountNameFilters(IEnumerable<int> mountListIds)
     {
@@ -37,120 +53,123 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
             .ToDictionary();
     }
 
-    public void Draw()
+
+    public OwnedMountsTable(Configuration.Configuration configuration, MountList mountList)
     {
-        var ownedMountIds = MountManager.GetOwnedMountIds();
+        this.configuration = configuration;
+        this.mountList = mountList;
+
+        mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
+    }
+
+    public override void Draw()
+    {
         var availableMountsForSummoning = mountList.GetAvailableMountsForSummoning(ownedMountIds).ToList();
 
         if (ImGui.CollapsingHeader(
                 $"{availableMountsForSummoning.Count} / {ownedMountIds.Count}###collapsedMounts_" + mountList.Id
             ))
         {
-            DrawTable(
-                ImRaii.Table(
-                    "mountTable_" + mountList.Id,
-                    2,
-                    ImGuiTableFlags.ScrollY | (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV),
-                    TableSize
-                ),
-                SetupColumns,
-                rowCallbacks: [GetDrawFilterAndActionsRow(ownedMountIds), ..GetDrawMountRow(ownedMountIds)]
-            );
+            base.Draw();
         }
     }
 
-    private static void SetupColumns()
-    {
-        ImGui.TableSetupColumn("Name", ImGuiTableColumnFlags.WidthStretch, 10);
-        ImGui.TableSetupColumn("##Remove", ImGuiTableColumnFlags.WidthStretch, 1);
-    }
+    protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
+        "mountTable_" + mountList.Id,
+        2,
+        ImGuiTableFlags.ScrollY | (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV),
+        TableSize
+    );
 
-    private IEnumerable<DrawColumnCallback> GetDrawFilterAndActionsRow(HashSet<uint> ownedMountIds)
+    protected override Dictionary<string, SetupColumn> GetSetupColumns()
     {
-        yield return () =>
+        return new Dictionary<string, SetupColumn>
         {
-            Text("Filter:");
-
-            ImGui.SameLine();
-
-            ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
-
-            var mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
-
-            if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
-            {
-                MountNameFilters[mountList.Id] = mountNameFilter;
-            }
-
-            var addConfirmationPopupName = ConfirmationWindow(
-                "Confirm replacement###add-all",
-                "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
-                () => configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
-            );
-            var removeConfirmationPopupName = ConfirmationWindow(
-                "Confirm replacement###remove-all",
-                "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
-                () => configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds)
-            );
-
-            ImGui.SameLine();
-            PaddingX(15);
-
-            if (ImGui.Button("Add All"))
-            {
-                ImGui.OpenPopup(addConfirmationPopupName);
-            }
-
-            ImGui.SameLine();
-            PaddingX(5);
-
-            if (ImGui.Button("Remove All"))
-            {
-                ImGui.OpenPopup(removeConfirmationPopupName);
-            }
+            [NameColumn] = () => ImGui.TableSetupColumn(NameColumn, ImGuiTableColumnFlags.WidthStretch, 10),
+            [RemoveColumn] = () => ImGui.TableSetupColumn(RemoveColumn, ImGuiTableColumnFlags.WidthStretch, 1),
         };
     }
 
-    private IEnumerable<IEnumerable<DrawColumnCallback>> GetDrawMountRow(HashSet<uint> ownedMountIds)
+    protected override IEnumerable<Row> GetRows()
     {
-        var mountNameFilter = MountNameFilters.GetValueOrDefault(mountList.Id, "");
+        yield return new Row(GetDrawFilterAndActionsRow(), "actionRow");
+
         var filteredAvailableMountsForSummoning = MapMountIdsToFilteredMounts(
-                mountNameFilter,
                 mountList.GetAvailableMountsForSummoning(ownedMountIds)
             )
             .ToList();
         var filteredOwnedButUnavailableMountsForList =
             MapMountIdsToFilteredMounts(
-                mountNameFilter,
                 mountList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds)
             );
 
-
         foreach (var mount in filteredAvailableMountsForSummoning)
         {
-            using (ImRaii.PushId("mount_available_" + mount.RowId))
-            {
-                yield return GetMountRowColumns(mount, isInSummonList: true);
-            }
+            yield return new Row(GetMountRowColumns(mount, isInSummonList: true), "mount_available_" + mount.RowId);
         }
 
         foreach (var mount in filteredOwnedButUnavailableMountsForList)
         {
-            using (ImRaii.PushId("mount_unavailable_" + mount.RowId))
-            {
-                yield return GetMountRowColumns(mount, isInSummonList: false);
-            }
+            yield return new Row(GetMountRowColumns(mount, isInSummonList: false), "mount_unavailable_" + mount.RowId);
         }
     }
 
-    private IEnumerable<DrawColumnCallback> GetMountRowColumns(Mount mount, bool isInSummonList)
+    private Dictionary<string, DrawColumnCallback> GetDrawFilterAndActionsRow()
+    {
+        return new Dictionary<string, DrawColumnCallback>()
+        {
+            [NameColumn] = () =>
+            {
+                Text("Filter:");
+
+                ImGui.SameLine();
+
+                ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
+
+                if (ImGui.InputText("###Filter", ref mountNameFilter, 50))
+                {
+                    MountNameFilters[mountList.Id] = mountNameFilter;
+                }
+
+                var addConfirmationPopupName = ConfirmationWindow(
+                    "Confirm replacement###add-all",
+                    "Are you sure you want to overwrite your current list,\nby adding all mounts to it?",
+                    () => configuration.ConsiderAllMountsForSummoning(mountList, ownedMountIds)
+                );
+                var removeConfirmationPopupName = ConfirmationWindow(
+                    "Confirm replacement###remove-all",
+                    "Are you sure you want to overwrite your current list,\nby removing all mounts from it?",
+                    () => configuration.OverlookAllMountsForSummoning(mountList, ownedMountIds)
+                );
+
+                ImGui.SameLine();
+                PaddingX(15);
+
+                if (ImGui.Button("Add All"))
+                {
+                    ImGui.OpenPopup(addConfirmationPopupName);
+                }
+
+                ImGui.SameLine();
+                PaddingX(5);
+
+                if (ImGui.Button("Remove All"))
+                {
+                    ImGui.OpenPopup(removeConfirmationPopupName);
+                }
+            }
+        };
+    }
+
+    private Dictionary<string, DrawColumnCallback> GetMountRowColumns(Mount mount, bool isInSummonList)
     {
         var colors = ColorsMapForIsInList[Convert.ToInt32(isInSummonList)];
 
-        return
-        [
-            () => DrawIconAndTextColumn(mount, isInSummonList, colors), () => DrawListActions(mount, isInSummonList)
-        ];
+        return new Dictionary<string, DrawColumnCallback>
+        {
+            [NameColumn] = () => DrawIconAndTextColumn(mount, colors),
+            [RemoveColumn] = () => DrawListActions(mount, isInSummonList)
+        };
     }
 
     private void DrawListActions(Mount mount, bool isInSummonList)
@@ -173,7 +192,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
         }
     }
 
-    private void DrawIconAndTextColumn(Mount mount, bool isInSummonList, ColorsForInList colors)
+    private void DrawIconAndTextColumn(Mount mount, ColorsForInList colors)
     {
         DrawMountIcon(mount, colors);
 
@@ -185,7 +204,7 @@ public class OwnedMountsTable(Configuration.Configuration configuration, MountLi
         );
     }
 
-    private IEnumerable<Mount> MapMountIdsToFilteredMounts(string mountNameFilter, IEnumerable<uint> mountIds)
+    private IEnumerable<Mount> MapMountIdsToFilteredMounts(IEnumerable<uint> mountIds)
     {
         var availableMountsForListEnumerator = mountIds
             .Select((MountManager.GetMount))
