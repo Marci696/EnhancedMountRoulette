@@ -40,41 +40,12 @@ public class ConfigWindow : Window, IDisposable
 
     public override void Draw()
     {
-   //     ImGui.ShowMetricsWindow();
-   
+        //     ImGui.ShowMetricsWindow();
+
         PaddingY(10);
 
-        using (
-            ImRaii.Table(
-                "mountListTable",
-                6,
-                (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersOuter) | ImGuiTableFlags.Hideable,
-                // Grow automatically to fit content.
-                new Vector2(1400, 0)
-            ))
-        {
-            // No idea why only the first item needs a space, all the others following are automatically padded.
-            ImGui.TableSetupColumn(" List Name", ImGuiTableColumnFlags.WidthStretch, 3);
-            ImGui.TableSetupColumn("Type", ImGuiTableColumnFlags.WidthStretch, 1.5f);
-            ImGui.TableSetupColumn("Default?", ImGuiTableColumnFlags.WidthStretch, 0.7f);
-            ImGui.TableSetupColumn(
-                "Considered during Mount action",
-                ImGuiTableColumnFlags.WidthStretch,
-                5
-            );
-            ImGui.TableSetupColumn("Summon Type", ImGuiTableColumnFlags.WidthStretch, 1.5f);
-            ImGui.TableSetupColumn("###removeColumn", ImGuiTableColumnFlags.WidthStretch, 0.3f);
-
-            ImGui.TableHeadersRow();
-
-            foreach (var mountList in configuration.OrderedMountList)
-            {
-                using (ImRaii.PushId("mountList_" + mountList.Id))
-                {
-                    RenderMountList(mountList);
-                }
-            }
-        }
+        // todo find out why this double name is needed
+        new MountListTable.MountListTable(configuration).Draw();
 
         if (ImGui.Button("Add new whitelist"))
         {
@@ -126,6 +97,50 @@ public class ConfigWindow : Window, IDisposable
 
         ImGui.TableNextColumn();
 
+        DrawTypeColumn(mountList);
+
+        ImGui.TableNextColumn();
+
+        new OwnedMountsTable(configuration, mountList).Draw();
+
+        ImGui.TableNextColumn();
+
+        DrawFetchTypeColumn(mountList);
+
+        ImGui.TableNextColumn();
+
+        DeleteListColumn(mountList);
+
+
+        ImGui.TableNextRow();
+    }
+
+    private void DeleteListColumn(MountList mountList)
+    {
+        CenterHorizontally();
+
+        if (RemoveIconButton("Delete mount list"))
+        {
+            configuration.RemoveMountList(mountList);
+        }
+    }
+
+    private void DrawFetchTypeColumn(MountList mountList)
+    {
+        FullWidth();
+
+        // todo find better way to do this
+        int currentFetchTypeIndex = (int)mountList.FetchNextType;
+        if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
+        {
+            configuration.StoreMountList(
+                new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
+            );
+        }
+    }
+
+    private void DrawTypeColumn(MountList mountList)
+    {
         FullWidth();
 
         int currentListTypeIndex = (int)mountList.Type;
@@ -143,34 +158,5 @@ public class ConfigWindow : Window, IDisposable
         {
             configuration.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
         }
-
-        ImGui.TableNextColumn();
-
-        new OwnedMountsTable(configuration, mountList).Draw();
-
-        ImGui.TableNextColumn();
-
-        FullWidth();
-
-        // todo find better way to do this
-        int currentFetchTypeIndex = (int)mountList.FetchNextType;
-        if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
-        {
-            configuration.StoreMountList(
-                new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
-            );
-        }
-
-        ImGui.TableNextColumn();
-
-        CenterHorizontally();
-
-        if (RemoveIconButton("Delete mount list"))
-        {
-            configuration.RemoveMountList(mountList);
-        }
-
-
-        ImGui.TableNextRow();
     }
 }
