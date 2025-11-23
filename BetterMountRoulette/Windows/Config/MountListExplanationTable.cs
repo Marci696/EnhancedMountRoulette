@@ -184,8 +184,9 @@ public class MountListExplanationTable : Table
         {
             ImGui.TextWrapped(
                 "Each summon action will draw a random mount from the list.\n\n"
-                + "This is the same as the games Mount Roulette that you find in the Mount Guide. "
-                + "The main disadvantage of it is, that you can get the same mount twice in a row.\n\n"
+                + "Pros: Each summon action is completely random and it is the same way as the games "
+                + "Mount Roulette in the Mount Guide does it.\n"
+                + "Cons: You can get the same mount twice in a row or a very recent one shortly again.\n\n"
                 + "Personally, I would not recommend this option."
             );
 
@@ -200,8 +201,9 @@ public class MountListExplanationTable : Table
                 + "Each summon action will remove one mount from this list.\n"
                 + "Once this internal shuffled list is empty, "
                 + "it will create a new shuffled list and continue the loop.\n\n"
-                + "The main advantage of this option is, that you will never get the same mount again until you "
-                + "have gone through all mounts from your list.\n\n"
+                + "Pros: You will never get the same mount again until you "
+                + "have gone through all mounts from your list and the order is different every time.\n"
+                + "Cons: Each summon action is not fully random.\n\n"
                 + "This is my personal recommendation."
             );
 
