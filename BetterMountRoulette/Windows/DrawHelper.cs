@@ -21,8 +21,11 @@ public static class DrawHelper
 
     public static readonly Vector4 CommandColor = RgbaToImgGuiVector(222, 121, 7, 1);
 
-    public static (FontAwesomeIcon Icon, Vector4 Color) CopyClipboardConfig = (FontAwesomeIcon.Copy,
+    public static (FontAwesomeIcon Icon, Vector4 Color) CopyToClipboardIconConfig = (FontAwesomeIcon.Copy,
         RgbaToImgGuiVector(33, 186, 188, 0.5f));
+
+    public static (FontAwesomeIcon Icon, Vector4 Color) RemoveIconConfig = (FontAwesomeIcon.Times,
+        RgbaToImgGuiVector(183, 29, 6, 0.8f));
 
     public static void Text(string text, TextScale textScale = TextScale.Normal, Vector4? color = null)
     {
@@ -108,17 +111,28 @@ public static class DrawHelper
         );
     }
 
+    public static void DrawIcon(FontAwesomeIcon icon, Vector4 color)
+    {
+        using (ImRaii.PushFont(UiBuilder.IconFont))
+        {
+            ImGui.TextColored(
+                color,
+                icon.ToIconString()
+            );
+        }  
+    }
+
     public static bool RemoveIconButton(string id, string tooltip = "", Vector2? size = null)
     {
         bool wasClicked;
 
         // Change X cross icon to red.
-        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(183, 29, 6, 0.8f)))
+        using (ImRaii.PushColor(ImGuiCol.Text, RemoveIconConfig.Color))
         {
             wasClicked = ImGuiComponents.IconButton(
                 id,
                 // Looks like an X cross.
-                icon: FontAwesomeIcon.Times,
+                icon: RemoveIconConfig.Icon,
                 size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
                 // Hide background
                 defaultColor: new Vector4(0, 0, 0, 0),
@@ -143,13 +157,13 @@ public static class DrawHelper
         // orange
         // RgbaToImgGuiVector(222, 121, 7, 1)
 
-        using (ImRaii.PushColor(ImGuiCol.Text, CopyClipboardConfig.Color))
+        using (ImRaii.PushColor(ImGuiCol.Text, CopyToClipboardIconConfig.Color))
         {
             wasClicked = ImGuiComponents.IconButton(
                 id,
                 // Looks like an X cross.
                 // icon: FontAwesomeIcon.Clipboard,
-                icon: CopyClipboardConfig.Icon,
+                icon: CopyToClipboardIconConfig.Icon,
                 size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
                 // Hide background
                 defaultColor: new Vector4(0, 0, 0, 0),

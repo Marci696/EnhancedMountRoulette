@@ -43,6 +43,7 @@ public class MountListExplanationTable : Table
                         MountListTable.DefaultColumn => DrawDefaultCheckboxExplanation,
                         MountListTable.OwnedMountsTableColumn => DrawOwnedMountsExplanation,
                         MountListTable.CopyToClipboardColumn => DrawCopyToClipboardExplanation,
+                        MountListTable.RemoveColumn => DrawRemoveListExplanation,
                         _ => () => { },
                     };
 
@@ -51,16 +52,22 @@ public class MountListExplanationTable : Table
                         // todo can i have the icon here instead?
                         MountListTable.CopyToClipboardColumn => () =>
                         {
-                            using (ImRaii.PushFont(UiBuilder.IconFont))
-                            {
-                                PaddingY(20);
-                                CenterHorizontally();
+                            PaddingY(20);
+                            CenterHorizontally();
 
-                                ImGui.TextColored(
-                                    CopyClipboardConfig.Color,
-                                    CopyClipboardConfig.Icon.ToIconString()
-                                );
-                            }
+                            DrawIcon(
+                                CopyToClipboardIconConfig.Icon,
+                                CopyToClipboardIconConfig.Color
+                            );
+                        },
+                        MountListTable.RemoveColumn => () =>
+                        {
+                            CenterHorizontally();
+
+                            DrawIcon(
+                                RemoveIconConfig.Icon,
+                                RemoveIconConfig.Color
+                            );
                         },
                         _ => () => ImGui.TextWrapped(columnId),
                     };
@@ -112,8 +119,8 @@ public class MountListExplanationTable : Table
     {
         ImGui.TextWrapped(
             "This table shows which of your currently owned mounts will be used when summoning your mount.\n\n"
-            + "While you can remove and all all your mounts to the list from the Context Menu (Right Click)"
-            + " of your Mount Guide, you can also do it from here,"
+            + "While you can add and remove mounts from your list via the Context Menu (Right Click)"
+            + " of your Mount Guide, you can also do it from here."
         );
     }
 
@@ -123,6 +130,13 @@ public class MountListExplanationTable : Table
             "Click on the icon and the macro for calling just this mount list will be copied to your clipboard. "
             + "Simply open \"User Macros\" from the game menu, and paste it into a new one.\n\n"
             + "This macro can then be used to summon only mounts from this list."
+        );
+    }
+
+    private void DrawRemoveListExplanation()
+    {
+        ImGui.TextWrapped(
+            "Clicking on the trash icon will delete this list. This action cannot be undone."
         );
     }
 }
