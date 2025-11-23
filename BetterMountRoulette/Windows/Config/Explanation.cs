@@ -20,7 +20,7 @@ public class Explanation : IDrawable
                 + "PVP, for showing off, etc."
             );
 
-            PaddingY(ImGui.GetTextLineHeight());
+            EmptyLine();
 
             using (ImRaii.PushIndent())
             {
@@ -43,7 +43,7 @@ public class Explanation : IDrawable
 
             Text(SummonMountCommand.CommandName + " your list name", color: CommandColor);
 
-            PaddingY(ImGui.GetTextLineHeight());
+            EmptyLine();
 
             ImGui.TextWrapped("To get it into your hotbar, create a macro with a content such as:");
 
@@ -64,7 +64,7 @@ public class Explanation : IDrawable
                 );
             }
             
-            PaddingY(ImGui.GetTextLineHeight());
+            EmptyLine();
         }
     }
 
@@ -76,11 +76,11 @@ public class Explanation : IDrawable
                 "In the Mount Lists table below you can create and edit different lists depending on your needs."
             );
 
-            PaddingY(ImGui.GetTextLineHeight());
+            EmptyLine();
 
             mountListExplanationTable.Draw();
             
-            PaddingY(ImGui.GetTextLineHeight());
+            EmptyLine();
         }
     }
 }

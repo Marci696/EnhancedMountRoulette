@@ -44,6 +44,7 @@ public class MountListExplanationTable : Table
                         MountListTable.OwnedMountsTableColumn => DrawOwnedMountsExplanation,
                         MountListTable.CopyToClipboardColumn => DrawCopyToClipboardExplanation,
                         MountListTable.RemoveColumn => DrawRemoveListExplanation,
+                        MountListTable.TypeColumn => DrawMountListTypeExplanation,
                         _ => () => { },
                     };
 
@@ -137,6 +138,25 @@ public class MountListExplanationTable : Table
     {
         ImGui.TextWrapped(
             "Clicking on the trash icon will delete this list. This action cannot be undone."
+        );
+    }
+
+    private void DrawMountListTypeExplanation()
+    {
+        Text("Whitelist:", TextScale.H4);
+
+        ImGui.TextWrapped(
+            "Any new mounts you acquire, will not automatically be added to this list. "
+            + "This list is static until you decide to add more mounts to it."
+        );
+
+        EmptyLine();
+
+        Text("Blacklist:", TextScale.H4);
+
+        ImGui.TextWrapped(
+            "This list is dynamic and will be updated as you acquire new mounts."
+            + "Only those you have blacklisted will never be summoned."
         );
     }
 }

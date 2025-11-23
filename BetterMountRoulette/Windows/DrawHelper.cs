@@ -199,6 +199,11 @@ public static class DrawHelper
         }
     }
 
+    public static void EmptyLine()
+    {
+        PaddingY(ImGui.GetTextLineHeight());
+    }
+
     public delegate void OpenPopup();
 
     public static OpenPopup ConfirmationWindow(
@@ -272,10 +277,10 @@ internal static class TextScaleExtensions
 {
     public static float ToFloat(this TextScale textScale) => textScale switch
     {
-        TextScale.H1 => 2f,
-        TextScale.H2 => 1.8f,
-        TextScale.H3 => 1.6f,
-        TextScale.H4 => 1.4f,
+        TextScale.H1 => 1.8f,
+        TextScale.H2 => 1.6f,
+        TextScale.H3 => 1.4f,
+        TextScale.H4 => 1.2f,
         _ => 1f
     };
 }
