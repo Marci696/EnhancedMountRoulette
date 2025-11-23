@@ -143,20 +143,22 @@ public class MountListExplanationTable : Table
 
     private void DrawMountListTypeExplanation()
     {
-        Text("Whitelist:", TextScale.H4);
+        if (ImGui.CollapsingHeader("Whitelist", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.TextWrapped(
+                "Any new mounts you acquire, will not automatically be added to this list. "
+                + "This list is static until you decide to add more mounts to it."
+            );
 
-        ImGui.TextWrapped(
-            "Any new mounts you acquire, will not automatically be added to this list. "
-            + "This list is static until you decide to add more mounts to it."
-        );
+            EmptyLine();
+        }
 
-        EmptyLine();
-
-        Text("Blacklist:", TextScale.H4);
-
-        ImGui.TextWrapped(
-            "This list is dynamic and will be updated as you acquire new mounts."
-            + "Only those you have blacklisted will never be summoned."
-        );
+        if (ImGui.CollapsingHeader("Blacklist", ImGuiTreeNodeFlags.DefaultOpen))
+        {
+            ImGui.TextWrapped(
+                "This list is dynamic and will be updated as you acquire new mounts."
+                + "Only those you have blacklisted will never be summoned."
+            );
+        }
     }
 }
