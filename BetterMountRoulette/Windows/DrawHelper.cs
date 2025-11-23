@@ -8,6 +8,7 @@ using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
+using Lumina.Data.Parsing.Layer;
 
 namespace BetterMountRoulette.Windows;
 
@@ -17,8 +18,11 @@ public static class DrawHelper
 {
     public static Vector4 RgbaToImgGuiVector(byte red, byte green, byte blue, float alpha) =>
         new(red / 255f, green / 255f, blue / 255f, alpha);
-    
+
     public static readonly Vector4 CommandColor = RgbaToImgGuiVector(222, 121, 7, 1);
+
+    public static (FontAwesomeIcon Icon, Vector4 Color) CopyClipboardConfig = (FontAwesomeIcon.Copy,
+        RgbaToImgGuiVector(33, 186, 188, 0.5f));
 
     public static void Text(string text, TextScale textScale = TextScale.Normal, Vector4? color = null)
     {
@@ -139,13 +143,13 @@ public static class DrawHelper
         // orange
         // RgbaToImgGuiVector(222, 121, 7, 1)
 
-        using (ImRaii.PushColor(ImGuiCol.Text, RgbaToImgGuiVector(33, 186, 188, 0.5f)))
+        using (ImRaii.PushColor(ImGuiCol.Text, CopyClipboardConfig.Color))
         {
             wasClicked = ImGuiComponents.IconButton(
                 id,
                 // Looks like an X cross.
                 // icon: FontAwesomeIcon.Clipboard,
-                icon: FontAwesomeIcon.Copy,
+                icon: CopyClipboardConfig.Icon,
                 size: size ?? new Vector2(ImGui.GetFrameHeight(), ImGui.GetFrameHeight()),
                 // Hide background
                 defaultColor: new Vector4(0, 0, 0, 0),

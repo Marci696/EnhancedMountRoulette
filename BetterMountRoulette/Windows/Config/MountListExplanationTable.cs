@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using BetterMountRoulette.Commands;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
+using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using static BetterMountRoulette.Windows.DrawHelper;
 
@@ -31,7 +34,7 @@ public class MountListExplanationTable : Table
 
     protected override IEnumerable<Row> GetRows()
     {
-        IEnumerable<(string MountListTableColumnName, DrawColumnCallback DrawExplanation)> rows =
+        IEnumerable<(DrawColumnCallback DrawColumnName, DrawColumnCallback DrawExplanation)> rows =
             MountListTable.FixedOrderedColumnsIds.Select((columnId) =>
                 {
                     DrawColumnCallback drawFunction = columnId switch
@@ -43,23 +46,35 @@ public class MountListExplanationTable : Table
                         _ => () => { },
                     };
 
-                    var name = columnId switch
+                    DrawColumnCallback drawColumnName = columnId switch
                     {
                         // todo can i have the icon here instead?
-                        MountListTable.CopyToClipboardColumn => "Copy to Clipboard",
-                        _ => columnId,
+                        MountListTable.CopyToClipboardColumn => () =>
+                        {
+                            using (ImRaii.PushFont(UiBuilder.IconFont))
+                            {
+                                PaddingY(20);
+                                CenterHorizontally();
+
+                                ImGui.TextColored(
+                                    CopyClipboardConfig.Color,
+                                    CopyClipboardConfig.Icon.ToIconString()
+                                );
+                            }
+                        },
+                        _ => () => ImGui.TextWrapped(columnId),
                     };
 
-                    return (name, drawFunction);
+                    return (drawColumnName, drawFunction);
                 }
             );
 
-        foreach (var (mountListTableColumnName, drawExplanation) in rows)
+        foreach (var (drawColumnName, drawExplanation) in rows)
         {
             yield return new Row(
                 new Dictionary<string, DrawColumnCallback>
                 {
-                    [NameColumn] = () => ImGui.TextWrapped(mountListTableColumnName),
+                    [NameColumn] = drawColumnName,
                     [ExplanationColumn] = drawExplanation
                 },
                 "mountListExplanation"
@@ -106,7 +121,7 @@ public class MountListExplanationTable : Table
     {
         ImGui.TextWrapped(
             "Click on the icon and the macro for calling just this mount list will be copied to your clipboard. "
-            + "Simply open \"User Macros\" from the game menu, and paste into a new one.\n\n"
+            + "Simply open \"User Macros\" from the game menu, and paste it into a new one.\n\n"
             + "This macro can then be used to summon only mounts from this list."
         );
     }
