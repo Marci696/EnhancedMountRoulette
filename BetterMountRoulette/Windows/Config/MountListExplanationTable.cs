@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using BetterMountRoulette.Commands;
+using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
+using Dalamud.Utility;
 using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.Config;
@@ -45,6 +47,8 @@ public class MountListExplanationTable : Table
                         MountListTable.CopyToClipboardColumn => DrawCopyToClipboardExplanation,
                         MountListTable.RemoveColumn => DrawRemoveListExplanation,
                         MountListTable.TypeColumn => DrawMountListTypeExplanation,
+                        // todo rename fetchType to SummonType ?
+                        MountListTable.FetchTypeColumn => DrawSummonTypeExplanation,
                         _ => () => { },
                     };
 
@@ -143,7 +147,11 @@ public class MountListExplanationTable : Table
 
     private void DrawMountListTypeExplanation()
     {
-        if (ImGui.CollapsingHeader("Whitelist", ImGuiTreeNodeFlags.DefaultOpen))
+        PaddingY(2);
+
+        if (ImGui.CollapsingHeader(
+                Enum.GetName(MountListType.Whitelist)
+            ))
         {
             ImGui.TextWrapped(
                 "Any new mounts you acquire, will not automatically be added to this list. "
@@ -153,12 +161,62 @@ public class MountListExplanationTable : Table
             EmptyLine();
         }
 
-        if (ImGui.CollapsingHeader("Blacklist", ImGuiTreeNodeFlags.DefaultOpen))
+        if (ImGui.CollapsingHeader(
+                Enum.GetName(MountListType.Blacklist)
+            ))
         {
             ImGui.TextWrapped(
                 "This list is dynamic and will be updated as you acquire new mounts."
                 + "Only those you have blacklisted will never be summoned."
             );
         }
+
+        PaddingY(2);
+    }
+
+    private void DrawSummonTypeExplanation()
+    {
+        PaddingY(2);
+
+        if (ImGui.CollapsingHeader(
+                Enum.GetName(FetchNextType.Random)
+            ))
+        {
+            ImGui.TextWrapped(
+                "Each summon action will draw a random mount from the list.\n\n"
+                + "This is the same as the games Mount Roulette that you find in the Mount Guide. "
+                + "The main disadvantage of it is, that you can get the same mount twice in a row.\n\n"
+                + "Personally, I would not recommend this option."
+            );
+
+            EmptyLine();
+        }
+
+        if (ImGui.CollapsingHeader(Enum.GetName(FetchNextType.Shuffle)))
+        {
+            // todo add note for that the list is reset on changes
+            ImGui.TextWrapped(
+                "All your considered mounts for summoning are put into a list and shuffled.\n"
+                + "Each summon action will remove one mount from this list.\n"
+                + "Once this internal shuffled list is empty, "
+                + "it will create a new shuffled list and continue the loop.\n\n"
+                + "The main advantage of this option is, that you will never get the same mount again until you "
+                + "have gone through all mounts from your list.\n\n"
+                + "This is my personal recommendation."
+            );
+
+            EmptyLine();
+        }
+
+        if (ImGui.CollapsingHeader(Enum.GetName(FetchNextType.Sequential)))
+        {
+            ImGui.TextWrapped(
+                "It will summon each mount by the order of which Square Enix added them to the game.\n\n"
+                + "Pros: You will never get the same mount twice in a row.\n"
+                + "Cons: It will be in the same order every time."
+            );
+        }
+
+        PaddingY(2);
     }
 }

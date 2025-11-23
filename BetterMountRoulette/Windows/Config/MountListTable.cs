@@ -119,9 +119,22 @@ public class MountListTable : Table
         FullWidth();
 
         int currentListTypeIndex = (int)mountList.Type;
-        if (ImGui.Combo("###Type", ref currentListTypeIndex, new[] { "Whitelist", "Blacklist" }))
+        if (ImGui.Combo("###Type", ref currentListTypeIndex, Enum.GetNames<MountListType>()))
         {
             ConfigManager.Instance.ChangeMountListType(mountList, (MountListType)currentListTypeIndex);
+        }
+    }
+
+    private void DrawFetchTypeColumn(MountList mountList)
+    {
+        FullWidth();
+
+        int currentFetchTypeIndex = (int)mountList.FetchNextType;
+        if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
+        {
+            ConfigManager.Instance.StoreMountList(
+                new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
+            );
         }
     }
 
@@ -133,20 +146,6 @@ public class MountListTable : Table
         if (ImGui.Checkbox("###checkbox", ref checkboxValue))
         {
             ConfigManager.Instance.StoreMountList(new MountList(mountList) { IsDefault = checkboxValue });
-        }
-    }
-
-    private void DrawFetchTypeColumn(MountList mountList)
-    {
-        FullWidth();
-
-        // todo find better way to do this
-        int currentFetchTypeIndex = (int)mountList.FetchNextType;
-        if (ImGui.Combo("###FetchNextType", ref currentFetchTypeIndex, Enum.GetNames<FetchNextType>()))
-        {
-            ConfigManager.Instance.StoreMountList(
-                new MountList(mountList) { FetchNextType = (FetchNextType)currentFetchTypeIndex }
-            );
         }
     }
 
