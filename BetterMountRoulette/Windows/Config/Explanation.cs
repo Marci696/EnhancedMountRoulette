@@ -1,8 +1,6 @@
-﻿using System.Numerics;
-using BetterMountRoulette.Commands;
+﻿using BetterMountRoulette.Commands;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using static BetterMountRoulette.Windows.DrawHelper;
 

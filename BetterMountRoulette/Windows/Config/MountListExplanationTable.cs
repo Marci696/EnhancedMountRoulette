@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net.Mime;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using BetterMountRoulette.Commands;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
-using Dalamud.Interface.Utility.Table;
-using Dalamud.Plugin.Services;
 using static BetterMountRoulette.Windows.DrawHelper;
 
 namespace BetterMountRoulette.Windows.Config;
@@ -34,12 +31,28 @@ public class MountListExplanationTable : Table
 
     protected override IEnumerable<Row> GetRows()
     {
-        (string MountListTableColumnName, DrawColumnCallback DrawExplanation)[] rows =
-        [
-            (MountListTable.NameColumn, DrawNameExplanation),
-            (MountListTable.DefaultColumn, DrawDefaultCheckboxExplanation),
-            (MountListTable.OwnedMountsTableColumn, DrawOwnedMountsExplanation),
-        ];
+        IEnumerable<(string MountListTableColumnName, DrawColumnCallback DrawExplanation)> rows =
+            MountListTable.FixedOrderedColumnsIds.Select((columnId) =>
+                {
+                    DrawColumnCallback drawFunction = columnId switch
+                    {
+                        MountListTable.NameColumn => DrawNameExplanation,
+                        MountListTable.DefaultColumn => DrawDefaultCheckboxExplanation,
+                        MountListTable.OwnedMountsTableColumn => DrawOwnedMountsExplanation,
+                        MountListTable.CopyToClipboardColumn => DrawCopyToClipboardExplanation,
+                        _ => () => { },
+                    };
+
+                    var name = columnId switch
+                    {
+                        // todo can i have the icon here instead?
+                        MountListTable.CopyToClipboardColumn => "Copy to Clipboard",
+                        _ => columnId,
+                    };
+
+                    return (name, drawFunction);
+                }
+            );
 
         foreach (var (mountListTableColumnName, drawExplanation) in rows)
         {
@@ -86,6 +99,15 @@ public class MountListExplanationTable : Table
             "This table shows which of your currently owned mounts will be used when summoning your mount.\n\n"
             + "While you can remove and all all your mounts to the list from the Context Menu (Right Click)"
             + " of your Mount Guide, you can also do it from here,"
+        );
+    }
+
+    private void DrawCopyToClipboardExplanation()
+    {
+        ImGui.TextWrapped(
+            "Click on the icon and the macro for calling just this mount list will be copied to your clipboard. "
+            + "Simply open \"User Macros\" from the game menu, and paste into a new one.\n\n"
+            + "This macro can then be used to summon only mounts from this list."
         );
     }
 }

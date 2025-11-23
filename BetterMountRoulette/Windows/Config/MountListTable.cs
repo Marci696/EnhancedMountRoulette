@@ -5,11 +5,8 @@ using BetterMountRoulette.Commands;
 using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Interface;
-using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using static BetterMountRoulette.Windows.DrawHelper;
-
 
 namespace BetterMountRoulette.Windows.Config;
 
@@ -28,7 +25,7 @@ public class MountListTable : Table
 
     private static readonly Vector4 ErrorMessageColor = RgbaToImgGuiVector(186, 6, 6, 1);
 
-    public override string[] OrderedColumnIds =>
+    public static readonly string[] FixedOrderedColumnsIds =
     [
         NameColumn,
         DefaultColumn,
@@ -38,6 +35,8 @@ public class MountListTable : Table
         CopyToClipboardColumn,
         RemoveColumn,
     ];
+
+    public override string[] OrderedColumnIds => FixedOrderedColumnsIds;
 
     protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
         "mountListTable",
