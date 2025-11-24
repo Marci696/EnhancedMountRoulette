@@ -105,8 +105,6 @@ public class OwnedMountsTable(MountList mountList)
         {
             [NameColumn] = () =>
             {
-         
-
                 ImGui.SetNextItemWidth(ImGui.GetColumnWidth() / 2);
 
                 if (ImGui.InputTextWithHint("###Filter", "Search...", ref mountNameFilter, 50))

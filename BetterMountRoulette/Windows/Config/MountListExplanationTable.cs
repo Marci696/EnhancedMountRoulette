@@ -54,7 +54,6 @@ public class MountListExplanationTable : Table
 
                     DrawColumnCallback drawColumnName = columnId switch
                     {
-                        // todo can i have the icon here instead?
                         MountListTable.CopyToClipboardColumn => () =>
                         {
                             PaddingY(20);

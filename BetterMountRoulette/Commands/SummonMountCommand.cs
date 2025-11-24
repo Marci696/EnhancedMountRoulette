@@ -9,7 +9,7 @@ internal class SummonMountCommand : ICommand
     public const string CommandName = "/bmr";
 
     public string Command => CommandName;
-    
+
     public static string GetMacro(MountList mountList)
     {
         return GetMacro(mountList.Name);

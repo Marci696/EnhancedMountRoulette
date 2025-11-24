@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+
 <Project Sdk="Dalamud.NET.Sdk/13.1.0">
     <PropertyGroup>
-        <Version>0.0.0.1</Version>
+        <Version>1.0.0</Version>
         <Description>Provide a better customizable list of mounts for roulette.</Description>
         <PackageProjectUrl>https://github.com/Marci696/better-mount-roulette</PackageProjectUrl>
         <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
@@ -19,39 +20,28 @@
         <AssemblySearchPaths>$(AssemblySearchPaths);$(DalamudLibPath)</AssemblySearchPaths>
     </PropertyGroup>
 
-    <!-- Remove the FFXIVClientStructs reference that the SDK adds -->
+    <!--
+     Remove the not up to date FFXIVClientStructs reference that the SDK adds
+     TODO remove once SDK is up to date
+-->
     <ItemGroup>
         <Reference Remove="FFXIVClientStructs" />
     </ItemGroup>
 
-
     <ItemGroup>
-        <Content Include="..\Data\goat.png">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Visible>false</Visible>
-        </Content>
-
-<!--
-        <PackageReference Include="DalamudPackager" Version="11.0.0" />
--->
         <Reference Include="Newtonsoft.Json" Private="false" />
-        <Reference Include="Dalamud">
-<!--
-            <HintPath>D:\macif\Documents\FF14 Modding Tools\OwnMods\Dalamud\bin\Debug\Dalamud.dll</HintPath>
--->
-            <Private>false</Private>
-        </Reference>
+        <Reference Include="Dalamud" Private="false" />
         <Reference Include="ImGui.NET" Private="false" />
         <Reference Include="ImGuiScene" Private="false" />
         <Reference Include="Lumina" Private="false" />
         <Reference Include="Lumina.Excel" Private="false" />
         <Reference Include="Serilog" Private="false" />
 
-        <!-- TODO Change back to no custom path -->
+        <!--TODO remove once SDK is up to date-->
         <Reference Include="FFXIVClientStructs">
             <HintPath>D:\macif\Documents\FF14 Modding Tools\OwnMods\FFXIVClientStructs\bin\Debug\FFXIVClientStructs.dll</HintPath>
-            <Private>true</Private>  <!-- not necessary, but a good reminder -->
+            <Private>true</Private>
         </Reference>
     </ItemGroup>
-    
+
 </Project>

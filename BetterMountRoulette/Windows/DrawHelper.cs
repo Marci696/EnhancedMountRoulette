@@ -64,13 +64,6 @@ public static class DrawHelper
         ImGui.SetCursorPosX(ImGui.GetCursorPosX() + (padding * scale));
     }
 
-    public static void NextItemWidth(float width)
-    {
-        var scale = ImGui.GetIO().FontGlobalScale;
-
-        ImGui.SetNextItemWidth(width * scale);
-    }
-
     public static void FullWidth()
     {
         ImGui.SetNextItemWidth(-1f);
@@ -93,24 +86,6 @@ public static class DrawHelper
         );
     }
 
-    // TODO maybe not working
-    public static void CenterVertically()
-    {
-        CenterVertically(ImGui.GetFrameHeight());
-    }
-
-    // TODO maybe not working
-    public static void CenterVertically(float itemHeight)
-    {
-        ImGui.SetCursorPosY(
-            ImGui.GetCursorPosY()
-            // Find out how much space is available and set position to the middle.
-            + (ImGui.GetContentRegionAvail().Y / 2)
-            // Take item size into account, to start drawing earlier to center the middle of the item.
-            - (itemHeight / 2.0f)
-        );
-    }
-
     public static void DrawIcon(FontAwesomeIcon icon, Vector4 color)
     {
         using (ImRaii.PushFont(UiBuilder.IconFont))
@@ -119,7 +94,7 @@ public static class DrawHelper
                 color,
                 icon.ToIconString()
             );
-        }  
+        }
     }
 
     public static bool RemoveIconButton(string id, string tooltip = "", Vector2? size = null)

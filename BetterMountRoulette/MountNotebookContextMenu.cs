@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using BetterMountRoulette.Configuration;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
@@ -55,17 +56,14 @@ public class MountNotebookContextMenu : IDisposable
     private MenuItem MountListToMenuItem(MountList mountList, Mount mount)
     {
         var mountId = mount.RowId;
-        var mountName = mount.Singular.ExtractText();
-
-        // todo move logic so it can be reused in configWindow
-        var isMountIdInList = mountList.MountIds.Contains(mountId);
-        var isCurrentlySummonedInList = mountList.Type == MountListType.Whitelist ? isMountIdInList : !isMountIdInList;
+        var isCurrentlyConsideredForSummoning = MountManager.GetAvailableMountsFromListForSummoning(mountList)
+            .Contains(mountId);
 
         string namePrefix;
         SeIconChar prefixChar;
         ColorMap prefixColor;
 
-        if (isCurrentlySummonedInList)
+        if (isCurrentlyConsideredForSummoning)
         {
             namePrefix = "Ignore in";
             prefixChar = SeIconChar.Cross;
@@ -86,7 +84,7 @@ public class MountNotebookContextMenu : IDisposable
             PrefixColor = (ushort)prefixColor,
             OnClicked = (_) =>
             {
-                if (!isMountIdInList)
+                if (!isCurrentlyConsideredForSummoning)
                 {
                     ConfigManager.Instance.AddMountToList(mountList, mount);
                 }

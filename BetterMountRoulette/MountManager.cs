@@ -132,7 +132,6 @@ public static class MountManager
 
     public static HashSet<uint> GetOwnedMountIds()
     {
-        // TODO see if it can use memory hook to safe performance to not always check that;
         HashSet<uint> ownedMountIds = [];
 
         // It is a list of all mounts in the Game. Player owns those with value of true.

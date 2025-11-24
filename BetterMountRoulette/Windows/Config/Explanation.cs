@@ -63,7 +63,7 @@ public class Explanation : IDrawable
                     new ToastOptions() { Position = ToastPosition.Bottom, Speed = ToastSpeed.Fast }
                 );
             }
-            
+
             EmptyLine();
         }
     }
@@ -79,7 +79,7 @@ public class Explanation : IDrawable
             EmptyLine();
 
             mountListExplanationTable.Draw();
-            
+
             EmptyLine();
         }
     }
