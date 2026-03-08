@@ -69,15 +69,9 @@ public static class MountManager
 
     public static unsafe Mount? GetSelectedMountInMountGuide()
     {
-        uint? mountId = AgentMountNoteBook->ViewType switch
-        {
-            AddonMinionMountBase.ViewType.Normal => AgentMountNoteBook->SelectedIdInNormalView,
-            AddonMinionMountBase.ViewType.Favorites => AgentMountNoteBook->SelectedIdInFavoritesView,
-            AddonMinionMountBase.ViewType.Search => AgentMountNoteBook->SelectedIdInSearchView,
-            _ => null
-        };
+        var mountId = AgentMountNoteBook->CurrentSelection->Id;
 
-        return mountId is not null ? GetMount(mountId.Value) : null;
+        return GetMount(mountId);
     }
 
 

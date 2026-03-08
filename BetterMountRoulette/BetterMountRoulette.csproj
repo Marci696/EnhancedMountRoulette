@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<Project Sdk="Dalamud.NET.Sdk/13.1.0">
+<Project Sdk="Dalamud.NET.Sdk/14.0.2">
     <PropertyGroup>
         <Version>1.0.0</Version>
         <Description>Provide a better customizable list of mounts for roulette.</Description>
@@ -8,7 +8,7 @@
         <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
         <RootNamespace>BetterMountRoulette</RootNamespace>
 
-        <TargetFramework>net9.0-windows</TargetFramework>
+        <TargetFramework>net10.0-windows</TargetFramework>
         <Platforms>x64</Platforms>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
@@ -19,29 +19,4 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <AssemblySearchPaths>$(AssemblySearchPaths);$(DalamudLibPath)</AssemblySearchPaths>
     </PropertyGroup>
-
-    <!--
-     Remove the not up to date FFXIVClientStructs reference that the SDK adds
-     TODO remove once SDK is up to date
--->
-    <ItemGroup>
-        <Reference Remove="FFXIVClientStructs" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <Reference Include="Newtonsoft.Json" Private="false" />
-        <Reference Include="Dalamud" Private="false" />
-        <Reference Include="ImGui.NET" Private="false" />
-        <Reference Include="ImGuiScene" Private="false" />
-        <Reference Include="Lumina" Private="false" />
-        <Reference Include="Lumina.Excel" Private="false" />
-        <Reference Include="Serilog" Private="false" />
-
-        <!--TODO remove once SDK is up to date-->
-        <Reference Include="FFXIVClientStructs">
-            <HintPath>D:\macif\Documents\FF14 Modding Tools\OwnMods\FFXIVClientStructs\bin\Debug\FFXIVClientStructs.dll</HintPath>
-            <Private>true</Private>
-        </Reference>
-    </ItemGroup>
-
 </Project>
