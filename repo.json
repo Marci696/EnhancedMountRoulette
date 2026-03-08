@@ -1,28 +1,27 @@
 [
-    {
-        "Name": "EnhancedMountRoulette",
-        "InternalName": "EnhancedMountRoulette",
-        "Author": "Marci696",
-        "Punchline": "Build your own mount roulette lists.",
-        "Description": "Instead of being limited by 10 favourites for mount roulette, you can define your own lists without any limit.",
-        "RepoUrl": "https://github.com/Marci696/EnhancedMountRoulette",
-        "Tags": [
-            "Mount",
-            "Roulette",
-            "QoL",
-            "Quality of Life",
-            "Enhancement"
-        ],
-        "AssemblyVersion": "1.0.0.0",
-        "TestingAssemblyVersion": null,
-        "ApplicableVersion": "any",
-        "DalamudApiLevel": 14,
-        "IsHide": false,
-        "IsTestingExclusive": false,
-        "ImageUrls": [
-        ],
-        "DownloadLinkInstall": "https://github.com/Marci696/EnhancedMountRoulette/releases/download/latest/EnhancedMountRoulette.zip",
-        "DownloadLinkUpdate": "https://github.com/Marci696/EnhancedMountRoulette/releases/download/latest/EnhancedMountRoulette.zip",
-        "LastUpdate": "1772386890"
-    }
+  {
+    "Name": "EnhancedMountRoulette",
+    "InternalName": "EnhancedMountRoulette",
+    "Author": "Marci696",
+    "Punchline": "Build your own mount roulette lists.",
+    "Description": "Instead of being limited by 10 favourites for mount roulette, you can define your own lists without any limit.",
+    "RepoUrl": "https://github.com/Marci696/EnhancedMountRoulette",
+    "Tags": [
+      "Mount",
+      "Roulette",
+      "QoL",
+      "Quality of Life",
+      "Enhancement"
+    ],
+    "AssemblyVersion": "1.0.0.1",
+    "TestingAssemblyVersion": null,
+    "ApplicableVersion": "any",
+    "DalamudApiLevel": 14,
+    "IsHide": false,
+    "IsTestingExclusive": false,
+    "ImageUrls": [],
+    "DownloadLinkInstall": "https://github.com/Marci696/EnhancedMountRoulette/releases/download/latest/EnhancedMountRoulette.zip",
+    "DownloadLinkUpdate": "https://github.com/Marci696/EnhancedMountRoulette/releases/download/latest/EnhancedMountRoulette.zip",
+    "LastUpdate": "1772978845"
+  }
 ]
