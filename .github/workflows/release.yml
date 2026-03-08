@@ -1,0 +1,117 @@
+name: Release (master)
+
+on:
+    push:
+        branches: [ master ]
+        paths-ignore:
+            - repo.json
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: windows-2022
+        
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v5
+                with:
+                    submodules: recursive
+
+            -   name: Install .NET
+                uses: actions/setup-dotnet@v5
+                with:
+                    dotnet-version: 10.0.x
+
+            -   name: Download Dalamud
+                shell: pwsh
+                run: |
+                    $tmp = Join-Path $env:RUNNER_TEMP "dalamud"
+                    New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+
+                    $zipPath = Join-Path $tmp "latest.zip"
+                    Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile $zipPath
+                    Expand-Archive -Force $zipPath "$env:AppData\XIVLauncher\addon\Hooks\dev"
+
+            -   name: Compute Version
+                id: ver
+                shell: pwsh
+                run: |
+                    $path = "repo.json"
+
+                    $runNumber = [int]("${{ github.run_number }}")
+
+                    $existingVersion = $null
+                    if (Test-Path $path) {
+                        $repoJson = Get-Content $path -Raw | ConvertFrom-Json
+                        if ($repoJson -is [System.Array]) {
+                            $existingVersion = $repoJson[0].AssemblyVersion
+                        } else {
+                            $existingVersion = $repoJson.AssemblyVersion
+                        }
+                    }
+
+                    $ver = $null
+                    if ($existingVersion -and ($existingVersion -match '^\d+\.\d+\.\d+\.\d+$')) {
+                        $parts = $existingVersion -split '\.'
+                        $ver = "$($parts[0]).$($parts[1]).$($parts[2]).$runNumber"
+                    } else {
+                        throw "Cannot compute version: repo.json is missing or AssemblyVersion '$existingVersion' is not in 'A.B.C.D' numeric format."
+                    }
+
+                    "version=$ver" >> $env:GITHUB_OUTPUT
+                    Write-Host "Existing version: $existingVersion"
+                    Write-Host "Version: $ver"
+
+            -   name: Build (Release)
+                shell: pwsh
+                run: |
+                    dotnet build --configuration Release `
+                      /p:Version=${{ steps.ver.outputs.version }} `
+                      /p:AssemblyVersion=${{ steps.ver.outputs.version }} `
+                      /p:FileVersion=${{ steps.ver.outputs.version }}
+
+            -   name: Package zip
+                shell: pwsh
+                run: |
+                    $srcDir = "EnhancedMountRoulette\bin\x64\Release"
+                    
+                    if (-not (Test-Path $srcDir -PathType Container)) {
+                        throw "Build output folder not found: $srcDir"
+                    }
+                    
+                    $items = Join-Path $srcDir "*"
+                    Compress-Archive -Path $items -DestinationPath "EnhancedMountRoulette.zip" -Force
+
+            -   name: Update repo.json AssemblyVersion + links
+                shell: pwsh
+                run: |
+                    $path = "repo.json"
+
+                    $json = @(Get-Content $path -Raw | ConvertFrom-Json)
+
+                    $json[0].AssemblyVersion = "${{ steps.ver.outputs.version }}"
+                    $json[0].DownloadLinkInstall = "https://github.com/${{ github.repository }}/releases/download/latest/EnhancedMountRoulette.zip"
+                    $json[0].DownloadLinkUpdate  = "https://github.com/${{ github.repository }}/releases/download/latest/EnhancedMountRoulette.zip"
+                    $json[0].LastUpdate = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
+
+                    $outJson = ConvertTo-Json -Depth 32 -InputObject $json
+                    Set-Content -Path $path -Value $outJson -Encoding UTF8
+
+            -   name: Commit repo.json
+                shell: pwsh
+                run: |
+                    git config user.name "github-actions[bot]"
+                    git config user.email "github-actions[bot]@users.noreply.github.com"
+                    git add repo.json
+                    git commit -m "Update repo.json for ${{ steps.ver.outputs.version }} [skip ci]" || exit 0
+                    git push
+
+            -   name: "Publish/Update GitHub Release (tag: latest)"
+                uses: softprops/action-gh-release@v2
+                with:
+                    tag_name: latest
+                    name: Latest (master)
+                    prerelease: true
+                    files: EnhancedMountRoulette.zip

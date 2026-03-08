@@ -1,39 +1,40 @@
-name: Sample PR Builder for 
+name: PR Build (validation)
 
 on:
-  pull_request:
-    branches: [ master ]
+    pull_request:
+
+permissions:
+    contents: read
 
 jobs:
+    build:
+        runs-on: windows-2022
+        
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v5
+              with:
+                  submodules: recursive
 
-  build:
-    runs-on: windows-2022
+            - name: Install .NET
+              uses: actions/setup-dotnet@v5
+              with:
+                  dotnet-version: 10.0.x
 
-    env:
-      Solution_Name: BetterMountRoulette.sln
+            - name: Download Dalamud (for build)
+              shell: pwsh
+              run: |
+                  Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
+                  Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev"
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v5
+            - name: Build (Release)
+              shell: pwsh
+              run: dotnet build --configuration Release
 
-    - name: Install .NET
-      uses: actions/setup-dotnet@v5
-      with:
-        dotnet-version: 9.0.x
-
-    - name: Download Dalamud
-      run: |
-        Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/latest.zip -OutFile latest.zip
-        Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev"
-
-    - name: Build with dotnet
-      run: dotnet build --configuration Release
-
-    - name: Store artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: 
-        path: .\\bin\x64\Release\\*
-        if-no-files-found: error
-        retention-days: 1
-
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: EnhancedMountRoulette-PR
+                  path: .\EnhancedMountRoulette\bin\x64\Release\EnhancedMountRoulette\*
+                  if-no-files-found: error
+                  retention-days: 7
