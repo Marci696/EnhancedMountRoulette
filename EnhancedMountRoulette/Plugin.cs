@@ -68,11 +68,10 @@ public sealed class Plugin : IDalamudPlugin
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
 
         MountNotebookContextMenu = new MountNotebookContextMenu();
-        CommandManager = new CommandManager();
-
         ConfigWindow = new ConfigWindow();
-
         WindowSystem.AddWindow(ConfigWindow);
+
+        CommandManager = new CommandManager(ConfigWindow);
 
         PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
