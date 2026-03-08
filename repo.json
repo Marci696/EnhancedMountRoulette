@@ -13,7 +13,7 @@
       "Quality of Life",
       "Enhancement"
     ],
-    "AssemblyVersion": "1.0.0.1",
+    "AssemblyVersion": "1.0.0.2",
     "TestingAssemblyVersion": null,
     "ApplicableVersion": "any",
     "DalamudApiLevel": 14,
@@ -22,6 +22,6 @@
     "ImageUrls": [],
     "DownloadLinkInstall": "https://github.com/Marci696/EnhancedMountRoulette/releases/download/latest/EnhancedMountRoulette.zip",
     "DownloadLinkUpdate": "https://github.com/Marci696/EnhancedMountRoulette/releases/download/latest/EnhancedMountRoulette.zip",
-    "LastUpdate": "1772978845"
+    "LastUpdate": "1772981316"
   }
 ]
