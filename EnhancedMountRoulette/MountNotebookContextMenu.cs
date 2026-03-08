@@ -31,7 +31,7 @@ public class MountNotebookContextMenu : IDisposable
             return;
         }
 
-        Chat.Write($"Selected mount {selectedMount.RowId} {selectedMount.Singular.ExtractText()}");
+        Plugin.Log.Debug($"Selected mount {selectedMount.RowId} {selectedMount.Singular.ExtractText()}");
 
         foreach (var mountListType in Enum.GetValues<MountListType>())
         {
@@ -86,11 +86,11 @@ public class MountNotebookContextMenu : IDisposable
             {
                 if (!isCurrentlyConsideredForSummoning)
                 {
-                    ConfigManager.Instance.AddMountToList(mountList, mount);
+                    ConfigManager.Instance.ConsiderMountForSummoning(mountList, mount);
                 }
                 else
                 {
-                    ConfigManager.Instance.RemoveMountFromList(mountList, mount);
+                    ConfigManager.Instance.OverlookMountFromSummoning(mountList, mount);
                 }
             },
         };

@@ -98,22 +98,6 @@ public sealed class ConfigManager
         );
     }
 
-    public void AddMountToList(MountList mountList, Mount mount)
-    {
-        // todo should keep shuffle list and just modify based on new id?
-        StoreMountList(new MountList(mountList) { MountIds = mountList.MountIds.Add(mount.RowId) });
-
-        Chat.Write($"Added #{mount.RowId} {mount.Singular.ExtractText()} to list {mountList.Name}");
-    }
-
-    // todo should keep shuffle list and just modify based on new id?
-    public void RemoveMountFromList(MountList mountList, Mount mount)
-    {
-        StoreMountList(new MountList(mountList) { MountIds = mountList.MountIds.Remove(mount.RowId) });
-
-        Chat.Write($"Added #{mount.RowId} {mount.Singular.ExtractText()} to list {mountList.Name}");
-    }
-
     public void ConsiderAllMountsForSummoning(MountList mountList, IEnumerable<uint> mountIds)
     {
         StoreMountList(
