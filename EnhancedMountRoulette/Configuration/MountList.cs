@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Xml.Serialization;
 using Newtonsoft.Json;
 
-namespace BetterMountRoulette.Configuration;
+namespace EnhancedMountRoulette.Configuration;
 
 public class MountList
 {

@@ -1,4 +1,4 @@
-﻿namespace BetterMountRoulette.Windows;
+﻿namespace EnhancedMountRoulette.Windows;
 
 public interface IDrawable
 {

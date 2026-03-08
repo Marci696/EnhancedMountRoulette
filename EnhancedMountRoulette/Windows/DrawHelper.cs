@@ -10,7 +10,7 @@ using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Lumina.Data.Parsing.Layer;
 
-namespace BetterMountRoulette.Windows;
+namespace EnhancedMountRoulette.Windows;
 
 using Dalamud.Bindings.ImGui;
 

@@ -1,8 +1,8 @@
-﻿using BetterMountRoulette.Configuration;
-using Dalamud.Game.Command;
+﻿using Dalamud.Game.Command;
 using Dalamud.Utility;
+using EnhancedMountRoulette.Configuration;
 
-namespace BetterMountRoulette.Commands;
+namespace EnhancedMountRoulette.Commands;
 
 internal class SummonMountCommand : ICommand
 {

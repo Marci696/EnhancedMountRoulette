@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using BetterMountRoulette.Commands;
-using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Utility.Raii;
-using static BetterMountRoulette.Windows.DrawHelper;
+using EnhancedMountRoulette.Commands;
+using EnhancedMountRoulette.Configuration;
+using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace BetterMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Config;
 
 public class MountListTable : Table
 {

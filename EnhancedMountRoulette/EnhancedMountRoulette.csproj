@@ -4,9 +4,9 @@
     <PropertyGroup>
         <Version>1.0.0</Version>
         <Description>Provide a better customizable list of mounts for roulette.</Description>
-        <PackageProjectUrl>https://github.com/Marci696/better-mount-roulette</PackageProjectUrl>
+        <PackageProjectUrl>https://github.com/Marci696/EnhancedMountRoulette</PackageProjectUrl>
         <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
-        <RootNamespace>BetterMountRoulette</RootNamespace>
+        <RootNamespace>EnhancedMountRoulette</RootNamespace>
 
         <TargetFramework>net10.0-windows</TargetFramework>
         <Platforms>x64</Platforms>

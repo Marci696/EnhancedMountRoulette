@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility.Raii;
 
-namespace BetterMountRoulette.Windows;
+namespace EnhancedMountRoulette.Windows;
 
 public abstract class Table : IDrawable
 {

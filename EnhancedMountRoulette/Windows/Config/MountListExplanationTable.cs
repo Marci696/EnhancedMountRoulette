@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using BetterMountRoulette.Commands;
-using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
-using static BetterMountRoulette.Windows.DrawHelper;
+using EnhancedMountRoulette.Commands;
+using EnhancedMountRoulette.Configuration;
+using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace BetterMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Config;
 
 public class MountListExplanationTable : Table
 {

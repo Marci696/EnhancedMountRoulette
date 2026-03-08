@@ -2,11 +2,11 @@
 using Dalamud.IoC;
 using Dalamud.Plugin.Services;
 
-namespace BetterMountRoulette;
+namespace EnhancedMountRoulette;
 
 public static class Chat
 {
-    private const string ChatTag = "BetterMountRoulette";
+    private const string ChatTag = "EnhancedMountRoulette";
 
     private const ushort ChatTagColor = (ushort)ColorMap.Lila;
 

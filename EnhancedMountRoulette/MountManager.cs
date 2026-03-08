@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using BetterMountRoulette.Configuration;
 using Dalamud.Game;
 using Dalamud.Plugin.Services;
+using EnhancedMountRoulette.Configuration;
 using FFXIVClientStructs;
 using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
@@ -15,7 +15,7 @@ using Lumina.Excel.Sheets;
 using Lumina.Extensions;
 
 
-namespace BetterMountRoulette;
+namespace EnhancedMountRoulette;
 
 public static class MountManager
 {

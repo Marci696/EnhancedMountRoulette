@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Linq;
 using System.Numerics;
-using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Windowing;
-using static BetterMountRoulette.Windows.DrawHelper;
+using EnhancedMountRoulette.Configuration;
+using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace BetterMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Config;
 
 public class ConfigWindow : Window, IDisposable, IDrawable
 {

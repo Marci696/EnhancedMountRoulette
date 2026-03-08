@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using BetterMountRoulette.Configuration;
 using Dalamud.Game.Command;
+using EnhancedMountRoulette.Configuration;
 
-namespace BetterMountRoulette.Commands;
+namespace EnhancedMountRoulette.Commands;
 
 internal class CommandManager : IDisposable
 {

@@ -1,13 +1,13 @@
 ﻿using Dalamud.IoC;
 using Dalamud.Plugin;
 using System.IO;
-using BetterMountRoulette.Commands;
-using BetterMountRoulette.Windows;
-using BetterMountRoulette.Windows.Config;
+using EnhancedMountRoulette.Windows;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
+using EnhancedMountRoulette.Commands;
+using EnhancedMountRoulette.Windows.Config;
 
-namespace BetterMountRoulette;
+namespace EnhancedMountRoulette;
 
 /**
  * Maps to UIColor RowId
@@ -53,7 +53,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IToastGui ToastGui { get; private set; } = null!;
 
-    public readonly WindowSystem WindowSystem = new("BetterMountRoulette");
+    public readonly WindowSystem WindowSystem = new("EnhancedMountRoulette");
 
     private CommandManager CommandManager { get; init; }
 

@@ -6,7 +6,7 @@ using System.Linq;
 using Dalamud.Configuration;
 using Lumina.Excel.Sheets;
 
-namespace BetterMountRoulette.Configuration;
+namespace EnhancedMountRoulette.Configuration;
 
 public sealed class ConfigManager
 {

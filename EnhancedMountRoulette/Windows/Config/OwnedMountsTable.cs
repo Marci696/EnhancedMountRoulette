@@ -4,15 +4,15 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Numerics;
-using BetterMountRoulette.Configuration;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Textures;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Utility;
+using EnhancedMountRoulette.Configuration;
 using Lumina.Excel.Sheets;
-using static BetterMountRoulette.Windows.DrawHelper;
+using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace BetterMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Config;
 
 public class OwnedMountsTable(MountList mountList)
     : Table

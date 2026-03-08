@@ -1,6 +1,6 @@
 ﻿using Dalamud.Game.Command;
 
-namespace BetterMountRoulette.Commands;
+namespace EnhancedMountRoulette.Commands;
 
 internal interface ICommand
 {

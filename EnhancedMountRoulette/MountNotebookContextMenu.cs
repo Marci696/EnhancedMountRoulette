@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Linq;
-using BetterMountRoulette.Configuration;
 using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
+using EnhancedMountRoulette.Configuration;
 using Lumina.Excel.Sheets;
 
-namespace BetterMountRoulette;
+namespace EnhancedMountRoulette;
 
 public class MountNotebookContextMenu : IDisposable
 {
