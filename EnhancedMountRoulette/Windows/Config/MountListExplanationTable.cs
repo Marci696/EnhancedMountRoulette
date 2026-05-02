@@ -20,7 +20,7 @@ public class MountListExplanationTable : Table
 
     public override string[] OrderedColumnIds => [NameColumn, ExplanationColumn];
 
-    protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
+    protected override ImRaii.TableDisposable BeginTable() => ImRaii.Table(
         "mountListTable",
         OrderedColumnIds.Length,
         flags: ImGuiTableFlags.BordersInnerH,

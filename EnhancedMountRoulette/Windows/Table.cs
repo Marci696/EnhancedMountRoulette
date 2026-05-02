@@ -13,7 +13,7 @@ public abstract class Table : IDrawable
 
     protected delegate void DrawColumnCallback();
 
-    protected abstract ImRaii.IEndObject BeginTable();
+    protected abstract ImRaii.TableDisposable BeginTable();
 
     protected abstract Dictionary<string, SetupColumn> GetSetupColumns();
 
