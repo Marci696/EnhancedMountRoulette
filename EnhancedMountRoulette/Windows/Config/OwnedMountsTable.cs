@@ -59,7 +59,7 @@ public class OwnedMountsTable(MountList mountList)
         }
     }
 
-    protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
+    protected override ImRaii.TableDisposable BeginTable() => ImRaii.Table(
         "mountTable_" + mountList.Id,
         OrderedColumnIds.Length,
         ImGuiTableFlags.ScrollY | (ImGuiTableFlags.Borders & ~ImGuiTableFlags.BordersV),

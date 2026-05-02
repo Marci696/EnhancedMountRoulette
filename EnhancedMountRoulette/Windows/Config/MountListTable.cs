@@ -38,7 +38,7 @@ public class MountListTable : Table
 
     public override string[] OrderedColumnIds => FixedOrderedColumnsIds;
 
-    protected override ImRaii.IEndObject BeginTable() => ImRaii.Table(
+    protected override ImRaii.TableDisposable BeginTable() => ImRaii.Table(
         "mountListTable",
         OrderedColumnIds.Length,
         ImGuiTableFlags.Borders,
