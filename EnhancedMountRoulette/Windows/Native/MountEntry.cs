@@ -7,5 +7,8 @@ public sealed record MountEntry(
     Mount Mount,
     bool IsInSummonList,
     int SeatCount,
+    string OwnedDisplay,
+    float? OwnedPercent,
+    string? Patch,
     Action<MountEntry> ToggleMembership
 );

@@ -74,6 +74,8 @@ public sealed class Plugin : IDalamudPlugin
     {
         await KamiToolKitLibrary.InitializeAsync(PluginInterface, "Enhanced Mount Roulette");
 
+        await FfxivCollectMountData.InitializeAsync();
+
         ConfigAddon = new ConfigAddon
         {
             InternalName = "EMRConfig",

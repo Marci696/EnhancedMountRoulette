@@ -45,6 +45,8 @@ public class MountListEditorNode : ResNode
     private readonly StringDropDownNode seatFilterDropDown;
     private readonly TextButtonNode nameSortButton;
     private readonly TextButtonNode seatsSortButton;
+    private readonly TextButtonNode ownedSortButton;
+    private readonly TextButtonNode patchSortButton;
     private readonly ListNode<MountEntry, MountEntryItemNode> mountsNode;
     private readonly TextNode emptyHint;
     private readonly ResNode columnHeader;
@@ -228,6 +230,24 @@ public class MountListEditorNode : ResNode
         };
         nameSortButton.AttachNode(columnHeader);
 
+        ownedSortButton = new TextButtonNode
+        {
+            Position = new Vector2(220.0f, 0.0f),
+            Size = new Vector2(MountEntryItemNode.OwnedWidth, HeaderButtonHeight),
+            String = "Own%",
+            OnClick = () => ToggleSort(MountSortMode.Owned),
+        };
+        ownedSortButton.AttachNode(columnHeader);
+
+        patchSortButton = new TextButtonNode
+        {
+            Position = new Vector2(280.0f, 0.0f),
+            Size = new Vector2(MountEntryItemNode.PatchWidth, HeaderButtonHeight),
+            String = "Patch",
+            OnClick = () => ToggleSort(MountSortMode.Patch),
+        };
+        patchSortButton.AttachNode(columnHeader);
+
         seatsSortButton = new TextButtonNode
         {
             Position = new Vector2(320.0f, 0.0f),
@@ -358,9 +378,17 @@ public class MountListEditorNode : ResNode
         seatsSortButton.Position = new Vector2(seatsX, 0.0f);
         seatsSortButton.Size = new Vector2(MountEntryItemNode.SeatsWidth, HeaderButtonHeight);
 
+        var patchX = seatsX - MountEntryItemNode.ColumnGap - MountEntryItemNode.PatchWidth;
+        patchSortButton.Position = new Vector2(patchX, 0.0f);
+        patchSortButton.Size = new Vector2(MountEntryItemNode.PatchWidth, HeaderButtonHeight);
+
+        var ownedX = patchX - MountEntryItemNode.ColumnGap - MountEntryItemNode.OwnedWidth;
+        ownedSortButton.Position = new Vector2(ownedX, 0.0f);
+        ownedSortButton.Size = new Vector2(MountEntryItemNode.OwnedWidth, HeaderButtonHeight);
+
         nameSortButton.Position = new Vector2(MountEntryItemNode.NameLeft, 0.0f);
         nameSortButton.Size = new Vector2(
-            Math.Max(40.0f, seatsX - MountEntryItemNode.ColumnGap - MountEntryItemNode.NameLeft),
+            Math.Max(40.0f, ownedX - MountEntryItemNode.ColumnGap - MountEntryItemNode.NameLeft),
             HeaderButtonHeight
         );
     }
@@ -384,6 +412,8 @@ public class MountListEditorNode : ResNode
         selectionFilterDropDown.IsVisible = visible;
         seatFilterDropDown.IsVisible = visible;
         nameSortButton.IsVisible = visible;
+        ownedSortButton.IsVisible = visible;
+        patchSortButton.IsVisible = visible;
         seatsSortButton.IsVisible = visible;
         mountsNode.IsVisible = visible;
     }
@@ -407,6 +437,8 @@ public class MountListEditorNode : ResNode
     private void UpdateSortHeaderLabels()
     {
         nameSortButton.String = FormatSortLabel("Name", MountSortMode.Name);
+        ownedSortButton.String = FormatSortLabel("Own%", MountSortMode.Owned);
+        patchSortButton.String = FormatSortLabel("Patch", MountSortMode.Patch);
         seatsSortButton.String = FormatSortLabel("Seats", MountSortMode.Seats);
     }
 
@@ -523,7 +555,18 @@ public class MountListEditorNode : ResNode
                 continue;
             }
 
-            entries.Add(new MountEntry(mount, isInList, seatCount, ToggleMembership));
+            var collectInfo = FfxivCollectMountData.Get(mountId);
+            entries.Add(
+                new MountEntry(
+                    mount,
+                    isInList,
+                    seatCount,
+                    collectInfo?.OwnedDisplay ?? "—",
+                    collectInfo?.OwnedPercent,
+                    collectInfo?.Patch,
+                    ToggleMembership
+                )
+            );
         }
 
         mountsNode.OptionsList = SortEntries(entries);
@@ -537,6 +580,16 @@ public class MountListEditorNode : ResNode
                 ? entries.OrderBy(entry => entry.SeatCount)
                     .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(entry => entry.SeatCount)
+                    .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
+            MountSortMode.Owned => sortAscending
+                ? entries.OrderBy(entry => entry.OwnedPercent ?? float.MaxValue)
+                    .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
+                : entries.OrderByDescending(entry => entry.OwnedPercent ?? float.MinValue)
+                    .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
+            MountSortMode.Patch => sortAscending
+                ? entries.OrderBy(entry => entry.Patch, Comparer<string?>.Create(MountCollectInfo.ComparePatch))
+                    .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
+                : entries.OrderByDescending(entry => entry.Patch, Comparer<string?>.Create(MountCollectInfo.ComparePatch))
                     .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
             _ => sortAscending
                 ? entries.OrderBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)

@@ -17,12 +17,16 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
     public const float NameGap = 8.0f;
     public const float NameLeft = IconLeft + IconSize + NameGap;
     public const float SeatsWidth = 56.0f;
+    public const float OwnedWidth = 72.0f;
+    public const float PatchWidth = 52.0f;
     public const float ToggleWidth = 70.0f;
     public const float RightPadding = 4.0f;
     public const float ColumnGap = 6.0f;
 
     private readonly IconImageNode iconNode;
     private readonly TextNode nameNode;
+    private readonly TextNode ownedNode;
+    private readonly TextNode patchNode;
     private readonly TextNode seatsNode;
     private readonly TextButtonNode toggleButton;
 
@@ -46,6 +50,26 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
             AlignmentType = AlignmentType.Left,
         };
         nameNode.AttachNode(this);
+
+        ownedNode = new TextNode
+        {
+            Position = new Vector2(220.0f, 0.0f),
+            Size = new Vector2(OwnedWidth, ItemHeight),
+            FontSize = 12,
+            LineSpacing = 12,
+            AlignmentType = AlignmentType.Center,
+        };
+        ownedNode.AttachNode(this);
+
+        patchNode = new TextNode
+        {
+            Position = new Vector2(280.0f, 0.0f),
+            Size = new Vector2(PatchWidth, ItemHeight),
+            FontSize = 12,
+            LineSpacing = 12,
+            AlignmentType = AlignmentType.Center,
+        };
+        patchNode.AttachNode(this);
 
         seatsNode = new TextNode
         {
@@ -93,9 +117,21 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         );
         seatsNode.Size = new Vector2(SeatsWidth, Height);
 
+        patchNode.Position = new Vector2(
+            seatsNode.X - ColumnGap - PatchWidth,
+            0.0f
+        );
+        patchNode.Size = new Vector2(PatchWidth, Height);
+
+        ownedNode.Position = new Vector2(
+            patchNode.X - ColumnGap - OwnedWidth,
+            0.0f
+        );
+        ownedNode.Size = new Vector2(OwnedWidth, Height);
+
         nameNode.Position = new Vector2(NameLeft, 0.0f);
         nameNode.Size = new Vector2(
-            Math.Max(40.0f, seatsNode.X - ColumnGap - NameLeft),
+            Math.Max(40.0f, ownedNode.X - ColumnGap - NameLeft),
             Height
         );
     }
@@ -111,6 +147,12 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         nameNode.TextColor = itemData.IsInSummonList
             ? new Vector4(1.0f, 1.0f, 1.0f, 1.0f)
             : new Vector4(0.6f, 0.6f, 0.6f, 1.0f);
+
+        ownedNode.String = itemData.OwnedDisplay;
+        ownedNode.TextColor = nameNode.TextColor;
+
+        patchNode.String = string.IsNullOrEmpty(itemData.Patch) ? "—" : itemData.Patch;
+        patchNode.TextColor = nameNode.TextColor;
 
         seatsNode.String = itemData.SeatCount.ToString(CultureInfo.InvariantCulture);
         seatsNode.TextColor = nameNode.TextColor;
