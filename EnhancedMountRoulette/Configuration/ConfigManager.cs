@@ -48,6 +48,23 @@ public sealed class ConfigManager
                 },
                 comparer: Comparer
             );
+
+        EnsureInitialDefaultList();
+    }
+
+    private void EnsureInitialDefaultList()
+    {
+        if (_mountLists.Count > 0)
+        {
+            return;
+        }
+
+        _mountLists[SerializableConfiguration.DefaultMountListName] = new MountList
+        {
+            Name = SerializableConfiguration.DefaultMountListName,
+            IsDefault = true,
+        };
+        Save();
     }
 
     public List<MountList> GetMountLists(MountListType type)
@@ -220,16 +237,9 @@ public sealed class ConfigManager
 
         public int Version { get; set; } = 2;
 
-        // Default is only assigned when nothing else is found.
-        public Dictionary<string, SerializableMountList> MountLists { get; set; } =
-            new(Comparer)
-            {
-                [DefaultMountListName] = new SerializableMountList
-                {
-                    Name = DefaultMountListName,
-                    IsDefault = true,
-                }
-            };
+        // Must stay empty: Newtonsoft populates into the existing dictionary on load,
+        // so seeding "Default" here would recreate it on every plugin restart.
+        public Dictionary<string, SerializableMountList> MountLists { get; set; } = new(Comparer);
     }
 
     public string FindNewMountListName()
