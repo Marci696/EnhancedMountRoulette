@@ -16,10 +16,12 @@ namespace EnhancedMountRoulette.Windows.Native;
 public class MountListEditorNode : ResNode
 {
     private const float SettingsRowY = 0.0f;
-    private const float FilterRowY = 36.0f;
-    private const float ViewRowY = 72.0f;
-    private const float HeaderRowY = 108.0f;
-    private const float MountsListY = 136.0f;
+    private const float DividerY = 32.0f;
+    private const float FilterRowY = 40.0f;
+    private const float HeaderRowY = 76.0f;
+    private const float MountsListY = 104.0f;
+    private const float ActionsRowHeight = 28.0f;
+    private const float ActionsRowGap = 6.0f;
     private const float HeaderButtonHeight = 24.0f;
 
     public System.Action? OnListsChanged { get; set; }
@@ -47,8 +49,9 @@ public class MountListEditorNode : ResNode
     private readonly TextNode emptyHint;
     private readonly ResNode columnHeader;
     private readonly HorizontalListNode settingsRow;
+    private readonly HorizontalLineNode settingsDivider;
     private readonly HorizontalListNode filterRow;
-    private readonly HorizontalListNode viewRow;
+    private readonly HorizontalListNode actionsRow;
 
     private readonly ConfirmationDialogNode confirmationDialog;
 
@@ -144,6 +147,13 @@ public class MountListEditorNode : ResNode
         };
         settingsRow.AddNode(copyMacroButton);
 
+        settingsDivider = new HorizontalLineNode
+        {
+            Position = new Vector2(0.0f, DividerY),
+            Size = new Vector2(600.0f, 4.0f),
+        };
+        settingsDivider.AttachNode(this);
+
         filterRow = new HorizontalListNode
         {
             Position = new Vector2(0.0f, FilterRowY),
@@ -154,7 +164,7 @@ public class MountListEditorNode : ResNode
 
         searchInput = new TextInputNode
         {
-            Size = new Vector2(220.0f, 28.0f),
+            Size = new Vector2(160.0f, 28.0f),
             PlaceholderString = "Search mounts...",
             MaxCharacters = 50,
             OnInputReceived = value =>
@@ -165,53 +175,9 @@ public class MountListEditorNode : ResNode
         };
         filterRow.AddNode(searchInput);
 
-        addAllButton = new TextButtonNode
-        {
-            Size = new Vector2(90.0f, 28.0f),
-            String = "Add All",
-            OnClick = () =>
-            {
-                if (boundList is null)
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.ConsiderAllMountsForSummoning(boundList, MountManager.GetOwnedMountIds());
-                RefreshBoundList();
-                RefreshMountEntries();
-            },
-        };
-        filterRow.AddNode(addAllButton);
-
-        removeAllButton = new TextButtonNode
-        {
-            Size = new Vector2(100.0f, 28.0f),
-            String = "Remove All",
-            OnClick = () =>
-            {
-                if (boundList is null)
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.OverlookAllMountsForSummoning(boundList, MountManager.GetOwnedMountIds());
-                RefreshBoundList();
-                RefreshMountEntries();
-            },
-        };
-        filterRow.AddNode(removeAllButton);
-
-        viewRow = new HorizontalListNode
-        {
-            Position = new Vector2(0.0f, ViewRowY),
-            Size = new Vector2(600.0f, 28.0f),
-            ItemSpacing = 6.0f,
-        };
-        viewRow.AttachNode(this);
-
         selectionFilterDropDown = new StringDropDownNode
         {
-            Size = new Vector2(170.0f, 28.0f),
+            Size = new Vector2(200.0f, 28.0f),
             Options = ["Selection: All", "Selection: Selected", "Selection: Unselected"],
             SelectedOption = "Selection: All",
             OnOptionSelected = option =>
@@ -225,11 +191,11 @@ public class MountListEditorNode : ResNode
                 RefreshMountEntries();
             },
         };
-        viewRow.AddNode(selectionFilterDropDown);
+        filterRow.AddNode(selectionFilterDropDown);
 
         seatFilterDropDown = new StringDropDownNode
         {
-            Size = new Vector2(150.0f, 28.0f),
+            Size = new Vector2(140.0f, 28.0f),
             Options = ["Seats: All", "Seats: 1-seater", "Seats: Multi"],
             SelectedOption = "Seats: All",
             OnOptionSelected = option =>
@@ -243,7 +209,7 @@ public class MountListEditorNode : ResNode
                 RefreshMountEntries();
             },
         };
-        viewRow.AddNode(seatFilterDropDown);
+        filterRow.AddNode(seatFilterDropDown);
 
         columnHeader = new ResNode
         {
@@ -287,6 +253,50 @@ public class MountListEditorNode : ResNode
         };
         mountsNode.AttachNode(this);
 
+        actionsRow = new HorizontalListNode
+        {
+            Position = new Vector2(0.0f, 500.0f),
+            Size = new Vector2(600.0f, ActionsRowHeight),
+            ItemSpacing = 6.0f,
+        };
+        actionsRow.AttachNode(this);
+
+        addAllButton = new TextButtonNode
+        {
+            Size = new Vector2(90.0f, 28.0f),
+            String = "Add All",
+            OnClick = () =>
+            {
+                if (boundList is null)
+                {
+                    return;
+                }
+
+                ConfigManager.Instance.ConsiderAllMountsForSummoning(boundList, MountManager.GetOwnedMountIds());
+                RefreshBoundList();
+                RefreshMountEntries();
+            },
+        };
+        actionsRow.AddNode(addAllButton);
+
+        removeAllButton = new TextButtonNode
+        {
+            Size = new Vector2(100.0f, 28.0f),
+            String = "Remove All",
+            OnClick = () =>
+            {
+                if (boundList is null)
+                {
+                    return;
+                }
+
+                ConfigManager.Instance.OverlookAllMountsForSummoning(boundList, MountManager.GetOwnedMountIds());
+                RefreshBoundList();
+                RefreshMountEntries();
+            },
+        };
+        actionsRow.AddNode(removeAllButton);
+
         emptyHint = new TextNode
         {
             Position = new Vector2(0.0f, 0.0f),
@@ -325,9 +335,17 @@ public class MountListEditorNode : ResNode
     {
         base.OnSizeChanged();
 
-        mountsNode.Size = new Vector2(Width, Math.Max(100.0f, Height - MountsListY));
+        var actionsY = Height - ActionsRowHeight;
+        actionsRow.Position = new Vector2(0.0f, actionsY);
+        actionsRow.Width = Width;
+
+        mountsNode.Size = new Vector2(
+            Width,
+            Math.Max(80.0f, actionsY - ActionsRowGap - MountsListY)
+        );
         emptyHint.Width = Width;
         columnHeader.Width = Width;
+        settingsDivider.Width = Width;
         confirmationDialog.Size = Size;
 
         var toggleX = Width - MountEntryItemNode.ToggleWidth - MountEntryItemNode.RightPadding
@@ -348,8 +366,9 @@ public class MountListEditorNode : ResNode
     {
         emptyHint.IsVisible = !visible;
         settingsRow.IsVisible = visible;
+        settingsDivider.IsVisible = visible;
         filterRow.IsVisible = visible;
-        viewRow.IsVisible = visible;
+        actionsRow.IsVisible = visible;
         columnHeader.IsVisible = visible;
         nameInput.IsVisible = visible;
         typeDropDown.IsVisible = visible;
