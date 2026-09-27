@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using KamiToolKit.Enums;
 using KamiToolKit.Interfaces;
 using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Configuration;
@@ -23,12 +24,24 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
     /// </summary>
     public const float ListContentRightInset = 16.0f;
 
+    private static readonly Vector4 OddRowBackground = new(1.0f, 1.0f, 1.0f, 0.08f);
+
+    private readonly ColorImageNode stripeNode;
     private readonly CheckboxNode defaultCheckbox;
     private readonly TextNode nameNode;
     private readonly TextNode metaNode;
 
     public MountListItemNode()
     {
+        stripeNode = new ColorImageNode
+        {
+            Position = Vector2.Zero,
+            Size = new Vector2(240.0f, ItemHeight),
+            Color = OddRowBackground,
+            IsVisible = false,
+        };
+        stripeNode.AttachNode(this, NodePosition.AsFirstChild);
+
         nameNode = new TextNode
         {
             Position = new Vector2(TextLeft, 4.0f),
@@ -75,6 +88,8 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
     {
         base.OnSizeChanged();
 
+        stripeNode.Size = Size;
+
         // CheckboxNode draws its box on the left (~Height-4 wide); center that box in the column.
         var boxSize = CheckboxSize - 4.0f;
         var checkboxX = Width - CheckboxColumnWidth + (CheckboxColumnWidth - boxSize) / 2.0f;
@@ -91,6 +106,9 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
 
     protected override void SetNodeData(MountList itemData)
     {
+        var rowIndex = ConfigManager.Instance.OrderedMountList.FindIndex(list => list.Id == itemData.Id);
+        stripeNode.IsVisible = rowIndex >= 0 && rowIndex % 2 == 1;
+
         nameNode.String = itemData.Name;
         metaNode.String = $"{itemData.Type} · {itemData.FetchNextType}";
 
