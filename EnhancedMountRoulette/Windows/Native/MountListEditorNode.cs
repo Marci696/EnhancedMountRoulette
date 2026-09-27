@@ -380,6 +380,7 @@ public class MountListEditorNode : ResNode
 
     public void Bind(MountList mountList)
     {
+        var listChanged = boundList is null || boundList.Id != mountList.Id;
         boundList = mountList;
         SetEditorVisible(true);
 
@@ -387,8 +388,31 @@ public class MountListEditorNode : ResNode
         typeDropDown.SelectedOption = mountList.Type.ToString();
         fetchTypeDropDown.SelectedOption = mountList.FetchNextType.ToString();
 
+        if (listChanged)
+        {
+            ResetFilters();
+        }
+
         confirmationDialog.Hide();
         RefreshMountEntries();
+    }
+
+    private void ResetFilters()
+    {
+        mountFilter = "";
+        selectionFilter = MountSelectionFilter.All;
+        seatFilter = MountSeatFilter.All;
+        ownedOnlyFilter = true;
+
+        searchInput.String = "";
+        selectionFilterDropDown.SelectedOption = MountSelectionFilter.All;
+        seatFilterDropDown.SelectedOption = MountSeatFilter.All;
+
+        // Writing IsChecked triggers OnClick; suppress so we don't refresh mid-reset.
+        var ownedClick = ownedFilterCheckbox.OnClick;
+        ownedFilterCheckbox.OnClick = null;
+        ownedFilterCheckbox.IsChecked = true;
+        ownedFilterCheckbox.OnClick = ownedClick;
     }
 
     public void Update()
