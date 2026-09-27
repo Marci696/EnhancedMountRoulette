@@ -242,36 +242,7 @@ public class OwnedMountsTable(MountList mountList)
             MountManager.ToggleMountFavorite(mount);
         }
 
-        foreach (var mountListType in Enum.GetValues<MountListType>())
-        {
-            ImGui.Separator();
-            ImGui.TextDisabled(
-                mountListType == MountListType.Whitelist
-                    ? "Roulette WhiteLists"
-                    : "Roulette BlackLists"
-            );
-
-            foreach (var list in ConfigManager.Instance.GetMountLists(mountListType))
-            {
-                var isInList = MountManager.GetAvailableMountsFromListForSummoning(list)
-                    .Contains(mount.RowId);
-                var label = isInList ? $"Ignore in {list.Name}" : $"Summon in {list.Name}";
-
-                if (!ImGui.Selectable(label))
-                {
-                    continue;
-                }
-
-                if (isInList)
-                {
-                    ConfigManager.Instance.OverlookMountFromSummoning(list, mount);
-                }
-                else
-                {
-                    ConfigManager.Instance.ConsiderMountForSummoning(list, mount);
-                }
-            }
-        }
+        MountRouletteMenuItems.DrawImGuiEntries(mount);
 
         ImGui.EndPopup();
     }
