@@ -194,4 +194,34 @@ public static class MountManager
 
         return ownedMountIds;
     }
+
+    /// <summary>
+    /// Counts owned vs total non-empty mount sheet entries in a single pass.
+    /// </summary>
+    public static (int Owned, int Total) GetOwnershipCounts()
+    {
+        BitArray mountsBitArray;
+        unsafe
+        {
+            mountsBitArray = PlayerState->UnlockedMountsBitArray;
+        }
+
+        var owned = 0;
+        var total = 0;
+        foreach (var mount in MountSheet)
+        {
+            if (IsMountEntryEmpty(mount))
+            {
+                continue;
+            }
+
+            total++;
+            if (mountsBitArray.Get(mount.Order))
+            {
+                owned++;
+            }
+        }
+
+        return (owned, total);
+    }
 }

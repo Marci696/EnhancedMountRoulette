@@ -13,6 +13,7 @@ public unsafe class ConfigAddon : NativeAddon
     private HorizontalListNode? rootLayout;
     private VerticalListNode? leftColumn;
     private ListNode<MountList, MountListItemNode>? mountListNode;
+    private OwnedMountsProgressNode? ownershipProgressNode;
     private MountListEditorNode? editorNode;
 
     private MountList? selectedMountList;
@@ -119,15 +120,23 @@ public unsafe class ConfigAddon : NativeAddon
 
         MountListItemNode.OnListsChanged = RefreshMountLists;
 
+        // Buttons (28) + list header (18) + progress header+bar (36) + three spacings (18) ≈ 100.
         mountListNode = new ListNode<MountList, MountListItemNode>
         {
-            Size = new Vector2(240.0f, ContentSize.Y - 56.0f),
+            Size = new Vector2(240.0f, ContentSize.Y - 100.0f),
             ItemSpacing = 2.0f,
             OptionsList = ConfigManager.Instance.OrderedMountList,
             OnItemSelected = OnMountListSelected,
             AutoResetScroll = false,
         };
         leftColumn.AddNode(mountListNode);
+
+        ownershipProgressNode = new OwnedMountsProgressNode
+        {
+            Size = new Vector2(240.0f, OwnedMountsProgressNode.PreferredHeight),
+        };
+        leftColumn.AddNode(ownershipProgressNode);
+        ownershipProgressNode.Refresh();
 
         editorNode = new MountListEditorNode
         {
@@ -147,6 +156,7 @@ public unsafe class ConfigAddon : NativeAddon
     {
         mountListNode?.Update();
         editorNode?.Update();
+        ownershipProgressNode?.Refresh();
     }
 
     private void OnMountListSelected(MountList? mountList)
