@@ -117,24 +117,26 @@ public sealed class ConfigManager
 
     public void ConsiderAllMountsForSummoning(MountList mountList, IEnumerable<uint> mountIds)
     {
+        var ids = mountIds as ICollection<uint> ?? mountIds.ToList();
         StoreMountList(
             new MountList(mountList)
             {
                 MountIds = mountList.Type == MountListType.Whitelist
-                    ? mountIds.ToImmutableHashSet()
-                    : ImmutableHashSet<uint>.Empty
+                    ? mountList.MountIds.Union(ids)
+                    : mountList.MountIds.Except(ids)
             }
         );
     }
 
     public void OverlookAllMountsForSummoning(MountList mountList, IEnumerable<uint> mountIds)
     {
+        var ids = mountIds as ICollection<uint> ?? mountIds.ToList();
         StoreMountList(
             new MountList(mountList)
             {
                 MountIds = mountList.Type == MountListType.Whitelist
-                    ? ImmutableHashSet<uint>.Empty
-                    : mountIds.ToImmutableHashSet()
+                    ? mountList.MountIds.Except(ids)
+                    : mountList.MountIds.Union(ids)
             }
         );
     }

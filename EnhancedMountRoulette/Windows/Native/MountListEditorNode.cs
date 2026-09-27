@@ -293,7 +293,10 @@ public class MountListEditorNode : ResNode
                     return;
                 }
 
-                ConfigManager.Instance.ConsiderAllMountsForSummoning(boundList, MountManager.GetOwnedMountIds());
+                ConfigManager.Instance.ConsiderAllMountsForSummoning(
+                    boundList,
+                    GetFilteredMountEntries().Select(entry => entry.Mount.RowId)
+                );
                 RefreshBoundList();
                 RefreshMountEntries();
             },
@@ -312,7 +315,10 @@ public class MountListEditorNode : ResNode
                     return;
                 }
 
-                ConfigManager.Instance.OverlookAllMountsForSummoning(boundList, MountManager.GetOwnedMountIds());
+                ConfigManager.Instance.OverlookAllMountsForSummoning(
+                    boundList,
+                    GetFilteredMountEntries().Select(entry => entry.Mount.RowId)
+                );
                 RefreshBoundList();
                 RefreshMountEntries();
             },
@@ -513,6 +519,22 @@ public class MountListEditorNode : ResNode
             return;
         }
 
+        var sorted = SortEntries(GetFilteredMountEntries());
+        for (var i = 0; i < sorted.Count; i++)
+        {
+            sorted[i] = sorted[i] with { RowIndex = i };
+        }
+
+        mountsNode.OptionsList = sorted;
+    }
+
+    private List<MountEntry> GetFilteredMountEntries()
+    {
+        if (boundList is null)
+        {
+            return [];
+        }
+
         var ownedMountIds = MountManager.GetOwnedMountIds();
         var available = boundList.GetAvailableMountsForSummoning(ownedMountIds).ToHashSet();
         var unavailable = boundList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds);
@@ -569,13 +591,7 @@ public class MountListEditorNode : ResNode
             );
         }
 
-        var sorted = SortEntries(entries);
-        for (var i = 0; i < sorted.Count; i++)
-        {
-            sorted[i] = sorted[i] with { RowIndex = i };
-        }
-
-        mountsNode.OptionsList = sorted;
+        return entries;
     }
 
     private List<MountEntry> SortEntries(List<MountEntry> entries)
