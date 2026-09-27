@@ -5,7 +5,7 @@ namespace EnhancedMountRoulette.Commands;
 
 internal class DeleteMountListCommand : ICommand
 {
-    public string Command => "/bmr-delete-list";
+    public string Command => "/emr-delete-list";
 
     public CommandInfo CommandInfo => new(Handler)
         { HelpMessage = $"Deletes a mount list. Usage like {Command} myName" };

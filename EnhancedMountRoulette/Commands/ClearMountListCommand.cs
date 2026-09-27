@@ -5,7 +5,7 @@ namespace EnhancedMountRoulette.Commands;
 
 internal class ClearMountListCommand : ICommand
 {
-    public string Command => "/bmr-clear-list";
+    public string Command => "/emr-clear-list";
 
     public CommandInfo CommandInfo => new(Handler)
         { HelpMessage = $"Clear mount list, resetting it to an empty list. Usage like {Command} myName" };

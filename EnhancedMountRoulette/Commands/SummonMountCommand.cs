@@ -6,7 +6,7 @@ namespace EnhancedMountRoulette.Commands;
 
 internal class SummonMountCommand : ICommand
 {
-    public const string CommandName = "/bmr";
+    public const string CommandName = "/emr";
 
     public string Command => CommandName;
 
@@ -28,7 +28,7 @@ internal class SummonMountCommand : ICommand
     public CommandInfo CommandInfo => new(Handler)
     {
         HelpMessage =
-            "Calls a random mount from a list. /bmr will use the default use. To use mount from your custom list use /bmr listName"
+            "Calls a random mount from a list. /emr will use the default use. To use mount from your custom list use /emr listName"
     };
 
     private void Handler(string _, string arguments)

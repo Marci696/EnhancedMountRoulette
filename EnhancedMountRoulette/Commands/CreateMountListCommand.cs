@@ -5,7 +5,7 @@ namespace EnhancedMountRoulette.Commands;
 
 internal class CreateMountListCommand(MountListType mountListType) : ICommand
 {
-    public string Command => "/bmr-add-" + mountListType.AsString();
+    public string Command => "/emr-add-" + mountListType.AsString();
 
     public CommandInfo CommandInfo
     {
@@ -16,7 +16,7 @@ internal class CreateMountListCommand(MountListType mountListType) : ICommand
             return new CommandInfo(Handler)
             {
                 HelpMessage =
-                    $"Add a new mount {typeName}. Specify a name by calling it like /bmr-add-{typeName} myName"
+                    $"Add a new mount {typeName}. Specify a name by calling it like /emr-add-{typeName} myName"
             };
         }
     }
@@ -27,7 +27,7 @@ internal class CreateMountListCommand(MountListType mountListType) : ICommand
         if (newMountListName.Length == 0)
         {
             Chat.Write(
-                "You need to specify a name for your new mount list. Add it like this: /bmr-add-blacklist myName",
+                "You need to specify a name for your new mount list. Add it like this: /emr-add-blacklist myName",
                 isError: true
             );
 

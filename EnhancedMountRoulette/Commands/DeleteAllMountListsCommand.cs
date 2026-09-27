@@ -5,7 +5,7 @@ namespace EnhancedMountRoulette.Commands;
 
 internal class DeleteAllMountListsCommand : ICommand
 {
-    public string Command => "/bmr-delete-all-lists";
+    public string Command => "/emr-delete-all-lists";
 
     public CommandInfo CommandInfo => new(Handler) { HelpMessage = "Deletes all mount lists." };
 

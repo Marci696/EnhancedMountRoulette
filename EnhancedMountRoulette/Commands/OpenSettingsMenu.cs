@@ -5,7 +5,7 @@ namespace EnhancedMountRoulette.Commands;
 
 internal class OpenSettingsMenu(ConfigAddon configAddon) : ICommand
 {
-    public string Command => "/bmr-settings";
+    public string Command => "/emr-settings";
 
     public CommandInfo CommandInfo => new(Handler) { HelpMessage = "Opens Settings-Menu" };
 

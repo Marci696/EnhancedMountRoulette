@@ -14,7 +14,7 @@ public class ConfigWindow : Window, IDisposable, IDrawable
     private readonly Explanation explanation = new();
 
     public ConfigWindow() : base(
-        "Better Mount Roulette Configuration"
+        "Enhanced Mount Roulette Configuration"
     )
     {
         // Flags |= ImGuiWindowFlags.AlwaysAutoResize;
