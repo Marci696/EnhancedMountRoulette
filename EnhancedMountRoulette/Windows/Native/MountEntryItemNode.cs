@@ -12,15 +12,18 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 {
     public static float ItemHeight => 28.0f;
 
-    private const float IconSize = 24.0f;
-    private const float IconLeft = 6.0f;
-    private const float NameGap = 8.0f;
-    private const float NameLeft = IconLeft + IconSize + NameGap;
-    private const float ToggleWidth = 70.0f;
-    private const float ToggleRightPadding = 4.0f;
+    public const float IconSize = 24.0f;
+    public const float IconLeft = 6.0f;
+    public const float NameGap = 8.0f;
+    public const float NameLeft = IconLeft + IconSize + NameGap;
+    public const float SeatsWidth = 56.0f;
+    public const float ToggleWidth = 70.0f;
+    public const float RightPadding = 4.0f;
+    public const float ColumnGap = 6.0f;
 
     private readonly IconImageNode iconNode;
     private readonly TextNode nameNode;
+    private readonly TextNode seatsNode;
     private readonly TextButtonNode toggleButton;
 
     public MountEntryItemNode()
@@ -44,9 +47,19 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         };
         nameNode.AttachNode(this);
 
+        seatsNode = new TextNode
+        {
+            Position = new Vector2(320.0f, 0.0f),
+            Size = new Vector2(SeatsWidth, ItemHeight),
+            FontSize = 12,
+            LineSpacing = 12,
+            AlignmentType = AlignmentType.Center,
+        };
+        seatsNode.AttachNode(this);
+
         toggleButton = new TextButtonNode
         {
-            Position = new Vector2(320.0f, (ItemHeight - 24.0f) / 2.0f),
+            Position = new Vector2(400.0f, (ItemHeight - 24.0f) / 2.0f),
             Size = new Vector2(ToggleWidth, 24.0f),
             String = "Add",
             OnClick = () =>
@@ -59,7 +72,7 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         };
         toggleButton.AttachNode(this);
 
-        Size = new Vector2(400.0f, ItemHeight);
+        Size = new Vector2(480.0f, ItemHeight);
     }
 
     protected override void OnSizeChanged()
@@ -68,15 +81,21 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         iconNode.Position = new Vector2(IconLeft, (Height - IconSize) / 2.0f);
 
-        nameNode.Position = new Vector2(NameLeft, 0.0f);
-        nameNode.Size = new Vector2(
-            Math.Max(40.0f, Width - NameLeft - ToggleWidth - ToggleRightPadding - 8.0f),
-            Height
+        toggleButton.Position = new Vector2(
+            Width - ToggleWidth - RightPadding,
+            (Height - toggleButton.Height) / 2.0f
         );
 
-        toggleButton.Position = new Vector2(
-            Width - ToggleWidth - ToggleRightPadding,
-            (Height - toggleButton.Height) / 2.0f
+        seatsNode.Position = new Vector2(
+            toggleButton.X - ColumnGap - SeatsWidth,
+            0.0f
+        );
+        seatsNode.Size = new Vector2(SeatsWidth, Height);
+
+        nameNode.Position = new Vector2(NameLeft, 0.0f);
+        nameNode.Size = new Vector2(
+            Math.Max(40.0f, seatsNode.X - ColumnGap - NameLeft),
+            Height
         );
     }
 
@@ -91,6 +110,9 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         nameNode.TextColor = itemData.IsInSummonList
             ? new Vector4(1.0f, 1.0f, 1.0f, 1.0f)
             : new Vector4(0.6f, 0.6f, 0.6f, 1.0f);
+
+        seatsNode.String = itemData.SeatCount.ToString(CultureInfo.InvariantCulture);
+        seatsNode.TextColor = nameNode.TextColor;
 
         toggleButton.String = itemData.IsInSummonList ? "Remove" : "Add";
     }

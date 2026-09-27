@@ -63,6 +63,11 @@ public static class MountManager
         return IsMountEntryEmpty(mount) ? null : mount;
     }
 
+    /// <summary>
+    /// Total rider capacity (driver + ExtraSeats).
+    /// </summary>
+    public static int GetSeatCount(Mount mount) => mount.ExtraSeats + 1;
+
     public static bool IsMountEntryEmpty(Mount mount)
     {
         return mount.Singular.IsEmpty || mount.Order < 0;

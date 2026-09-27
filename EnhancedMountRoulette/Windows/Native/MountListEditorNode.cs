@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Game.Gui.Toast;
+using Dalamud.Utility;
+using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.ContextMenu;
 using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Commands;
@@ -13,10 +15,21 @@ namespace EnhancedMountRoulette.Windows.Native;
 
 public class MountListEditorNode : ResNode
 {
+    private const float SettingsRowY = 0.0f;
+    private const float FilterRowY = 36.0f;
+    private const float ViewRowY = 72.0f;
+    private const float HeaderRowY = 108.0f;
+    private const float MountsListY = 136.0f;
+    private const float HeaderButtonHeight = 24.0f;
+
     public System.Action? OnListsChanged { get; set; }
 
     private MountList? boundList;
     private string mountFilter = "";
+    private MountSortMode sortMode = MountSortMode.Name;
+    private bool sortAscending = true;
+    private MountSelectionFilter selectionFilter = MountSelectionFilter.All;
+    private MountSeatFilter seatFilter = MountSeatFilter.All;
 
     private readonly TextInputNode nameInput;
     private readonly StringDropDownNode typeDropDown;
@@ -26,10 +39,16 @@ public class MountListEditorNode : ResNode
     private readonly TextInputNode searchInput;
     private readonly TextButtonNode addAllButton;
     private readonly TextButtonNode removeAllButton;
+    private readonly StringDropDownNode selectionFilterDropDown;
+    private readonly StringDropDownNode seatFilterDropDown;
+    private readonly TextButtonNode nameSortButton;
+    private readonly TextButtonNode seatsSortButton;
     private readonly ListNode<MountEntry, MountEntryItemNode> mountsNode;
     private readonly TextNode emptyHint;
+    private readonly ResNode columnHeader;
     private readonly HorizontalListNode settingsRow;
     private readonly HorizontalListNode filterRow;
+    private readonly HorizontalListNode viewRow;
 
     private readonly ConfirmationDialogNode confirmationDialog;
 
@@ -45,7 +64,7 @@ public class MountListEditorNode : ResNode
 
         settingsRow = new HorizontalListNode
         {
-            Position = new Vector2(0.0f, 0.0f),
+            Position = new Vector2(0.0f, SettingsRowY),
             Size = new Vector2(600.0f, 28.0f),
             ItemSpacing = 6.0f,
         };
@@ -127,7 +146,7 @@ public class MountListEditorNode : ResNode
 
         filterRow = new HorizontalListNode
         {
-            Position = new Vector2(0.0f, 36.0f),
+            Position = new Vector2(0.0f, FilterRowY),
             Size = new Vector2(600.0f, 28.0f),
             ItemSpacing = 6.0f,
         };
@@ -182,9 +201,78 @@ public class MountListEditorNode : ResNode
         };
         filterRow.AddNode(removeAllButton);
 
+        viewRow = new HorizontalListNode
+        {
+            Position = new Vector2(0.0f, ViewRowY),
+            Size = new Vector2(600.0f, 28.0f),
+            ItemSpacing = 6.0f,
+        };
+        viewRow.AttachNode(this);
+
+        selectionFilterDropDown = new StringDropDownNode
+        {
+            Size = new Vector2(170.0f, 28.0f),
+            Options = ["Selection: All", "Selection: Selected", "Selection: Unselected"],
+            SelectedOption = "Selection: All",
+            OnOptionSelected = option =>
+            {
+                selectionFilter = option switch
+                {
+                    "Selection: Selected" => MountSelectionFilter.Selected,
+                    "Selection: Unselected" => MountSelectionFilter.Unselected,
+                    _ => MountSelectionFilter.All,
+                };
+                RefreshMountEntries();
+            },
+        };
+        viewRow.AddNode(selectionFilterDropDown);
+
+        seatFilterDropDown = new StringDropDownNode
+        {
+            Size = new Vector2(150.0f, 28.0f),
+            Options = ["Seats: All", "Seats: 1-seater", "Seats: Multi"],
+            SelectedOption = "Seats: All",
+            OnOptionSelected = option =>
+            {
+                seatFilter = option switch
+                {
+                    "Seats: 1-seater" => MountSeatFilter.Single,
+                    "Seats: Multi" => MountSeatFilter.Multi,
+                    _ => MountSeatFilter.All,
+                };
+                RefreshMountEntries();
+            },
+        };
+        viewRow.AddNode(seatFilterDropDown);
+
+        columnHeader = new ResNode
+        {
+            Position = new Vector2(0.0f, HeaderRowY),
+            Size = new Vector2(600.0f, HeaderButtonHeight),
+        };
+        columnHeader.AttachNode(this);
+
+        nameSortButton = new TextButtonNode
+        {
+            Position = new Vector2(MountEntryItemNode.NameLeft, 0.0f),
+            Size = new Vector2(200.0f, HeaderButtonHeight),
+            String = "Name ▲",
+            OnClick = () => ToggleSort(MountSortMode.Name),
+        };
+        nameSortButton.AttachNode(columnHeader);
+
+        seatsSortButton = new TextButtonNode
+        {
+            Position = new Vector2(320.0f, 0.0f),
+            Size = new Vector2(MountEntryItemNode.SeatsWidth, HeaderButtonHeight),
+            String = "Seats",
+            OnClick = () => ToggleSort(MountSortMode.Seats),
+        };
+        seatsSortButton.AttachNode(columnHeader);
+
         mountsNode = new ListNode<MountEntry, MountEntryItemNode>
         {
-            Position = new Vector2(0.0f, 72.0f),
+            Position = new Vector2(0.0f, MountsListY),
             Size = new Vector2(600.0f, 400.0f),
             ItemSpacing = 1.0f,
             OptionsList = [],
@@ -211,6 +299,7 @@ public class MountListEditorNode : ResNode
 
         confirmationDialog.AttachNode(this);
 
+        UpdateSortHeaderLabels();
         SetEditorVisible(false);
     }
 
@@ -236,9 +325,23 @@ public class MountListEditorNode : ResNode
     {
         base.OnSizeChanged();
 
-        mountsNode.Size = new Vector2(Width, Math.Max(100.0f, Height - 72.0f));
+        mountsNode.Size = new Vector2(Width, Math.Max(100.0f, Height - MountsListY));
         emptyHint.Width = Width;
+        columnHeader.Width = Width;
         confirmationDialog.Size = Size;
+
+        var toggleX = Width - MountEntryItemNode.ToggleWidth - MountEntryItemNode.RightPadding
+            - 16.0f; // list scrollbar inset
+        var seatsX = toggleX - MountEntryItemNode.ColumnGap - MountEntryItemNode.SeatsWidth;
+
+        seatsSortButton.Position = new Vector2(seatsX, 0.0f);
+        seatsSortButton.Size = new Vector2(MountEntryItemNode.SeatsWidth, HeaderButtonHeight);
+
+        nameSortButton.Position = new Vector2(MountEntryItemNode.NameLeft, 0.0f);
+        nameSortButton.Size = new Vector2(
+            Math.Max(40.0f, seatsX - MountEntryItemNode.ColumnGap - MountEntryItemNode.NameLeft),
+            HeaderButtonHeight
+        );
     }
 
     private void SetEditorVisible(bool visible)
@@ -246,6 +349,8 @@ public class MountListEditorNode : ResNode
         emptyHint.IsVisible = !visible;
         settingsRow.IsVisible = visible;
         filterRow.IsVisible = visible;
+        viewRow.IsVisible = visible;
+        columnHeader.IsVisible = visible;
         nameInput.IsVisible = visible;
         typeDropDown.IsVisible = visible;
         fetchTypeDropDown.IsVisible = visible;
@@ -254,7 +359,43 @@ public class MountListEditorNode : ResNode
         searchInput.IsVisible = visible;
         addAllButton.IsVisible = visible;
         removeAllButton.IsVisible = visible;
+        selectionFilterDropDown.IsVisible = visible;
+        seatFilterDropDown.IsVisible = visible;
+        nameSortButton.IsVisible = visible;
+        seatsSortButton.IsVisible = visible;
         mountsNode.IsVisible = visible;
+    }
+
+    private void ToggleSort(MountSortMode mode)
+    {
+        if (sortMode == mode)
+        {
+            sortAscending = !sortAscending;
+        }
+        else
+        {
+            sortMode = mode;
+            sortAscending = true;
+        }
+
+        UpdateSortHeaderLabels();
+        RefreshMountEntries();
+    }
+
+    private void UpdateSortHeaderLabels()
+    {
+        nameSortButton.String = FormatSortLabel("Name", MountSortMode.Name);
+        seatsSortButton.String = FormatSortLabel("Seats", MountSortMode.Seats);
+    }
+
+    private string FormatSortLabel(string label, MountSortMode mode)
+    {
+        if (sortMode != mode)
+        {
+            return label;
+        }
+
+        return sortAscending ? $"{label} ▲" : $"{label} ▼";
     }
 
     private void ConfirmAndDeleteList()
@@ -338,10 +479,52 @@ public class MountListEditorNode : ResNode
             }
 
             var isInList = available.Contains(mountId);
-            entries.Add(new MountEntry(mount, isInList, ToggleMembership));
+            var seatCount = MountManager.GetSeatCount(mount);
+
+            if (selectionFilter == MountSelectionFilter.Selected && !isInList)
+            {
+                continue;
+            }
+
+            if (selectionFilter == MountSelectionFilter.Unselected && isInList)
+            {
+                continue;
+            }
+
+            if (seatFilter == MountSeatFilter.Single && seatCount != 1)
+            {
+                continue;
+            }
+
+            if (seatFilter == MountSeatFilter.Multi && seatCount < 2)
+            {
+                continue;
+            }
+
+            entries.Add(new MountEntry(mount, isInList, seatCount, ToggleMembership));
         }
 
-        mountsNode.OptionsList = entries;
+        mountsNode.OptionsList = SortEntries(entries);
+    }
+
+    private List<MountEntry> SortEntries(List<MountEntry> entries)
+    {
+        IOrderedEnumerable<MountEntry> ordered = sortMode switch
+        {
+            MountSortMode.Seats => sortAscending
+                ? entries.OrderBy(entry => entry.SeatCount)
+                    .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
+                : entries.OrderByDescending(entry => entry.SeatCount)
+                    .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
+            _ => sortAscending
+                ? entries.OrderBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
+                : entries.OrderByDescending(
+                    entry => entry.Mount.Singular.ExtractText(),
+                    StringComparer.CurrentCultureIgnoreCase
+                ),
+        };
+
+        return ordered.ToList();
     }
 
     private void ToggleMembership(MountEntry entry)
