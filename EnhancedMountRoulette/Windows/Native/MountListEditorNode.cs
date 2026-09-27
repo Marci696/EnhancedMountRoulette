@@ -532,7 +532,7 @@ public class MountListEditorNode : ResNode
             return;
         }
 
-        var mountIds = GetFilteredOwnedMountIds();
+        var mountIds = GetFilteredOwnedMountIds(inSummonList: false);
         if (mountIds.Count == 0)
         {
             return;
@@ -556,7 +556,7 @@ public class MountListEditorNode : ResNode
             return;
         }
 
-        var mountIds = GetFilteredOwnedMountIds();
+        var mountIds = GetFilteredOwnedMountIds(inSummonList: true);
         if (mountIds.Count == 0)
         {
             return;
@@ -573,9 +573,9 @@ public class MountListEditorNode : ResNode
         );
     }
 
-    private List<uint> GetFilteredOwnedMountIds() =>
+    private List<uint> GetFilteredOwnedMountIds(bool inSummonList) =>
         GetFilteredMountEntries()
-            .Where(entry => entry.IsOwned)
+            .Where(entry => entry.IsOwned && entry.IsInSummonList == inSummonList)
             .Select(entry => entry.Mount.RowId)
             .ToList();
 
