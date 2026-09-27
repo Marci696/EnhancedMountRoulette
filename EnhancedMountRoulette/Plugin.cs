@@ -1,11 +1,12 @@
-﻿using Dalamud.IoC;
+﻿using System;
+using System.Numerics;
+using System.Threading.Tasks;
+using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
-using EnhancedMountRoulette.Windows;
-using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
 using EnhancedMountRoulette.Commands;
-using EnhancedMountRoulette.Windows.Config;
+using EnhancedMountRoulette.Windows.Native;
+using KamiToolKit;
 
 namespace EnhancedMountRoulette;
 
@@ -53,12 +54,11 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IToastGui ToastGui { get; private set; } = null!;
 
-    public readonly WindowSystem WindowSystem = new("EnhancedMountRoulette");
+    private CommandManager? CommandManager { get; set; }
 
-    private CommandManager CommandManager { get; init; }
+    private ConfigAddon? ConfigAddon { get; set; }
 
-    private ConfigWindow ConfigWindow { get; init; }
-    private MountNotebookContextMenu MountNotebookContextMenu { get; init; }
+    private MountNotebookContextMenu? MountNotebookContextMenu { get; set; }
 
     public Plugin()
     {
@@ -67,29 +67,36 @@ public sealed class Plugin : IDalamudPlugin
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
 
+        _ = InitializeAsync();
+    }
+
+    private async Task InitializeAsync()
+    {
+        await KamiToolKitLibrary.InitializeAsync(PluginInterface, "Enhanced Mount Roulette");
+
+        ConfigAddon = new ConfigAddon
+        {
+            InternalName = "EMRConfig",
+            Title = "Enhanced Mount Roulette",
+            Size = new Vector2(900.0f, 620.0f),
+        };
+
         MountNotebookContextMenu = new MountNotebookContextMenu();
-        ConfigWindow = new ConfigWindow();
-        WindowSystem.AddWindow(ConfigWindow);
+        CommandManager = new CommandManager(ConfigAddon);
 
-        CommandManager = new CommandManager(ConfigWindow);
-
-        PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
     }
 
     public void Dispose()
     {
-        PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
         PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
 
-        WindowSystem.RemoveAllWindows();
+        CommandManager?.Dispose();
+        MountNotebookContextMenu?.Dispose();
+        ConfigAddon?.Dispose();
 
-        ConfigWindow.Dispose();
-
-        MountNotebookContextMenu.Dispose();
-
-        CommandManager.Dispose();
+        KamiToolKitLibrary.Dispose();
     }
 
-    public void ToggleConfigUi() => ConfigWindow.Toggle();
+    public void ToggleConfigUi() => ConfigAddon?.Toggle();
 }

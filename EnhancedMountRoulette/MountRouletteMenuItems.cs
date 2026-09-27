@@ -8,6 +8,7 @@ using Dalamud.Game.Gui.ContextMenu;
 using Dalamud.Game.Text;
 using EnhancedMountRoulette.Configuration;
 using EnhancedMountRoulette.Windows;
+using KamiToolKit.ContextMenu;
 using Lumina.Excel.Sheets;
 
 namespace EnhancedMountRoulette;
@@ -81,6 +82,35 @@ internal static class MountRouletteMenuItems
             }
         }
     }
+
+    public static void ApplyToKamiContextMenu(ContextMenu contextMenu, Mount mount)
+    {
+        foreach (var mountListType in Enum.GetValues<MountListType>())
+        {
+            contextMenu.AddItem(
+                new ContextMenuItem
+                {
+                    Name = GetHeaderLabel(mountListType),
+                    IsEnabled = false,
+                    OnClick = static () => { },
+                    DisplayPriority = mountListType == MountListType.Whitelist ? 100 : 50,
+                }
+            );
+
+            foreach (var mountList in ConfigManager.Instance.GetMountLists(mountListType))
+            {
+                var item = CreateForMountList(mountList, mount);
+                contextMenu.AddItem(
+                    new ContextMenuItem
+                    {
+                        Name = item.Name,
+                        OnClick = item.ToggleMountInList,
+                        DisplayPriority = mountListType == MountListType.Whitelist ? 90 : 40,
+                    }
+                );
+            }
+        }
+    }
 }
 
 internal record MountListMenuItem(
@@ -124,7 +154,7 @@ internal record MountListMenuItem(
     private FontAwesomeIcon GetImGuiIcon() =>
         Prefix == SeIconChar.Cross ? FontAwesomeIcon.Times : FontAwesomeIcon.PlusSquare;
 
-    private void ToggleMountInList()
+    public void ToggleMountInList()
     {
         if (!IsCurrentlyConsideredForSummoning)
         {

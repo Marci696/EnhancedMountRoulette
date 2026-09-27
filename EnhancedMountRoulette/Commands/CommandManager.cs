@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Dalamud.Game.Command;
 using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Config;
+using EnhancedMountRoulette.Windows.Native;
 
 namespace EnhancedMountRoulette.Commands;
 
@@ -11,7 +10,7 @@ internal class CommandManager : IDisposable
 {
     private List<ICommand> Commands { get; }
 
-    public CommandManager(ConfigWindow configWindow)
+    public CommandManager(ConfigAddon configAddon)
     {
         Commands =
         [
@@ -21,8 +20,7 @@ internal class CommandManager : IDisposable
             new ClearMountListCommand(),
             new DeleteMountListCommand(),
             new DeleteAllMountListsCommand(),
-            new OpenSettingsMenu(configWindow),
-            // TODO add command to add and remove currently mounted mount
+            new OpenSettingsMenu(configAddon),
         ];
 
         foreach (var command in Commands)

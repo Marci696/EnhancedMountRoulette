@@ -1,10 +1,9 @@
 ﻿using Dalamud.Game.Command;
-using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Config;
+using EnhancedMountRoulette.Windows.Native;
 
 namespace EnhancedMountRoulette.Commands;
 
-internal class OpenSettingsMenu(ConfigWindow configWindow) : ICommand
+internal class OpenSettingsMenu(ConfigAddon configAddon) : ICommand
 {
     public string Command => "/bmr-settings";
 
@@ -12,6 +11,6 @@ internal class OpenSettingsMenu(ConfigWindow configWindow) : ICommand
 
     private void Handler(string _, string __)
     {
-        configWindow.IsOpen = true;
+        configAddon.Toggle();
     }
 }
