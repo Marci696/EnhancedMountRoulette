@@ -14,9 +14,14 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
     public static Action? OnListsChanged { get; set; }
 
     public const float CheckboxSize = 20.0f;
-    public const float CheckboxLeft = 4.0f;
     public const float CheckboxColumnWidth = 54.0f;
-    public const float TextLeft = CheckboxLeft + CheckboxColumnWidth + 2.0f;
+    public const float TextLeft = 8.0f;
+    public const float TextRightPadding = 4.0f;
+
+    /// <summary>
+    /// Matches ListNode item width: scrollbar (8) + inner padding (8).
+    /// </summary>
+    public const float ListContentRightInset = 16.0f;
 
     private readonly CheckboxNode defaultCheckbox;
     private readonly TextNode nameNode;
@@ -24,27 +29,6 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
 
     public MountListItemNode()
     {
-        defaultCheckbox = new CheckboxNode
-        {
-            Position = new Vector2(
-                CheckboxLeft + (CheckboxColumnWidth - CheckboxSize) / 2.0f,
-                (ItemHeight - CheckboxSize) / 2.0f
-            ),
-            Size = new Vector2(CheckboxSize, CheckboxSize),
-            String = string.Empty,
-            OnClick = isChecked =>
-            {
-                if (ItemData is null)
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.StoreMountList(new MountList(ItemData) { IsDefault = isChecked });
-                OnListsChanged?.Invoke();
-            },
-        };
-        defaultCheckbox.AttachNode(this);
-
         nameNode = new TextNode
         {
             Position = new Vector2(TextLeft, 4.0f),
@@ -66,6 +50,24 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
         };
         metaNode.AttachNode(this);
 
+        defaultCheckbox = new CheckboxNode
+        {
+            Position = new Vector2(200.0f, (ItemHeight - CheckboxSize) / 2.0f),
+            Size = new Vector2(CheckboxSize, CheckboxSize),
+            String = string.Empty,
+            OnClick = isChecked =>
+            {
+                if (ItemData is null)
+                {
+                    return;
+                }
+
+                ConfigManager.Instance.StoreMountList(new MountList(ItemData) { IsDefault = isChecked });
+                OnListsChanged?.Invoke();
+            },
+        };
+        defaultCheckbox.AttachNode(this);
+
         Size = new Vector2(240.0f, ItemHeight);
     }
 
@@ -73,13 +75,13 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
     {
         base.OnSizeChanged();
 
-        defaultCheckbox.Position = new Vector2(
-            CheckboxLeft + (CheckboxColumnWidth - CheckboxSize) / 2.0f,
-            (Height - CheckboxSize) / 2.0f
-        );
+        // CheckboxNode draws its box on the left (~Height-4 wide); center that box in the column.
+        var boxSize = CheckboxSize - 4.0f;
+        var checkboxX = Width - CheckboxColumnWidth + (CheckboxColumnWidth - boxSize) / 2.0f;
+        defaultCheckbox.Position = new Vector2(checkboxX, (Height - CheckboxSize) / 2.0f);
         defaultCheckbox.Size = new Vector2(CheckboxSize, CheckboxSize);
 
-        var textWidth = Math.Max(40.0f, Width - TextLeft - 4.0f);
+        var textWidth = Math.Max(40.0f, Width - TextLeft - CheckboxColumnWidth - TextRightPadding);
         nameNode.Position = new Vector2(TextLeft, 4.0f);
         nameNode.Size = new Vector2(textWidth, 16.0f);
 

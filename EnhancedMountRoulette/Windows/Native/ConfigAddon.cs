@@ -84,9 +84,11 @@ public unsafe class ConfigAddon : NativeAddon
             Size = new Vector2(240.0f, 18.0f),
         };
 
+        var headerContentWidth = 240.0f - MountListItemNode.ListContentRightInset;
+
         var defaultHeader = new TextNode
         {
-            Position = new Vector2(MountListItemNode.CheckboxLeft, 0.0f),
+            Position = new Vector2(headerContentWidth - MountListItemNode.CheckboxColumnWidth, 0.0f),
             Size = new Vector2(MountListItemNode.CheckboxColumnWidth, 18.0f),
             FontSize = 11,
             LineSpacing = 11,
@@ -99,7 +101,10 @@ public unsafe class ConfigAddon : NativeAddon
         var nameHeader = new TextNode
         {
             Position = new Vector2(MountListItemNode.TextLeft, 0.0f),
-            Size = new Vector2(200.0f, 18.0f),
+            Size = new Vector2(
+                headerContentWidth - MountListItemNode.TextLeft - MountListItemNode.CheckboxColumnWidth - 4.0f,
+                18.0f
+            ),
             FontSize = 11,
             LineSpacing = 11,
             AlignmentType = AlignmentType.Left,
