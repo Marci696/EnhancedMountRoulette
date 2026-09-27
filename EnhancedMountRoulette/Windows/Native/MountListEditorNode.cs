@@ -539,7 +539,7 @@ public class MountListEditorNode : ResNode
         }
 
         confirmationDialog.Show(
-            $"Add {mountIds.Count} filtered owned mount(s) to \"{list.Name}\"?",
+            $"Add {mountIds.Count} filtered owned {(mountIds.Count == 1 ? "mount" : "mounts")} to \"{list.Name}\"?",
             () =>
             {
                 ConfigManager.Instance.ConsiderAllMountsForSummoning(list, mountIds);
@@ -563,7 +563,7 @@ public class MountListEditorNode : ResNode
         }
 
         confirmationDialog.Show(
-            $"Remove {mountIds.Count} filtered owned mount(s) from \"{list.Name}\"?",
+            $"Remove {mountIds.Count} filtered owned {(mountIds.Count == 1 ? "mount" : "mounts")} from \"{list.Name}\"?",
             () =>
             {
                 ConfigManager.Instance.OverlookAllMountsForSummoning(list, mountIds);
