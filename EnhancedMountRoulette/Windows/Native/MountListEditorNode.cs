@@ -125,6 +125,7 @@ public class MountListEditorNode : ResNode
             String = "Delete",
             OnClick = ConfirmAndDeleteList,
         };
+        NativeButtonStyles.StyleAsRemove(deleteButton);
         settingsRow.AddNode(deleteButton);
 
         copyMacroButton = new TextButtonNode
@@ -277,6 +278,7 @@ public class MountListEditorNode : ResNode
                 RefreshMountEntries();
             },
         };
+        NativeButtonStyles.StyleAsAdd(addAllButton);
         actionsRow.AddNode(addAllButton);
 
         removeAllButton = new TextButtonNode
@@ -295,6 +297,7 @@ public class MountListEditorNode : ResNode
                 RefreshMountEntries();
             },
         };
+        NativeButtonStyles.StyleAsRemove(removeAllButton);
         actionsRow.AddNode(removeAllButton);
 
         emptyHint = new TextNode

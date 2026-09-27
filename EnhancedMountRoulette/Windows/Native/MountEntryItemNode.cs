@@ -70,6 +70,7 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
                 }
             },
         };
+        NativeButtonStyles.StyleAsAdd(toggleButton);
         toggleButton.AttachNode(this);
 
         Size = new Vector2(480.0f, ItemHeight);
@@ -115,5 +116,13 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         seatsNode.TextColor = nameNode.TextColor;
 
         toggleButton.String = itemData.IsInSummonList ? "Remove" : "Add";
+        if (itemData.IsInSummonList)
+        {
+            NativeButtonStyles.StyleAsRemove(toggleButton);
+        }
+        else
+        {
+            NativeButtonStyles.StyleAsAdd(toggleButton);
+        }
     }
 }

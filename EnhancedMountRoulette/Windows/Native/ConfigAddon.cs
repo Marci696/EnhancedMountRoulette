@@ -57,6 +57,7 @@ public unsafe class ConfigAddon : NativeAddon
                 RefreshMountLists();
             },
         };
+        NativeButtonStyles.StyleAsAdd(addWhitelist);
 
         var addBlacklist = new TextButtonNode
         {
@@ -74,6 +75,7 @@ public unsafe class ConfigAddon : NativeAddon
                 RefreshMountLists();
             },
         };
+        NativeButtonStyles.StyleAsAdd(addBlacklist);
 
         addButtons.AddNode(addWhitelist);
         addButtons.AddNode(addBlacklist);
