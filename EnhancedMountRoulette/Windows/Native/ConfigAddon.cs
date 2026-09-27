@@ -11,12 +11,18 @@ namespace EnhancedMountRoulette.Windows.Native;
 public unsafe class ConfigAddon : NativeAddon
 {
     private const float LeftColumnWidth = 240.0f;
+    private const float OwnershipProgressWidth = LeftColumnWidth * 4.0f / 3.0f;
     private const float ColumnDividerWidth = 4.0f;
     private const float ColumnSpacing = 16.0f;
+    private const float MainLayoutSpacing = 6.0f;
+    private const float FooterLineHeight = 4.0f;
+    private const float LeftChromeHeight = 28.0f + 18.0f + (MainLayoutSpacing * 2.0f);
 
-    private HorizontalListNode? rootLayout;
+    private VerticalListNode? mainLayout;
+    private HorizontalListNode? columnsLayout;
     private VerticalListNode? leftColumn;
     private VerticalLineNode? columnDivider;
+    private HorizontalLineNode? footerDivider;
     private ListNode<MountList, MountListItemNode>? mountListNode;
     private OwnedMountsProgressNode? ownershipProgressNode;
     private MountListEditorNode? editorNode;
@@ -25,21 +31,34 @@ public unsafe class ConfigAddon : NativeAddon
 
     protected override void OnSetup(AtkUnitBase* addon, Span<AtkValue> atkValueSpan)
     {
-        rootLayout = new HorizontalListNode
+        mainLayout = new VerticalListNode
         {
             Position = ContentStartPosition,
             Size = ContentSize,
+            ItemSpacing = MainLayoutSpacing,
+            FitWidth = false,
+        };
+        mainLayout.AttachNode(this);
+
+        var columnsHeight = ContentSize.Y
+            - FooterLineHeight
+            - OwnedMountsProgressNode.PreferredHeight
+            - (MainLayoutSpacing * 2.0f);
+
+        columnsLayout = new HorizontalListNode
+        {
+            Size = new Vector2(ContentSize.X, columnsHeight),
             ItemSpacing = ColumnSpacing,
         };
-        rootLayout.AttachNode(this);
+        mainLayout.AddNode(columnsLayout);
 
         leftColumn = new VerticalListNode
         {
-            Size = new Vector2(LeftColumnWidth, ContentSize.Y),
-            ItemSpacing = 6.0f,
+            Size = new Vector2(LeftColumnWidth, columnsHeight),
+            ItemSpacing = MainLayoutSpacing,
             FitWidth = true,
         };
-        rootLayout.AddNode(leftColumn);
+        columnsLayout.AddNode(leftColumn);
 
         var addButtons = new HorizontalListNode
         {
@@ -125,10 +144,9 @@ public unsafe class ConfigAddon : NativeAddon
 
         MountListItemNode.OnListsChanged = RefreshMountLists;
 
-        // Buttons (28) + list header (18) + progress header+bar (36) + three spacings (18) ≈ 100.
         mountListNode = new ListNode<MountList, MountListItemNode>
         {
-            Size = new Vector2(LeftColumnWidth, ContentSize.Y - 100.0f),
+            Size = new Vector2(LeftColumnWidth, Math.Max(80.0f, columnsHeight - LeftChromeHeight)),
             ItemSpacing = 2.0f,
             OptionsList = ConfigManager.Instance.OrderedMountList,
             OnItemSelected = OnMountListSelected,
@@ -136,31 +154,37 @@ public unsafe class ConfigAddon : NativeAddon
         };
         leftColumn.AddNode(mountListNode);
 
-        ownershipProgressNode = new OwnedMountsProgressNode
-        {
-            Size = new Vector2(LeftColumnWidth, OwnedMountsProgressNode.PreferredHeight),
-        };
-        leftColumn.AddNode(ownershipProgressNode);
-        ownershipProgressNode.Refresh();
-
         editorNode = new MountListEditorNode
         {
-            Size = new Vector2(ContentSize.X - LeftColumnWidth - ColumnSpacing, ContentSize.Y),
+            Size = new Vector2(ContentSize.X - LeftColumnWidth - ColumnSpacing, columnsHeight),
             OnListsChanged = RefreshMountLists,
             GetOwnerAddonId = () => (uint)AddonId,
         };
-        rootLayout.AddNode(editorNode);
+        columnsLayout.AddNode(editorNode);
 
         // Overlay only — VerticalLineNode.Size bypasses Width/Height overrides and would
         // report ContentSize.Y as layout width if added to the horizontal list.
         columnDivider = new VerticalLineNode();
         columnDivider.Width = ColumnDividerWidth;
-        columnDivider.Height = ContentSize.Y;
+        columnDivider.Height = columnsHeight;
         columnDivider.Position = new Vector2(
             LeftColumnWidth + (ColumnSpacing - ColumnDividerWidth) / 2.0f,
             0.0f
         );
-        columnDivider.AttachNode(rootLayout);
+        columnDivider.AttachNode(columnsLayout);
+
+        footerDivider = new HorizontalLineNode
+        {
+            Size = new Vector2(ContentSize.X, FooterLineHeight),
+        };
+        mainLayout.AddNode(footerDivider);
+
+        ownershipProgressNode = new OwnedMountsProgressNode
+        {
+            Size = new Vector2(OwnershipProgressWidth, OwnedMountsProgressNode.PreferredHeight),
+        };
+        mainLayout.AddNode(ownershipProgressNode);
+        ownershipProgressNode.Refresh();
 
         if (ConfigManager.Instance.OrderedMountList.FirstOrDefault() is { } first)
         {

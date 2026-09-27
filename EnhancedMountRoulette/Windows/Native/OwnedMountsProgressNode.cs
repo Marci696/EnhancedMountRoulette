@@ -9,12 +9,14 @@ namespace EnhancedMountRoulette.Windows.Native;
 
 /// <summary>
 /// Owned/total mount progress with a native Parameter_Gauge frame and a solid fill.
+/// Label sits to the left of the bar for use as a full-width footer.
 /// </summary>
 public class OwnedMountsProgressNode : ResNode
 {
-    public const float HeaderHeight = 16.0f;
     public const float BarHeight = 20.0f;
-    public const float PreferredHeight = HeaderHeight + BarHeight;
+    public const float PreferredHeight = BarHeight;
+    private const float LabelWidth = 110.0f;
+    private const float LabelGap = 8.0f;
 
     private const float FillInsetX = 6.0f;
     private const float FillInsetY = 4.0f;
@@ -36,17 +38,18 @@ public class OwnedMountsProgressNode : ResNode
         headerNode = new TextNode
         {
             Position = Vector2.Zero,
-            FontSize = 11,
-            LineSpacing = 11,
+            Size = new Vector2(LabelWidth, BarHeight),
+            FontSize = 12,
+            LineSpacing = 12,
             AlignmentType = AlignmentType.Left,
             TextColor = HeaderColor,
-            String = "Owned mounts",
+            String = "Owned mounts:",
         };
         headerNode.AttachNode(this);
 
         backgroundNode = new SimpleNineGridNode
         {
-            Position = new Vector2(0.0f, HeaderHeight),
+            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
             TexturePath = "ui/uld/Parameter_Gauge.tex",
             TextureSize = new Vector2(160.0f, 20.0f),
             TextureCoordinates = new Vector2(0.0f, 100.0f),
@@ -59,7 +62,7 @@ public class OwnedMountsProgressNode : ResNode
         // AtkEventManager.ClearEvents crashes during addon finalization.
         fillNode = new SimpleNineGridNode
         {
-            Position = new Vector2(FillInsetX, HeaderHeight + FillInsetY),
+            Position = new Vector2(LabelWidth + LabelGap + FillInsetX, FillInsetY),
             TexturePath = "ui/uld/PartyList_GaugeCast.tex",
             TextureSize = new Vector2(188.0f, 7.0f),
             TextureCoordinates = new Vector2(8.0f, 3.0f),
@@ -73,7 +76,7 @@ public class OwnedMountsProgressNode : ResNode
 
         borderNode = new SimpleNineGridNode
         {
-            Position = new Vector2(0.0f, HeaderHeight),
+            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
             TexturePath = "ui/uld/Parameter_Gauge.tex",
             TextureSize = new Vector2(160.0f, 20.0f),
             TextureCoordinates = new Vector2(0.0f, 0.0f),
@@ -84,7 +87,7 @@ public class OwnedMountsProgressNode : ResNode
 
         labelNode = new TextNode
         {
-            Position = new Vector2(0.0f, HeaderHeight),
+            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
             FontSize = 11,
             LineSpacing = 11,
             AlignmentType = AlignmentType.Center,
@@ -113,15 +116,19 @@ public class OwnedMountsProgressNode : ResNode
         );
     }
 
+    private float BarLeft => LabelWidth + LabelGap;
+
+    private float BarWidth => Math.Max(0.0f, Width - BarLeft);
+
     private void ApplyFill()
     {
-        var maxFillWidth = Math.Max(0.0f, Width - (FillInsetX * 2.0f));
+        var maxFillWidth = Math.Max(0.0f, BarWidth - (FillInsetX * 2.0f));
         var fillHeight = Math.Max(0.0f, BarHeight - (FillInsetY * 2.0f));
         var fraction = lastTotal > 0
             ? Math.Clamp(lastOwned / (float)lastTotal, 0.0f, 1.0f)
             : 0.0f;
 
-        fillNode.Position = new Vector2(FillInsetX, HeaderHeight + FillInsetY);
+        fillNode.Position = new Vector2(BarLeft + FillInsetX, FillInsetY);
         fillNode.Height = fillHeight;
         fillNode.Width = maxFillWidth * fraction;
         fillNode.IsVisible = fillNode.Width > 0.5f;
@@ -131,14 +138,14 @@ public class OwnedMountsProgressNode : ResNode
     {
         base.OnSizeChanged();
 
-        headerNode.Size = new Vector2(Width, HeaderHeight);
+        headerNode.Size = new Vector2(LabelWidth, Height);
 
-        var barSize = new Vector2(Width, BarHeight);
-        backgroundNode.Position = new Vector2(0.0f, HeaderHeight);
+        var barSize = new Vector2(BarWidth, Height);
+        backgroundNode.Position = new Vector2(BarLeft, 0.0f);
         backgroundNode.Size = barSize;
-        borderNode.Position = new Vector2(0.0f, HeaderHeight);
+        borderNode.Position = new Vector2(BarLeft, 0.0f);
         borderNode.Size = barSize;
-        labelNode.Position = new Vector2(0.0f, HeaderHeight);
+        labelNode.Position = new Vector2(BarLeft, 0.0f);
         labelNode.Size = barSize;
 
         ApplyFill();
