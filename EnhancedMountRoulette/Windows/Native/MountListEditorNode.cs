@@ -261,7 +261,7 @@ public class MountListEditorNode : ResNode
         {
             Position = new Vector2(0.0f, MountsListY),
             Size = new Vector2(600.0f, 400.0f),
-            ItemSpacing = -MountEntryItemNode.SeparatorHeight,
+            ItemSpacing = 0.0f,
             OptionsList = [],
             AutoResetScroll = false,
             OnItemSelected = entry =>
@@ -569,7 +569,13 @@ public class MountListEditorNode : ResNode
             );
         }
 
-        mountsNode.OptionsList = SortEntries(entries);
+        var sorted = SortEntries(entries);
+        for (var i = 0; i < sorted.Count; i++)
+        {
+            sorted[i] = sorted[i] with { RowIndex = i };
+        }
+
+        mountsNode.OptionsList = sorted;
     }
 
     private List<MountEntry> SortEntries(List<MountEntry> entries)

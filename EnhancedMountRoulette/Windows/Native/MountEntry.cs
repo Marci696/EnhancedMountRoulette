@@ -10,5 +10,6 @@ public sealed record MountEntry(
     string OwnedDisplay,
     float? OwnedPercent,
     string? Patch,
-    Action<MountEntry> ToggleMembership
+    Action<MountEntry> ToggleMembership,
+    int RowIndex = 0
 );

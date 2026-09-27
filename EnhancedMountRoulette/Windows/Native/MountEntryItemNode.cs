@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Numerics;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
+using KamiToolKit.Enums;
 using KamiToolKit.Interfaces;
 using KamiToolKit.Nodes;
 
@@ -10,10 +11,7 @@ namespace EnhancedMountRoulette.Windows.Native;
 
 public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 {
-    public const float SeparatorHeight = 4.0f;
-    private const float ContentHeight = 26.0f;
-
-    public static float ItemHeight => SeparatorHeight + ContentHeight + SeparatorHeight;
+    public static float ItemHeight => 28.0f;
 
     public const float IconSize = 24.0f;
     public const float IconLeft = 6.0f;
@@ -26,27 +24,30 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
     public const float RightPadding = 4.0f;
     public const float ColumnGap = 6.0f;
 
+    private static readonly Vector4 OddRowBackground = new(1.0f, 1.0f, 1.0f, 0.08f);
+
+    private readonly ColorImageNode stripeNode;
     private readonly IconImageNode iconNode;
     private readonly TextNode nameNode;
     private readonly TextNode ownedNode;
     private readonly TextNode patchNode;
     private readonly TextNode seatsNode;
     private readonly TextButtonNode toggleButton;
-    private readonly HorizontalLineNode topSeparator;
-    private readonly HorizontalLineNode bottomSeparator;
 
     public MountEntryItemNode()
     {
-        topSeparator = new HorizontalLineNode
+        stripeNode = new ColorImageNode
         {
             Position = Vector2.Zero,
-            Size = new Vector2(480.0f, SeparatorHeight),
+            Size = new Vector2(480.0f, ItemHeight),
+            Color = OddRowBackground,
+            IsVisible = false,
         };
-        topSeparator.AttachNode(this);
+        stripeNode.AttachNode(this, NodePosition.AsFirstChild);
 
         iconNode = new IconImageNode
         {
-            Position = new Vector2(IconLeft, SeparatorHeight + (ContentHeight - IconSize) / 2.0f),
+            Position = new Vector2(IconLeft, (ItemHeight - IconSize) / 2.0f),
             Size = new Vector2(IconSize, IconSize),
             TextureSize = new Vector2(IconSize, IconSize),
             FitTexture = true,
@@ -55,8 +56,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         nameNode = new TextNode
         {
-            Position = new Vector2(NameLeft, SeparatorHeight),
-            Size = new Vector2(200.0f, ContentHeight),
+            Position = new Vector2(NameLeft, 0.0f),
+            Size = new Vector2(200.0f, ItemHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Left,
@@ -65,8 +66,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         ownedNode = new TextNode
         {
-            Position = new Vector2(220.0f, SeparatorHeight),
-            Size = new Vector2(OwnedWidth, ContentHeight),
+            Position = new Vector2(220.0f, 0.0f),
+            Size = new Vector2(OwnedWidth, ItemHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Center,
@@ -75,8 +76,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         patchNode = new TextNode
         {
-            Position = new Vector2(280.0f, SeparatorHeight),
-            Size = new Vector2(PatchWidth, ContentHeight),
+            Position = new Vector2(280.0f, 0.0f),
+            Size = new Vector2(PatchWidth, ItemHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Center,
@@ -85,8 +86,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         seatsNode = new TextNode
         {
-            Position = new Vector2(320.0f, SeparatorHeight),
-            Size = new Vector2(SeatsWidth, ContentHeight),
+            Position = new Vector2(320.0f, 0.0f),
+            Size = new Vector2(SeatsWidth, ItemHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Center,
@@ -95,7 +96,7 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         toggleButton = new TextButtonNode
         {
-            Position = new Vector2(400.0f, SeparatorHeight + (ContentHeight - 24.0f) / 2.0f),
+            Position = new Vector2(400.0f, (ItemHeight - 24.0f) / 2.0f),
             Size = new Vector2(ToggleWidth, 24.0f),
             String = "Add",
             OnClick = () =>
@@ -109,13 +110,6 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         NativeButtonStyles.StyleAsAdd(toggleButton);
         toggleButton.AttachNode(this);
 
-        bottomSeparator = new HorizontalLineNode
-        {
-            Position = new Vector2(0.0f, ItemHeight - SeparatorHeight),
-            Size = new Vector2(480.0f, SeparatorHeight),
-        };
-        bottomSeparator.AttachNode(this);
-
         Size = new Vector2(480.0f, ItemHeight);
     }
 
@@ -123,48 +117,44 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
     {
         base.OnSizeChanged();
 
-        var contentHeight = Math.Max(1.0f, Height - (SeparatorHeight * 2.0f));
+        stripeNode.Size = Size;
 
-        topSeparator.Position = Vector2.Zero;
-        topSeparator.Size = new Vector2(Width, SeparatorHeight);
-
-        bottomSeparator.Position = new Vector2(0.0f, Height - SeparatorHeight);
-        bottomSeparator.Size = new Vector2(Width, SeparatorHeight);
-
-        iconNode.Position = new Vector2(IconLeft, SeparatorHeight + (contentHeight - IconSize) / 2.0f);
+        iconNode.Position = new Vector2(IconLeft, (Height - IconSize) / 2.0f);
 
         toggleButton.Position = new Vector2(
             Width - ToggleWidth - RightPadding,
-            SeparatorHeight + (contentHeight - toggleButton.Height) / 2.0f
+            (Height - toggleButton.Height) / 2.0f
         );
 
         seatsNode.Position = new Vector2(
             toggleButton.X - ColumnGap - SeatsWidth,
-            SeparatorHeight
+            0.0f
         );
-        seatsNode.Size = new Vector2(SeatsWidth, contentHeight);
+        seatsNode.Size = new Vector2(SeatsWidth, Height);
 
         patchNode.Position = new Vector2(
             seatsNode.X - ColumnGap - PatchWidth,
-            SeparatorHeight
+            0.0f
         );
-        patchNode.Size = new Vector2(PatchWidth, contentHeight);
+        patchNode.Size = new Vector2(PatchWidth, Height);
 
         ownedNode.Position = new Vector2(
             patchNode.X - ColumnGap - OwnedWidth,
-            SeparatorHeight
+            0.0f
         );
-        ownedNode.Size = new Vector2(OwnedWidth, contentHeight);
+        ownedNode.Size = new Vector2(OwnedWidth, Height);
 
-        nameNode.Position = new Vector2(NameLeft, SeparatorHeight);
+        nameNode.Position = new Vector2(NameLeft, 0.0f);
         nameNode.Size = new Vector2(
             Math.Max(40.0f, ownedNode.X - ColumnGap - NameLeft),
-            contentHeight
+            Height
         );
     }
 
     protected override void SetNodeData(MountEntry itemData)
     {
+        stripeNode.IsVisible = itemData.RowIndex % 2 == 1;
+
         iconNode.IconId = itemData.Mount.Icon;
         iconNode.Alpha = itemData.IsInSummonList ? 1.0f : 0.35f;
 
