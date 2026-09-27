@@ -31,10 +31,18 @@ public class MountListEditorNode : ResNode
     private readonly HorizontalListNode settingsRow;
     private readonly HorizontalListNode filterRow;
 
+    private readonly ConfirmationDialogNode confirmationDialog;
+
     private readonly ContextMenu mountContextMenu = new();
 
     public MountListEditorNode()
     {
+        confirmationDialog = new ConfirmationDialogNode
+        {
+            Position = Vector2.Zero,
+            Size = new Vector2(600.0f, 400.0f),
+        };
+
         settingsRow = new HorizontalListNode
         {
             Position = new Vector2(0.0f, 0.0f),
@@ -45,7 +53,7 @@ public class MountListEditorNode : ResNode
 
         nameInput = new TextInputNode
         {
-            Size = new Vector2(180.0f, 28.0f),
+            Size = new Vector2(160.0f, 28.0f),
             PlaceholderString = "List name",
             MaxCharacters = 50,
             OnInputComplete = value => RenameList(value.ToString()),
@@ -55,7 +63,7 @@ public class MountListEditorNode : ResNode
 
         typeDropDown = new StringDropDownNode
         {
-            Size = new Vector2(120.0f, 28.0f),
+            Size = new Vector2(110.0f, 28.0f),
             Options = Enum.GetNames<MountListType>().ToList(),
             OnOptionSelected = option =>
             {
@@ -73,7 +81,7 @@ public class MountListEditorNode : ResNode
 
         fetchTypeDropDown = new StringDropDownNode
         {
-            Size = new Vector2(120.0f, 28.0f),
+            Size = new Vector2(150.0f, 28.0f),
             Options = Enum.GetNames<FetchNextType>().ToList(),
             OnOptionSelected = option =>
             {
@@ -93,17 +101,7 @@ public class MountListEditorNode : ResNode
         {
             Size = new Vector2(70.0f, 28.0f),
             String = "Delete",
-            OnClick = () =>
-            {
-                if (boundList is null)
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.RemoveMountList(boundList);
-                boundList = null;
-                OnListsChanged?.Invoke();
-            },
+            OnClick = ConfirmAndDeleteList,
         };
         settingsRow.AddNode(deleteButton);
 
@@ -211,6 +209,8 @@ public class MountListEditorNode : ResNode
         };
         emptyHint.AttachNode(this);
 
+        confirmationDialog.AttachNode(this);
+
         SetEditorVisible(false);
     }
 
@@ -223,6 +223,7 @@ public class MountListEditorNode : ResNode
         typeDropDown.SelectedOption = mountList.Type.ToString();
         fetchTypeDropDown.SelectedOption = mountList.FetchNextType.ToString();
 
+        confirmationDialog.Hide();
         RefreshMountEntries();
     }
 
@@ -237,6 +238,7 @@ public class MountListEditorNode : ResNode
 
         mountsNode.Size = new Vector2(Width, Math.Max(100.0f, Height - 72.0f));
         emptyHint.Width = Width;
+        confirmationDialog.Size = Size;
     }
 
     private void SetEditorVisible(bool visible)
@@ -253,6 +255,25 @@ public class MountListEditorNode : ResNode
         addAllButton.IsVisible = visible;
         removeAllButton.IsVisible = visible;
         mountsNode.IsVisible = visible;
+    }
+
+    private void ConfirmAndDeleteList()
+    {
+        if (boundList is not { } listToDelete)
+        {
+            return;
+        }
+
+        confirmationDialog.Show(
+            $"Are you sure you want to delete your list \"{listToDelete.Name}\"?",
+            () =>
+            {
+                ConfigManager.Instance.RemoveMountList(listToDelete);
+                boundList = null;
+                SetEditorVisible(false);
+                OnListsChanged?.Invoke();
+            }
+        );
     }
 
     private void RenameList(string newName)
