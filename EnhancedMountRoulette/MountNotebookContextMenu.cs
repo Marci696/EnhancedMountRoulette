@@ -18,6 +18,11 @@ public class MountNotebookContextMenu : IDisposable
 
     private void OnContextMenuOpened(IMenuOpenedArgs args)
     {
+        if (MountRouletteMenuItems.SuppressNativeMountMenuInjection)
+        {
+            return;
+        }
+
         if (args.AddonName != "MountNoteBook")
         {
             return;

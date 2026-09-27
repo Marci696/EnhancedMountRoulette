@@ -10,11 +10,19 @@ using EnhancedMountRoulette.Configuration;
 using EnhancedMountRoulette.Windows;
 using KamiToolKit.ContextMenu;
 using Lumina.Excel.Sheets;
+using Lumina.Text;
+using Lumina.Text.ReadOnly;
 
 namespace EnhancedMountRoulette;
 
 internal static class MountRouletteMenuItems
 {
+    /// <summary>
+    /// When true, skip injecting into Dalamud's native context menu.
+    /// KamiToolKit menus also open AgentContext and would otherwise get duplicated entries.
+    /// </summary>
+    public static bool SuppressNativeMountMenuInjection { get; set; }
+
     public static string GetHeaderLabel(MountListType mountListType) =>
         mountListType == MountListType.Whitelist
             ? "---- Roulette WhiteLists: ----"
@@ -90,10 +98,15 @@ internal static class MountRouletteMenuItems
             contextMenu.AddItem(
                 new ContextMenuItem
                 {
-                    Name = GetHeaderLabel(mountListType),
+                    Name = MountListMenuItem.FormatKamiMenuName(
+                        SeIconChar.BoxedLetterR,
+                        color: null,
+                        GetHeaderLabel(mountListType)
+                    ),
                     IsEnabled = false,
                     OnClick = static () => { },
-                    DisplayPriority = mountListType == MountListType.Whitelist ? 100 : 50,
+                    // KamiToolKit orders ascending; keep Summon/Favorites above these.
+                    DisplayPriority = mountListType == MountListType.Whitelist ? 30 : 50,
                 }
             );
 
@@ -103,9 +116,9 @@ internal static class MountRouletteMenuItems
                 contextMenu.AddItem(
                     new ContextMenuItem
                     {
-                        Name = item.Name,
+                        Name = item.ToKamiMenuName(),
                         OnClick = item.ToggleMountInList,
-                        DisplayPriority = mountListType == MountListType.Whitelist ? 90 : 40,
+                        DisplayPriority = mountListType == MountListType.Whitelist ? 31 : 51,
                     }
                 );
             }
@@ -132,6 +145,27 @@ internal record MountListMenuItem(
             PrefixColor = (ushort)PrefixColor,
             OnClicked = (_) => ToggleMountInList(),
         };
+
+    public ReadOnlySeString ToKamiMenuName() =>
+        FormatKamiMenuName(Prefix, (ushort)PrefixColor, Name);
+
+    public static ReadOnlySeString FormatKamiMenuName(SeIconChar icon, ushort? color, string name)
+    {
+        var builder = new SeStringBuilder();
+        if (color is { } colorType)
+        {
+            builder.PushColorType(colorType);
+        }
+
+        builder.Append(icon.ToIconChar());
+
+        if (color is not null)
+        {
+            builder.PopColorType();
+        }
+
+        return builder.Append(' ').Append(name).ToReadOnlySeString();
+    }
 
     public void DrawImGuiSelectable()
     {

@@ -648,15 +648,34 @@ public class MountListEditorNode : ResNode
     {
         mountContextMenu.Clear();
 
-        mountContextMenu.AddItem("Summon", () => MountManager.SummonMount(mount));
+        mountContextMenu.AddItem(
+            new ContextMenuItem
+            {
+                Name = "Summon",
+                OnClick = () => MountManager.SummonMount(mount),
+                DisplayPriority = 10,
+            }
+        );
 
         var isFavorite = MountManager.IsMountFavorite(mount);
         mountContextMenu.AddItem(
-            isFavorite ? "Remove from Favorites" : "Add to Favorites",
-            () => MountManager.ToggleMountFavorite(mount)
+            new ContextMenuItem
+            {
+                Name = isFavorite ? "Remove from Favorites" : "Add to Favorites",
+                OnClick = () => MountManager.ToggleMountFavorite(mount),
+                DisplayPriority = 20,
+            }
         );
 
         MountRouletteMenuItems.ApplyToKamiContextMenu(mountContextMenu, mount);
-        mountContextMenu.Open();
+        try
+        {
+            MountRouletteMenuItems.SuppressNativeMountMenuInjection = true;
+            mountContextMenu.Open();
+        }
+        finally
+        {
+            MountRouletteMenuItems.SuppressNativeMountMenuInjection = false;
+        }
     }
 }
