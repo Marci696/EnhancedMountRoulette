@@ -175,7 +175,6 @@ public class MountListEditorNode : ResNode
         {
             Size = new Vector2(145.0f, 28.0f),
             PlaceholderString = "Search mounts...",
-            MaxCharacters = 50,
             OnInputReceived = value =>
             {
                 mountFilter = value.ToString();
