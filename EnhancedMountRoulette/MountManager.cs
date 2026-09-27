@@ -9,6 +9,7 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using FFXIVClientStructs.FFXIV.Client.Game.UI;
 using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
+using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using InteropGenerator.Runtime;
 using Lumina.Excel;
 using Lumina.Excel.Sheets;
@@ -69,9 +70,42 @@ public static class MountManager
 
     public static unsafe Mount? GetSelectedMountInMountGuide()
     {
-        var mountId = AgentMountNoteBook->CurrentSelection->Id;
+        if (AgentMountNoteBook->CurrentSelection == null)
+        {
+            return null;
+        }
 
-        return GetMount(mountId);
+        return GetMount(AgentMountNoteBook->CurrentSelection->Id);
+    }
+
+    public static unsafe bool IsMountFavorite(Mount mount)
+    {
+        var mountListModule = MountListModule.Instance();
+        if (mountListModule == null)
+        {
+            return false;
+        }
+
+        return mountListModule->IsFavorite((ushort)mount.Order);
+    }
+
+    public static unsafe void ToggleMountFavorite(Mount mount)
+    {
+        var mountListModule = MountListModule.Instance();
+        if (mountListModule == null)
+        {
+            return;
+        }
+
+        var orderId = (ushort)mount.Order;
+        if (mountListModule->IsFavorite(orderId))
+        {
+            mountListModule->RemoveFromFavorites(orderId);
+        }
+        else
+        {
+            mountListModule->AddToFavorites(orderId);
+        }
     }
 
 

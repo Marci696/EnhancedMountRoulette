@@ -33,10 +33,15 @@ public class MountNotebookContextMenu : IDisposable
 
         Plugin.Log.Debug($"Selected mount {selectedMount.RowId} {selectedMount.Singular.ExtractText()}");
 
+        AddRouletteMenuItems(args, selectedMount);
+    }
+
+    private void AddRouletteMenuItems(IMenuOpenedArgs args, Mount mount)
+    {
         foreach (var mountListType in Enum.GetValues<MountListType>())
         {
             args.AddMenuItem(
-                new MenuItem()
+                new MenuItem
                 {
                     Name = mountListType == MountListType.Whitelist
                         ? "---- Roulette WhiteLists: ----"
@@ -48,7 +53,7 @@ public class MountNotebookContextMenu : IDisposable
 
             foreach (var mountList in ConfigManager.Instance.GetMountLists(mountListType))
             {
-                args.AddMenuItem(MountListToMenuItem(mountList, selectedMount));
+                args.AddMenuItem(MountListToMenuItem(mountList, mount));
             }
         }
     }
@@ -76,7 +81,7 @@ public class MountNotebookContextMenu : IDisposable
             prefixColor = ColorMap.Green;
         }
 
-        return new MenuItem()
+        return new MenuItem
         {
             Name = $"{namePrefix} {mountList.Name}",
             IsEnabled = true,

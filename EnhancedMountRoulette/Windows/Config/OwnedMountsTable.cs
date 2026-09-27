@@ -212,11 +212,68 @@ public class OwnedMountsTable(MountList mountList)
 
         var scale = ImGui.GetIO().FontGlobalScale;
 
-        ImGui.Image(
-            texture.Handle,
-            size: new Vector2(20, 20) * new Vector2(scale, scale),
-            tintCol: colors.MountIconTint
-        );
+        using (ImRaii.PushId((int)mount.RowId))
+        {
+            ImGui.Image(
+                texture.Handle,
+                size: new Vector2(20, 20) * new Vector2(scale, scale),
+                tintCol: colors.MountIconTint
+            );
+
+            DrawMountContextMenu(mount);
+        }
+    }
+
+    private static void DrawMountContextMenu(Mount mount)
+    {
+        if (!ImGui.BeginPopupContextItem("##mountCtx"))
+        {
+            return;
+        }
+
+        if (ImGui.Selectable("Summon"))
+        {
+            MountManager.SummonMount(mount);
+        }
+
+        var isFavorite = MountManager.IsMountFavorite(mount);
+        if (ImGui.Selectable(isFavorite ? "Remove from Favorites" : "Add to Favorites"))
+        {
+            MountManager.ToggleMountFavorite(mount);
+        }
+
+        foreach (var mountListType in Enum.GetValues<MountListType>())
+        {
+            ImGui.Separator();
+            ImGui.TextDisabled(
+                mountListType == MountListType.Whitelist
+                    ? "Roulette WhiteLists"
+                    : "Roulette BlackLists"
+            );
+
+            foreach (var list in ConfigManager.Instance.GetMountLists(mountListType))
+            {
+                var isInList = MountManager.GetAvailableMountsFromListForSummoning(list)
+                    .Contains(mount.RowId);
+                var label = isInList ? $"Ignore in {list.Name}" : $"Summon in {list.Name}";
+
+                if (!ImGui.Selectable(label))
+                {
+                    continue;
+                }
+
+                if (isInList)
+                {
+                    ConfigManager.Instance.OverlookMountFromSummoning(list, mount);
+                }
+                else
+                {
+                    ConfigManager.Instance.ConsiderMountForSummoning(list, mount);
+                }
+            }
+        }
+
+        ImGui.EndPopup();
     }
 
     private record ColorsForInList(Vector4? NameText, Vector4 MountIconTint);
