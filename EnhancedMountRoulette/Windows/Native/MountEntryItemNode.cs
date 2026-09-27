@@ -10,7 +10,10 @@ namespace EnhancedMountRoulette.Windows.Native;
 
 public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 {
-    public static float ItemHeight => 28.0f;
+    public const float SeparatorHeight = 4.0f;
+    private const float ContentHeight = 26.0f;
+
+    public static float ItemHeight => SeparatorHeight + ContentHeight + SeparatorHeight;
 
     public const float IconSize = 24.0f;
     public const float IconLeft = 6.0f;
@@ -29,12 +32,21 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
     private readonly TextNode patchNode;
     private readonly TextNode seatsNode;
     private readonly TextButtonNode toggleButton;
+    private readonly HorizontalLineNode topSeparator;
+    private readonly HorizontalLineNode bottomSeparator;
 
     public MountEntryItemNode()
     {
+        topSeparator = new HorizontalLineNode
+        {
+            Position = Vector2.Zero,
+            Size = new Vector2(480.0f, SeparatorHeight),
+        };
+        topSeparator.AttachNode(this);
+
         iconNode = new IconImageNode
         {
-            Position = new Vector2(IconLeft, (ItemHeight - IconSize) / 2.0f),
+            Position = new Vector2(IconLeft, SeparatorHeight + (ContentHeight - IconSize) / 2.0f),
             Size = new Vector2(IconSize, IconSize),
             TextureSize = new Vector2(IconSize, IconSize),
             FitTexture = true,
@@ -43,8 +55,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         nameNode = new TextNode
         {
-            Position = new Vector2(NameLeft, 0.0f),
-            Size = new Vector2(200.0f, ItemHeight),
+            Position = new Vector2(NameLeft, SeparatorHeight),
+            Size = new Vector2(200.0f, ContentHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Left,
@@ -53,8 +65,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         ownedNode = new TextNode
         {
-            Position = new Vector2(220.0f, 0.0f),
-            Size = new Vector2(OwnedWidth, ItemHeight),
+            Position = new Vector2(220.0f, SeparatorHeight),
+            Size = new Vector2(OwnedWidth, ContentHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Center,
@@ -63,8 +75,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         patchNode = new TextNode
         {
-            Position = new Vector2(280.0f, 0.0f),
-            Size = new Vector2(PatchWidth, ItemHeight),
+            Position = new Vector2(280.0f, SeparatorHeight),
+            Size = new Vector2(PatchWidth, ContentHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Center,
@@ -73,8 +85,8 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         seatsNode = new TextNode
         {
-            Position = new Vector2(320.0f, 0.0f),
-            Size = new Vector2(SeatsWidth, ItemHeight),
+            Position = new Vector2(320.0f, SeparatorHeight),
+            Size = new Vector2(SeatsWidth, ContentHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Center,
@@ -83,7 +95,7 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 
         toggleButton = new TextButtonNode
         {
-            Position = new Vector2(400.0f, (ItemHeight - 24.0f) / 2.0f),
+            Position = new Vector2(400.0f, SeparatorHeight + (ContentHeight - 24.0f) / 2.0f),
             Size = new Vector2(ToggleWidth, 24.0f),
             String = "Add",
             OnClick = () =>
@@ -97,6 +109,13 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         NativeButtonStyles.StyleAsAdd(toggleButton);
         toggleButton.AttachNode(this);
 
+        bottomSeparator = new HorizontalLineNode
+        {
+            Position = new Vector2(0.0f, ItemHeight - SeparatorHeight),
+            Size = new Vector2(480.0f, SeparatorHeight),
+        };
+        bottomSeparator.AttachNode(this);
+
         Size = new Vector2(480.0f, ItemHeight);
     }
 
@@ -104,35 +123,43 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
     {
         base.OnSizeChanged();
 
-        iconNode.Position = new Vector2(IconLeft, (Height - IconSize) / 2.0f);
+        var contentHeight = Math.Max(1.0f, Height - (SeparatorHeight * 2.0f));
+
+        topSeparator.Position = Vector2.Zero;
+        topSeparator.Size = new Vector2(Width, SeparatorHeight);
+
+        bottomSeparator.Position = new Vector2(0.0f, Height - SeparatorHeight);
+        bottomSeparator.Size = new Vector2(Width, SeparatorHeight);
+
+        iconNode.Position = new Vector2(IconLeft, SeparatorHeight + (contentHeight - IconSize) / 2.0f);
 
         toggleButton.Position = new Vector2(
             Width - ToggleWidth - RightPadding,
-            (Height - toggleButton.Height) / 2.0f
+            SeparatorHeight + (contentHeight - toggleButton.Height) / 2.0f
         );
 
         seatsNode.Position = new Vector2(
             toggleButton.X - ColumnGap - SeatsWidth,
-            0.0f
+            SeparatorHeight
         );
-        seatsNode.Size = new Vector2(SeatsWidth, Height);
+        seatsNode.Size = new Vector2(SeatsWidth, contentHeight);
 
         patchNode.Position = new Vector2(
             seatsNode.X - ColumnGap - PatchWidth,
-            0.0f
+            SeparatorHeight
         );
-        patchNode.Size = new Vector2(PatchWidth, Height);
+        patchNode.Size = new Vector2(PatchWidth, contentHeight);
 
         ownedNode.Position = new Vector2(
             patchNode.X - ColumnGap - OwnedWidth,
-            0.0f
+            SeparatorHeight
         );
-        ownedNode.Size = new Vector2(OwnedWidth, Height);
+        ownedNode.Size = new Vector2(OwnedWidth, contentHeight);
 
-        nameNode.Position = new Vector2(NameLeft, 0.0f);
+        nameNode.Position = new Vector2(NameLeft, SeparatorHeight);
         nameNode.Size = new Vector2(
             Math.Max(40.0f, ownedNode.X - ColumnGap - NameLeft),
-            Height
+            contentHeight
         );
     }
 

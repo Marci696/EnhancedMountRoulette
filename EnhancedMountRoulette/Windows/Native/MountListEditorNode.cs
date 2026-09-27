@@ -261,7 +261,7 @@ public class MountListEditorNode : ResNode
         {
             Position = new Vector2(0.0f, MountsListY),
             Size = new Vector2(600.0f, 400.0f),
-            ItemSpacing = 1.0f,
+            ItemSpacing = -MountEntryItemNode.SeparatorHeight,
             OptionsList = [],
             AutoResetScroll = false,
             OnItemSelected = entry =>
