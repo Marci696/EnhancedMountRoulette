@@ -318,22 +318,7 @@ public class MountListEditorNode : ResNode
         {
             Size = new Vector2(90.0f, 28.0f),
             String = "Add All",
-            OnClick = () =>
-            {
-                if (boundList is null)
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.ConsiderAllMountsForSummoning(
-                    boundList,
-                    GetFilteredMountEntries()
-                        .Where(entry => entry.IsOwned)
-                        .Select(entry => entry.Mount.RowId)
-                );
-                RefreshBoundList();
-                RefreshMountEntries();
-            },
+            OnClick = ConfirmAndAddAll,
         };
         NativeButtonStyles.StyleAsAdd(addAllButton);
         actionsRow.AddNode(addAllButton);
@@ -342,22 +327,7 @@ public class MountListEditorNode : ResNode
         {
             Size = new Vector2(100.0f, 28.0f),
             String = "Remove All",
-            OnClick = () =>
-            {
-                if (boundList is null)
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.OverlookAllMountsForSummoning(
-                    boundList,
-                    GetFilteredMountEntries()
-                        .Where(entry => entry.IsOwned)
-                        .Select(entry => entry.Mount.RowId)
-                );
-                RefreshBoundList();
-                RefreshMountEntries();
-            },
+            OnClick = ConfirmAndRemoveAll,
         };
         NativeButtonStyles.StyleAsRemove(removeAllButton);
         actionsRow.AddNode(removeAllButton);
@@ -554,6 +524,60 @@ public class MountListEditorNode : ResNode
             }
         );
     }
+
+    private void ConfirmAndAddAll()
+    {
+        if (boundList is not { } list)
+        {
+            return;
+        }
+
+        var mountIds = GetFilteredOwnedMountIds();
+        if (mountIds.Count == 0)
+        {
+            return;
+        }
+
+        confirmationDialog.Show(
+            $"Add {mountIds.Count} filtered owned mount(s) to \"{list.Name}\"?",
+            () =>
+            {
+                ConfigManager.Instance.ConsiderAllMountsForSummoning(list, mountIds);
+                RefreshBoundList();
+                RefreshMountEntries();
+            }
+        );
+    }
+
+    private void ConfirmAndRemoveAll()
+    {
+        if (boundList is not { } list)
+        {
+            return;
+        }
+
+        var mountIds = GetFilteredOwnedMountIds();
+        if (mountIds.Count == 0)
+        {
+            return;
+        }
+
+        confirmationDialog.Show(
+            $"Remove {mountIds.Count} filtered owned mount(s) from \"{list.Name}\"?",
+            () =>
+            {
+                ConfigManager.Instance.OverlookAllMountsForSummoning(list, mountIds);
+                RefreshBoundList();
+                RefreshMountEntries();
+            }
+        );
+    }
+
+    private List<uint> GetFilteredOwnedMountIds() =>
+        GetFilteredMountEntries()
+            .Where(entry => entry.IsOwned)
+            .Select(entry => entry.Mount.RowId)
+            .ToList();
 
     private void RenameList(string newName)
     {
