@@ -142,6 +142,7 @@ public unsafe class ConfigAddon : NativeAddon
         {
             Size = new Vector2(ContentSize.X - 248.0f, ContentSize.Y),
             OnListsChanged = RefreshMountLists,
+            GetOwnerAddonId = () => (uint)AddonId,
         };
         rootLayout.AddNode(editorNode);
 

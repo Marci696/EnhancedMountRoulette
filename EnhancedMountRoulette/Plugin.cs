@@ -54,6 +54,9 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService]
     internal static IToastGui ToastGui { get; private set; } = null!;
 
+    [PluginService]
+    internal static IFramework Framework { get; private set; } = null!;
+
     private CommandManager? CommandManager { get; set; }
 
     private ConfigAddon? ConfigAddon { get; set; }

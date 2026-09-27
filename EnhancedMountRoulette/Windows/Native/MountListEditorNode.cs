@@ -11,6 +11,7 @@ using EnhancedMountRoulette.Commands;
 using EnhancedMountRoulette.Configuration;
 using Lumina.Excel.Sheets;
 using Lumina.Text.ReadOnly;
+using AgentContext = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentContext;
 
 namespace EnhancedMountRoulette.Windows.Native;
 
@@ -26,6 +27,11 @@ public class MountListEditorNode : ResNode
     private const float HeaderButtonHeight = 24.0f;
 
     public System.Action? OnListsChanged { get; set; }
+
+    /// <summary>
+    /// Returns the owning native addon id used to bind context menus.
+    /// </summary>
+    public Func<uint>? GetOwnerAddonId { get; set; }
 
     private MountList? boundList;
     private string mountFilter = "";
@@ -295,15 +301,10 @@ public class MountListEditorNode : ResNode
             ItemSpacing = 0.0f,
             OptionsList = [],
             AutoResetScroll = false,
-            OnItemSelected = entry =>
-            {
-                if (entry is { IsOwned: true })
-                {
-                    OpenMountContextMenu(entry.Mount);
-                }
-            },
         };
         mountsNode.AttachNode(this);
+
+        MountEntryItemNode.OnOpenContextMenu = OpenMountContextMenu;
 
         actionsRow = new HorizontalListNode
         {
@@ -761,7 +762,7 @@ public class MountListEditorNode : ResNode
             _ => "All",
         };
 
-    private void OpenMountContextMenu(Mount mount)
+    private unsafe void OpenMountContextMenu(Mount mount)
     {
         mountContextMenu.Clear();
 
@@ -785,14 +786,34 @@ public class MountListEditorNode : ResNode
         );
 
         MountRouletteMenuItems.ApplyToKamiContextMenu(mountContextMenu, mount);
-        try
+
+        // Open on the next tick so the MouseUp that follows MouseDown does not
+        // immediately dismiss the freshly opened AgentContext menu.
+        var ownerAddonId = GetOwnerAddonId?.Invoke() ?? 0u;
+        MountRouletteMenuItems.SuppressNativeMountMenuInjection = true;
+        Plugin.Framework.RunOnTick(() =>
         {
-            MountRouletteMenuItems.SuppressNativeMountMenuInjection = true;
-            mountContextMenu.Open();
-        }
-        finally
-        {
-            MountRouletteMenuItems.SuppressNativeMountMenuInjection = false;
-        }
+            try
+            {
+                // KamiToolKit Open() uses bindToOwner:true with whatever focus exists.
+                // Without a focused text input that closes the menu immediately, so
+                // re-bind to our addon (or open unbound) after items are registered.
+                mountContextMenu.Open();
+
+                var agent = AgentContext.Instance();
+                if (ownerAddonId is not 0)
+                {
+                    agent->OpenContextMenuForAddon(ownerAddonId);
+                }
+                else
+                {
+                    agent->OpenContextMenu(bindToOwner: false);
+                }
+            }
+            finally
+            {
+                MountRouletteMenuItems.SuppressNativeMountMenuInjection = false;
+            }
+        });
     }
 }

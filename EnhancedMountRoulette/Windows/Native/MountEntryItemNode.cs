@@ -6,11 +6,14 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Enums;
 using KamiToolKit.Interfaces;
 using KamiToolKit.Nodes;
+using Lumina.Excel.Sheets;
 
 namespace EnhancedMountRoulette.Windows.Native;
 
-public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
+public unsafe class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 {
+    public static Action<Mount>? OnOpenContextMenu { get; set; }
+
     public static float ItemHeight => 28.0f;
 
     public const float IconSize = 24.0f;
@@ -110,7 +113,31 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         NativeButtonStyles.StyleAsAdd(toggleButton);
         toggleButton.AttachNode(this);
 
+        AddEvent(AtkEventType.MouseDown, OnRowMouseDown);
+
         Size = new Vector2(480.0f, ItemHeight);
+    }
+
+    private unsafe void OnRowMouseDown(
+        AtkEventListener* thisPtr,
+        AtkEventType eventType,
+        int eventParam,
+        AtkEvent* atkEvent,
+        AtkEventData* atkEventData
+    )
+    {
+        // ButtonId 1 = right mouse button
+        if (atkEventData->MouseData.ButtonId is not 1)
+        {
+            return;
+        }
+
+        if (ItemData is not { IsOwned: true, Mount: var mount })
+        {
+            return;
+        }
+
+        OnOpenContextMenu?.Invoke(mount);
     }
 
     protected override void OnSizeChanged()
