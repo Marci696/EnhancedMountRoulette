@@ -195,6 +195,19 @@ public static class MountManager
         return ownedMountIds;
     }
 
+    public static IEnumerable<Mount> GetAllMounts()
+    {
+        foreach (var mount in MountSheet)
+        {
+            if (IsMountEntryEmpty(mount))
+            {
+                continue;
+            }
+
+            yield return mount;
+        }
+    }
+
     /// <summary>
     /// Counts owned vs total non-empty mount sheet entries in a single pass.
     /// </summary>

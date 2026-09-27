@@ -156,14 +156,18 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         stripeNode.IsVisible = itemData.RowIndex % 2 == 1;
 
         iconNode.IconId = itemData.Mount.Icon;
-        iconNode.Alpha = itemData.IsInSummonList ? 1.0f : 0.35f;
+        iconNode.Alpha = itemData.IsOwned
+            ? (itemData.IsInSummonList ? 1.0f : 0.35f)
+            : 0.25f;
 
         nameNode.String = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
             itemData.Mount.Singular.ExtractText()
         );
-        nameNode.TextColor = itemData.IsInSummonList
-            ? new Vector4(1.0f, 1.0f, 1.0f, 1.0f)
-            : new Vector4(0.6f, 0.6f, 0.6f, 1.0f);
+        nameNode.TextColor = itemData.IsOwned
+            ? (itemData.IsInSummonList
+                ? new Vector4(1.0f, 1.0f, 1.0f, 1.0f)
+                : new Vector4(0.6f, 0.6f, 0.6f, 1.0f))
+            : new Vector4(0.45f, 0.45f, 0.45f, 1.0f);
 
         ownedNode.String = itemData.OwnedDisplay;
         ownedNode.TextColor = nameNode.TextColor;
@@ -174,6 +178,13 @@ public class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         seatsNode.String = itemData.SeatCount.ToString(CultureInfo.InvariantCulture);
         seatsNode.TextColor = nameNode.TextColor;
 
+        if (!itemData.IsOwned)
+        {
+            toggleButton.IsVisible = false;
+            return;
+        }
+
+        toggleButton.IsVisible = true;
         toggleButton.String = itemData.IsInSummonList ? "Remove" : "Add";
         if (itemData.IsInSummonList)
         {

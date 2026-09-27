@@ -5,6 +5,7 @@ namespace EnhancedMountRoulette.Windows.Native;
 
 public sealed record MountEntry(
     Mount Mount,
+    bool IsOwned,
     bool IsInSummonList,
     int SeatCount,
     string OwnedDisplay,

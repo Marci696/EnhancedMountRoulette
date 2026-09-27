@@ -10,6 +10,7 @@ using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Commands;
 using EnhancedMountRoulette.Configuration;
 using Lumina.Excel.Sheets;
+using Lumina.Text.ReadOnly;
 
 namespace EnhancedMountRoulette.Windows.Native;
 
@@ -32,6 +33,7 @@ public class MountListEditorNode : ResNode
     private bool sortAscending = true;
     private MountSelectionFilter selectionFilter = MountSelectionFilter.All;
     private MountSeatFilter seatFilter = MountSeatFilter.All;
+    private bool ownedOnlyFilter = true;
 
     private readonly TextInputNode nameInput;
     private readonly StringDropDownNode typeDropDown;
@@ -41,8 +43,12 @@ public class MountListEditorNode : ResNode
     private readonly TextInputNode searchInput;
     private readonly TextButtonNode addAllButton;
     private readonly TextButtonNode removeAllButton;
-    private readonly StringDropDownNode selectionFilterDropDown;
-    private readonly StringDropDownNode seatFilterDropDown;
+    private readonly EnumDropDownNode<MountSelectionFilter> selectionFilterDropDown;
+    private readonly EnumDropDownNode<MountSeatFilter> seatFilterDropDown;
+    private readonly TextNode selectionFilterLabel;
+    private readonly TextNode seatFilterLabel;
+    private readonly TextNode ownedFilterLabel;
+    private readonly CheckboxNode ownedFilterCheckbox;
     private readonly TextButtonNode nameSortButton;
     private readonly TextButtonNode seatsSortButton;
     private readonly TextButtonNode ownedSortButton;
@@ -167,7 +173,7 @@ public class MountListEditorNode : ResNode
 
         searchInput = new TextInputNode
         {
-            Size = new Vector2(160.0f, 28.0f),
+            Size = new Vector2(145.0f, 28.0f),
             PlaceholderString = "Search mounts...",
             MaxCharacters = 50,
             OnInputReceived = value =>
@@ -178,41 +184,67 @@ public class MountListEditorNode : ResNode
         };
         filterRow.AddNode(searchInput);
 
-        selectionFilterDropDown = new StringDropDownNode
-        {
-            Size = new Vector2(200.0f, 28.0f),
-            Options = ["Selection: All", "Selection: Selected", "Selection: Unselected"],
-            SelectedOption = "Selection: All",
-            OnOptionSelected = option =>
-            {
-                selectionFilter = option switch
-                {
-                    "Selection: Selected" => MountSelectionFilter.Selected,
-                    "Selection: Unselected" => MountSelectionFilter.Unselected,
-                    _ => MountSelectionFilter.All,
-                };
-                RefreshMountEntries();
-            },
-        };
-        filterRow.AddNode(selectionFilterDropDown);
+        selectionFilterLabel = CreateFilterCategoryLabel("Selected:", 70.0f);
+        filterRow.AddNode(selectionFilterLabel);
 
-        seatFilterDropDown = new StringDropDownNode
+        selectionFilterDropDown = new EnumDropDownNode<MountSelectionFilter>
         {
             Size = new Vector2(140.0f, 28.0f),
-            Options = ["Seats: All", "Seats: 1-seater", "Seats: Multi"],
-            SelectedOption = "Seats: All",
+            Options =
+            [
+                MountSelectionFilter.All,
+                MountSelectionFilter.Selected,
+                MountSelectionFilter.Unselected,
+            ],
+            SelectedOption = MountSelectionFilter.All,
             OnOptionSelected = option =>
             {
-                seatFilter = option switch
-                {
-                    "Seats: 1-seater" => MountSeatFilter.Single,
-                    "Seats: Multi" => MountSeatFilter.Multi,
-                    _ => MountSeatFilter.All,
-                };
+                selectionFilter = option;
                 RefreshMountEntries();
             },
         };
+        selectionFilterDropDown.GetLabelFunction = FormatSelectionFilterLabel;
+        filterRow.AddNode(selectionFilterDropDown);
+
+        seatFilterLabel = CreateFilterCategoryLabel("Seats:", 48.0f);
+        filterRow.AddNode(seatFilterLabel);
+
+        seatFilterDropDown = new EnumDropDownNode<MountSeatFilter>
+        {
+            Size = new Vector2(90.0f, 28.0f),
+            Options =
+            [
+                MountSeatFilter.All,
+                MountSeatFilter.Single,
+                MountSeatFilter.Multi,
+            ],
+            SelectedOption = MountSeatFilter.All,
+            OnOptionSelected = option =>
+            {
+                seatFilter = option;
+                RefreshMountEntries();
+            },
+        };
+        seatFilterDropDown.GetLabelFunction = FormatSeatFilterLabel;
         filterRow.AddNode(seatFilterDropDown);
+
+        ownedFilterLabel = CreateFilterCategoryLabel("Owned:", 52.0f);
+        filterRow.AddNode(ownedFilterLabel);
+
+        ownedFilterCheckbox = new CheckboxNode
+        {
+            Size = new Vector2(20.0f, 20.0f),
+            String = string.Empty,
+            IsChecked = true,
+            OnClick = isChecked =>
+            {
+                ownedOnlyFilter = isChecked;
+                RefreshMountEntries();
+            },
+        };
+        // Attach directly to the filter row so component events stay under the list node tree.
+        ownedFilterCheckbox.Y = (28.0f - ownedFilterCheckbox.Height) / 2.0f;
+        filterRow.AddNode(ownedFilterCheckbox);
 
         columnHeader = new ResNode
         {
@@ -266,7 +298,7 @@ public class MountListEditorNode : ResNode
             AutoResetScroll = false,
             OnItemSelected = entry =>
             {
-                if (entry is not null)
+                if (entry is { IsOwned: true })
                 {
                     OpenMountContextMenu(entry.Mount);
                 }
@@ -295,7 +327,9 @@ public class MountListEditorNode : ResNode
 
                 ConfigManager.Instance.ConsiderAllMountsForSummoning(
                     boundList,
-                    GetFilteredMountEntries().Select(entry => entry.Mount.RowId)
+                    GetFilteredMountEntries()
+                        .Where(entry => entry.IsOwned)
+                        .Select(entry => entry.Mount.RowId)
                 );
                 RefreshBoundList();
                 RefreshMountEntries();
@@ -317,7 +351,9 @@ public class MountListEditorNode : ResNode
 
                 ConfigManager.Instance.OverlookAllMountsForSummoning(
                     boundList,
-                    GetFilteredMountEntries().Select(entry => entry.Mount.RowId)
+                    GetFilteredMountEntries()
+                        .Where(entry => entry.IsOwned)
+                        .Select(entry => entry.Mount.RowId)
                 );
                 RefreshBoundList();
                 RefreshMountEntries();
@@ -360,6 +396,18 @@ public class MountListEditorNode : ResNode
         mountsNode.Update();
     }
 
+    /// <summary>
+    /// Collapses any open filter/settings dropdowns. Call before the parent
+    /// addon hides so popup nodes reattached to the root are not finalized mid-open.
+    /// </summary>
+    public void CollapseOpenDropDowns()
+    {
+        typeDropDown.Collapse(playSoundEffect: false);
+        fetchTypeDropDown.Collapse(playSoundEffect: false);
+        selectionFilterDropDown.Collapse(playSoundEffect: false);
+        seatFilterDropDown.Collapse(playSoundEffect: false);
+    }
+
     protected override void OnSizeChanged()
     {
         base.OnSizeChanged();
@@ -375,6 +423,8 @@ public class MountListEditorNode : ResNode
         emptyHint.Width = Width;
         columnHeader.Width = Width;
         settingsDivider.Width = Width;
+        settingsRow.Width = Width;
+        filterRow.Width = Width;
         confirmationDialog.Size = Size;
 
         var toggleX = Width - MountEntryItemNode.ToggleWidth - MountEntryItemNode.RightPadding
@@ -415,8 +465,12 @@ public class MountListEditorNode : ResNode
         searchInput.IsVisible = visible;
         addAllButton.IsVisible = visible;
         removeAllButton.IsVisible = visible;
+        selectionFilterLabel.IsVisible = visible;
         selectionFilterDropDown.IsVisible = visible;
+        seatFilterLabel.IsVisible = visible;
         seatFilterDropDown.IsVisible = visible;
+        ownedFilterLabel.IsVisible = visible;
+        ownedFilterCheckbox.IsVisible = visible;
         nameSortButton.IsVisible = visible;
         ownedSortButton.IsVisible = visible;
         patchSortButton.IsVisible = visible;
@@ -537,16 +591,26 @@ public class MountListEditorNode : ResNode
 
         var ownedMountIds = MountManager.GetOwnedMountIds();
         var available = boundList.GetAvailableMountsForSummoning(ownedMountIds).ToHashSet();
-        var unavailable = boundList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds);
+
+        IEnumerable<Mount> candidateMounts;
+        if (ownedOnlyFilter)
+        {
+            var unavailable = boundList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds);
+            candidateMounts = available
+                .Concat(unavailable)
+                .Select(MountManager.GetMount)
+                .OfType<Mount>();
+        }
+        else
+        {
+            candidateMounts = MountManager.GetAllMounts();
+        }
 
         var entries = new List<MountEntry>();
 
-        foreach (var mountId in available.Concat(unavailable))
+        foreach (var mount in candidateMounts)
         {
-            if (MountManager.GetMount(mountId) is not { } mount)
-            {
-                continue;
-            }
+            var mountId = mount.RowId;
 
             if (!string.IsNullOrEmpty(mountFilter)
                 && !mount.Singular.ExtractText().Contains(mountFilter, StringComparison.CurrentCultureIgnoreCase))
@@ -554,6 +618,7 @@ public class MountListEditorNode : ResNode
                 continue;
             }
 
+            var isOwned = ownedMountIds.Contains(mountId);
             var isInList = available.Contains(mountId);
             var seatCount = MountManager.GetSeatCount(mount);
 
@@ -581,6 +646,7 @@ public class MountListEditorNode : ResNode
             entries.Add(
                 new MountEntry(
                     mount,
+                    isOwned,
                     isInList,
                     seatCount,
                     collectInfo?.OwnedDisplay ?? "—",
@@ -626,7 +692,7 @@ public class MountListEditorNode : ResNode
 
     private void ToggleMembership(MountEntry entry)
     {
-        if (boundList is null)
+        if (boundList is null || !entry.IsOwned)
         {
             return;
         }
@@ -643,6 +709,34 @@ public class MountListEditorNode : ResNode
         RefreshBoundList();
         RefreshMountEntries();
     }
+
+    private static TextNode CreateFilterCategoryLabel(string text, float width) =>
+        new()
+        {
+            Size = new Vector2(width, 28.0f),
+            FontSize = 12,
+            LineSpacing = 12,
+            AlignmentType = AlignmentType.Right,
+            TextFlags = TextFlags.Edge,
+            TextColor = new Vector4(0.85f, 0.85f, 0.85f, 1.0f),
+            String = text,
+        };
+
+    private static ReadOnlySeString FormatSelectionFilterLabel(MountSelectionFilter filter) =>
+        filter switch
+        {
+            MountSelectionFilter.Selected => "Selected",
+            MountSelectionFilter.Unselected => "Unselected",
+            _ => "All",
+        };
+
+    private static ReadOnlySeString FormatSeatFilterLabel(MountSeatFilter filter) =>
+        filter switch
+        {
+            MountSeatFilter.Single => "One",
+            MountSeatFilter.Multi => "Multi",
+            _ => "All",
+        };
 
     private void OpenMountContextMenu(Mount mount)
     {

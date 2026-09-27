@@ -24,7 +24,7 @@ public class OwnedMountsProgressNode : ResNode
 
     private readonly TextNode headerNode;
     private readonly SimpleNineGridNode backgroundNode;
-    private readonly ColorImageNode fillNode;
+    private readonly SimpleNineGridNode fillNode;
     private readonly SimpleNineGridNode borderNode;
     private readonly TextNode labelNode;
 
@@ -55,12 +55,20 @@ public class OwnedMountsProgressNode : ResNode
         };
         backgroundNode.AttachNode(this);
 
-        fillNode = new ColorImageNode
+        // Textured fill (not ColorImageNode): empty image nodes have been implicated in
+        // AtkEventManager.ClearEvents crashes during addon finalization.
+        fillNode = new SimpleNineGridNode
         {
             Position = new Vector2(FillInsetX, HeaderHeight + FillInsetY),
-            Color = FillColor,
+            TexturePath = "ui/uld/PartyList_GaugeCast.tex",
+            TextureSize = new Vector2(188.0f, 7.0f),
+            TextureCoordinates = new Vector2(8.0f, 3.0f),
+            LeftOffset = 10,
+            RightOffset = 10,
             IsVisible = false,
         };
+        fillNode.Color = new Vector4(1.0f, 1.0f, 1.0f, FillColor.W);
+        fillNode.AddColor = new Vector3(FillColor.X, FillColor.Y, FillColor.Z);
         fillNode.AttachNode(this);
 
         borderNode = new SimpleNineGridNode

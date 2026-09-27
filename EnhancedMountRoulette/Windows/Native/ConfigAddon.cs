@@ -156,7 +156,13 @@ public unsafe class ConfigAddon : NativeAddon
     {
         mountListNode?.Update();
         editorNode?.Update();
-        ownershipProgressNode?.Refresh();
+    }
+
+    protected override void OnHide(AtkUnitBase* addon)
+    {
+        // Dropdown popups reattach to the addon root while open; collapse first
+        // so Escape → Close does not finalize them with live event links.
+        editorNode?.CollapseOpenDropDowns();
     }
 
     private void OnMountListSelected(MountList? mountList)
@@ -193,5 +199,7 @@ public unsafe class ConfigAddon : NativeAddon
         {
             editorNode?.Bind(selectedMountList);
         }
+
+        ownershipProgressNode?.Refresh();
     }
 }
