@@ -10,8 +10,13 @@ namespace EnhancedMountRoulette.Windows.Native;
 
 public unsafe class ConfigAddon : NativeAddon
 {
+    private const float LeftColumnWidth = 240.0f;
+    private const float ColumnDividerWidth = 4.0f;
+    private const float ColumnSpacing = 16.0f;
+
     private HorizontalListNode? rootLayout;
     private VerticalListNode? leftColumn;
+    private VerticalLineNode? columnDivider;
     private ListNode<MountList, MountListItemNode>? mountListNode;
     private OwnedMountsProgressNode? ownershipProgressNode;
     private MountListEditorNode? editorNode;
@@ -24,13 +29,13 @@ public unsafe class ConfigAddon : NativeAddon
         {
             Position = ContentStartPosition,
             Size = ContentSize,
-            ItemSpacing = 8.0f,
+            ItemSpacing = ColumnSpacing,
         };
         rootLayout.AttachNode(this);
 
         leftColumn = new VerticalListNode
         {
-            Size = new Vector2(240.0f, ContentSize.Y),
+            Size = new Vector2(LeftColumnWidth, ContentSize.Y),
             ItemSpacing = 6.0f,
             FitWidth = true,
         };
@@ -38,7 +43,7 @@ public unsafe class ConfigAddon : NativeAddon
 
         var addButtons = new HorizontalListNode
         {
-            Size = new Vector2(240.0f, 28.0f),
+            Size = new Vector2(LeftColumnWidth, 28.0f),
             ItemSpacing = 4.0f,
         };
 
@@ -84,10 +89,10 @@ public unsafe class ConfigAddon : NativeAddon
 
         var listHeader = new ResNode
         {
-            Size = new Vector2(240.0f, 18.0f),
+            Size = new Vector2(LeftColumnWidth, 18.0f),
         };
 
-        var headerContentWidth = 240.0f - MountListItemNode.ListContentRightInset;
+        var headerContentWidth = LeftColumnWidth - MountListItemNode.ListContentRightInset;
 
         var defaultHeader = new TextNode
         {
@@ -123,7 +128,7 @@ public unsafe class ConfigAddon : NativeAddon
         // Buttons (28) + list header (18) + progress header+bar (36) + three spacings (18) ≈ 100.
         mountListNode = new ListNode<MountList, MountListItemNode>
         {
-            Size = new Vector2(240.0f, ContentSize.Y - 100.0f),
+            Size = new Vector2(LeftColumnWidth, ContentSize.Y - 100.0f),
             ItemSpacing = 2.0f,
             OptionsList = ConfigManager.Instance.OrderedMountList,
             OnItemSelected = OnMountListSelected,
@@ -133,18 +138,29 @@ public unsafe class ConfigAddon : NativeAddon
 
         ownershipProgressNode = new OwnedMountsProgressNode
         {
-            Size = new Vector2(240.0f, OwnedMountsProgressNode.PreferredHeight),
+            Size = new Vector2(LeftColumnWidth, OwnedMountsProgressNode.PreferredHeight),
         };
         leftColumn.AddNode(ownershipProgressNode);
         ownershipProgressNode.Refresh();
 
         editorNode = new MountListEditorNode
         {
-            Size = new Vector2(ContentSize.X - 248.0f, ContentSize.Y),
+            Size = new Vector2(ContentSize.X - LeftColumnWidth - ColumnSpacing, ContentSize.Y),
             OnListsChanged = RefreshMountLists,
             GetOwnerAddonId = () => (uint)AddonId,
         };
         rootLayout.AddNode(editorNode);
+
+        // Overlay only — VerticalLineNode.Size bypasses Width/Height overrides and would
+        // report ContentSize.Y as layout width if added to the horizontal list.
+        columnDivider = new VerticalLineNode();
+        columnDivider.Width = ColumnDividerWidth;
+        columnDivider.Height = ContentSize.Y;
+        columnDivider.Position = new Vector2(
+            LeftColumnWidth + (ColumnSpacing - ColumnDividerWidth) / 2.0f,
+            0.0f
+        );
+        columnDivider.AttachNode(rootLayout);
 
         if (ConfigManager.Instance.OrderedMountList.FirstOrDefault() is { } first)
         {
