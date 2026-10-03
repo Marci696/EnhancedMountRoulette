@@ -10,202 +10,45 @@ namespace EnhancedMountRoulette.Windows.Native;
 
 public unsafe class NativeSettingsAddon : NativeAddon
 {
-    private const float LeftColumnWidth = 240.0f;
-    private const float OwnershipProgressWidth = LeftColumnWidth * 4.0f / 3.0f;
+    private const float FooterProgressWidth = MountListsOverviewNode.PreferredWidth * 4.0f / 3.0f;
     private const float ColumnDividerWidth = 4.0f;
     private const float ColumnSpacing = 16.0f;
-    private const float MainLayoutSpacing = 6.0f;
+    private const float ContentSpacing = 6.0f;
     private const float FooterLineHeight = 4.0f;
-    private const float LeftChromeHeight = 28.0f + 18.0f + (MainLayoutSpacing * 2.0f);
+    private const float FooterHeight = FooterLineHeight
+        + OwnedMountsProgressNode.PreferredHeight
+        + (ContentSpacing * 2.0f);
 
-    private VerticalListNode? mainLayout;
-    private HorizontalListNode? columnsLayout;
-    private VerticalListNode? leftColumn;
-    private VerticalLineNode? columnDivider;
-    private HorizontalLineNode? footerDivider;
-    private ListNode<MountList, MountListItemNode>? mountListNode;
-    private OwnedMountsProgressNode? ownershipProgressNode;
-    private MountListEditorNode? editorNode;
-
-    private MountList? selectedMountList;
+    private MountListsOverviewNode? mountListsOverviewNode;
+    private MountListItemEditorNode? mountListItemEditorNode;
+    private OwnedMountsProgressNode? footerProgressNode;
 
     protected override void OnSetup(AtkUnitBase* addon, Span<AtkValue> atkValueSpan)
     {
-        mainLayout = new VerticalListNode
+        var contentRoot = new VerticalListNode
         {
             Position = ContentStartPosition,
             Size = ContentSize,
-            ItemSpacing = MainLayoutSpacing,
+            ItemSpacing = ContentSpacing,
             FitWidth = false,
         };
-        mainLayout.AttachNode(this);
+        contentRoot.AttachNode(this);
 
-        var columnsHeight = ContentSize.Y
-            - FooterLineHeight
-            - OwnedMountsProgressNode.PreferredHeight
-            - (MainLayoutSpacing * 2.0f);
-
-        columnsLayout = new HorizontalListNode
-        {
-            Size = new Vector2(ContentSize.X, columnsHeight),
-            ItemSpacing = ColumnSpacing,
-        };
-        mainLayout.AddNode(columnsLayout);
-
-        leftColumn = new VerticalListNode
-        {
-            Size = new Vector2(LeftColumnWidth, columnsHeight),
-            ItemSpacing = MainLayoutSpacing,
-            FitWidth = true,
-        };
-        columnsLayout.AddNode(leftColumn);
-
-        var addButtons = new HorizontalListNode
-        {
-            Size = new Vector2(LeftColumnWidth, 28.0f),
-            ItemSpacing = 4.0f,
-        };
-
-        var addWhitelist = new TextButtonNode
-        {
-            Size = new Vector2(118.0f, 28.0f),
-            String = "Add Whitelist",
-            OnClick = () =>
-            {
-                ConfigManager.Instance.StoreMountList(
-                    new MountList
-                    {
-                        Name = ConfigManager.Instance.FindNewMountListName(),
-                        Type = MountListType.Whitelist,
-                    }
-                );
-                RefreshMountLists();
-            },
-        };
-        NativeButtonStyles.StyleAsAdd(addWhitelist);
-
-        var addBlacklist = new TextButtonNode
-        {
-            Size = new Vector2(118.0f, 28.0f),
-            String = "Add Blacklist",
-            OnClick = () =>
-            {
-                ConfigManager.Instance.StoreMountList(
-                    new MountList
-                    {
-                        Name = ConfigManager.Instance.FindNewMountListName(),
-                        Type = MountListType.Blacklist,
-                    }
-                );
-                RefreshMountLists();
-            },
-        };
-        NativeButtonStyles.StyleAsAdd(addBlacklist);
-
-        addButtons.AddNode(addWhitelist);
-        addButtons.AddNode(addBlacklist);
-        leftColumn.AddNode(addButtons);
-
-        var listHeader = new ResNode
-        {
-            Size = new Vector2(LeftColumnWidth, 18.0f),
-        };
-
-        var headerContentWidth = LeftColumnWidth - MountListItemNode.ListContentRightInset;
-
-        var defaultHeader = new TextNode
-        {
-            Position = new Vector2(headerContentWidth - MountListItemNode.CheckboxColumnWidth, 0.0f),
-            Size = new Vector2(MountListItemNode.CheckboxColumnWidth, 18.0f),
-            FontSize = 11,
-            LineSpacing = 11,
-            AlignmentType = AlignmentType.Center,
-            TextColor = new Vector4(0.85f, 0.85f, 0.85f, 1.0f),
-            String = "Default?",
-        };
-        defaultHeader.AttachNode(listHeader);
-
-        var nameHeader = new TextNode
-        {
-            Position = new Vector2(MountListItemNode.TextLeft, 0.0f),
-            Size = new Vector2(
-                headerContentWidth - MountListItemNode.TextLeft - MountListItemNode.CheckboxColumnWidth - 4.0f,
-                18.0f
-            ),
-            FontSize = 11,
-            LineSpacing = 11,
-            AlignmentType = AlignmentType.Left,
-            TextColor = new Vector4(0.85f, 0.85f, 0.85f, 1.0f),
-            String = "List",
-        };
-        nameHeader.AttachNode(listHeader);
-
-        leftColumn.AddNode(listHeader);
-
-        MountListItemNode.OnListsChanged = RefreshMountLists;
-
-        mountListNode = new ListNode<MountList, MountListItemNode>
-        {
-            Size = new Vector2(LeftColumnWidth, Math.Max(80.0f, columnsHeight - LeftChromeHeight)),
-            ItemSpacing = 2.0f,
-            OptionsList = ConfigManager.Instance.OrderedMountList,
-            OnItemSelected = OnMountListSelected,
-            AutoResetScroll = false,
-        };
-        leftColumn.AddNode(mountListNode);
-
-        editorNode = new MountListEditorNode
-        {
-            Size = new Vector2(ContentSize.X - LeftColumnWidth - ColumnSpacing, columnsHeight),
-            OnListsChanged = RefreshMountLists,
-            GetOwnerAddonId = () => (uint)AddonId,
-        };
-        columnsLayout.AddNode(editorNode);
-
-        // Overlay only — VerticalLineNode.Size bypasses Width/Height overrides and would
-        // report ContentSize.Y as layout width if added to the horizontal list.
-        // VerticalLineNode is a horizontal line rotated 90° around origin (0,0), so the
-        // bar occupies [X - Width, X]. Offset by Width/2 to center it in the column gap.
-        columnDivider = new VerticalLineNode();
-        columnDivider.Width = ColumnDividerWidth;
-        columnDivider.Height = columnsHeight;
-        columnDivider.Position = new Vector2(
-            LeftColumnWidth + ColumnSpacing / 2.0f + ColumnDividerWidth / 2.0f,
-            0.0f
-        );
-        columnDivider.AttachNode(columnsLayout);
-
-        footerDivider = new HorizontalLineNode
-        {
-            Size = new Vector2(ContentSize.X, FooterLineHeight),
-        };
-        mainLayout.AddNode(footerDivider);
-
-        ownershipProgressNode = new OwnedMountsProgressNode
-        {
-            Size = new Vector2(OwnershipProgressWidth, OwnedMountsProgressNode.PreferredHeight),
-        };
-        mainLayout.AddNode(ownershipProgressNode);
-        ownershipProgressNode.Refresh();
-
-        if (ConfigManager.Instance.OrderedMountList.FirstOrDefault() is { } first)
-        {
-            selectedMountList = first;
-            editorNode.Select(first);
-            SyncMountListSelection();
-        }
+        AddMain(contentRoot);
+        AddFooter(contentRoot);
+        SelectInitialMountList();
     }
 
     protected override void OnUpdate(AtkUnitBase* addon)
     {
-        mountListNode?.Update();
-        editorNode?.Update();
+        mountListsOverviewNode?.Update();
+        mountListItemEditorNode?.Update();
     }
 
     protected override void OnShow(AtkUnitBase* addon)
     {
         // Owned/total only changes on acquire or patch (restart). Recount when the window opens.
-        ownershipProgressNode?.Refresh();
+        footerProgressNode?.Refresh();
     }
 
     protected override void OnHide(AtkUnitBase* addon)
@@ -213,70 +56,113 @@ public unsafe class NativeSettingsAddon : NativeAddon
         // Dropdown popups reattach to the addon root while open; collapse first
         // so Escape → Close does not finalize them with live event links.
         // Also cancel any deferred context-menu open scheduled for the next tick.
-        editorNode?.PrepareForHide();
+        mountListItemEditorNode?.PrepareForHide();
     }
 
     public override void Dispose()
     {
         // Collapse/cancel before KamiToolKit Close()/finalize tears nodes down.
-        editorNode?.PrepareForTeardown();
-        MountListItemNode.OnListsChanged = null;
+        mountListItemEditorNode?.PrepareForTeardown();
+        mountListsOverviewNode?.DetachCallbacks();
         MountEntryItemNode.OnOpenContextMenu = null;
         base.Dispose();
     }
 
-    private void OnMountListSelected(MountList? mountList)
+    private void AddMain(VerticalListNode contentRoot)
     {
-        if (mountList is null)
+        var mainHeight = ContentSize.Y - FooterHeight;
+        var mainRow = new HorizontalListNode
+        {
+            Size = new Vector2(ContentSize.X, mainHeight),
+            ItemSpacing = ColumnSpacing,
+        };
+        contentRoot.AddNode(mainRow);
+
+        AddMountListsOverview(mainRow, mainHeight);
+        AddVerticalDivider(mainRow, mainHeight);
+        AddMountListItemEditor(mainRow, mainHeight);
+    }
+
+    private void AddMountListsOverview(HorizontalListNode mainRow, float height)
+    {
+        mountListsOverviewNode = new MountListsOverviewNode(height)
+        {
+            OnListsChanged = RefreshMountLists,
+            OnMountListSelected = OnMountListSelected,
+        };
+        mainRow.AddNode(mountListsOverviewNode);
+    }
+
+    private void AddVerticalDivider(HorizontalListNode mainRow, float height)
+    {
+        // Overlay only — VerticalLineNode.Size bypasses Width/Height overrides and would
+        // report ContentSize.Y as layout width if added to the horizontal list.
+        // VerticalLineNode is a horizontal line rotated 90° around origin (0,0), so the
+        // bar occupies [X - Width, X]. Offset by Width/2 to center it in the column gap.
+        var columnDivider = new VerticalLineNode();
+        columnDivider.Width = ColumnDividerWidth;
+        columnDivider.Height = height;
+        columnDivider.Position = new Vector2(
+            MountListsOverviewNode.PreferredWidth + ColumnSpacing / 2.0f + ColumnDividerWidth / 2.0f,
+            0.0f
+        );
+        columnDivider.AttachNode(mainRow);
+    }
+
+    private void AddMountListItemEditor(HorizontalListNode mainRow, float height)
+    {
+        mountListItemEditorNode = new MountListItemEditorNode
+        {
+            Size = new Vector2(
+                ContentSize.X - MountListsOverviewNode.PreferredWidth - ColumnSpacing,
+                height
+            ),
+            OnListsChanged = RefreshMountLists,
+            GetOwnerAddonId = () => (uint)AddonId,
+        };
+        mainRow.AddNode(mountListItemEditorNode);
+    }
+
+    private void AddFooter(VerticalListNode contentRoot)
+    {
+        contentRoot.AddNode(
+            new HorizontalLineNode
+            {
+                Size = new Vector2(ContentSize.X, FooterLineHeight),
+            }
+        );
+
+        footerProgressNode = new OwnedMountsProgressNode
+        {
+            Size = new Vector2(FooterProgressWidth, OwnedMountsProgressNode.PreferredHeight),
+        };
+        contentRoot.AddNode(footerProgressNode);
+        footerProgressNode.Refresh();
+    }
+
+    private void SelectInitialMountList()
+    {
+        if (ConfigManager.Instance.OrderedMountList.FirstOrDefault() is not { } first)
         {
             return;
         }
 
-        selectedMountList = mountList;
-        editorNode?.Select(mountList);
+        mountListsOverviewNode?.Select(first);
+        mountListItemEditorNode?.Select(first);
+    }
+
+    private void OnMountListSelected(MountList mountList)
+    {
+        mountListItemEditorNode?.Select(mountList);
     }
 
     private void RefreshMountLists()
     {
-        if (mountListNode is null)
+        mountListsOverviewNode?.Refresh();
+
+        if (mountListsOverviewNode?.SelectedMountList is { } selected)
         {
-            return;
+            mountListItemEditorNode?.Select(selected);
         }
-
-        var lists = ConfigManager.Instance.OrderedMountList;
-
-        if (selectedMountList is null || lists.All(list => list.Id != selectedMountList.Id))
-        {
-            selectedMountList = lists.FirstOrDefault();
-        }
-        else
-        {
-            selectedMountList = lists.First(list => list.Id == selectedMountList.Id);
-        }
-
-        // OptionsList assignment may FullRebuild and clear SelectedItems; set selection after.
-        mountListNode.OptionsList = lists;
-        SyncMountListSelection();
-
-        if (selectedMountList is not null)
-        {
-            editorNode?.Select(selectedMountList);
-        }
-    }
-
-    private void SyncMountListSelection()
-    {
-        if (mountListNode is null)
-        {
-            return;
-        }
-
-        mountListNode.SelectedItems.Clear();
-        if (selectedMountList is not null)
-        {
-            mountListNode.SelectedItems.Add(selectedMountList);
-        }
-
-        mountListNode.Update();
     }
 }

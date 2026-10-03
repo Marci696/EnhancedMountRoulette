@@ -15,7 +15,7 @@ using AgentContext = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentContext;
 
 namespace EnhancedMountRoulette.Windows.Native;
 
-public class MountListEditorNode : ResNode
+public class MountListItemEditorNode : ResNode
 {
     private const float SettingsRowY = 0.0f;
     private const float DividerY = 32.0f;
@@ -83,7 +83,7 @@ public class MountListEditorNode : ResNode
 
     private readonly ContextMenu mountContextMenu = new();
 
-    public MountListEditorNode()
+    public MountListItemEditorNode()
     {
         confirmationDialog = new ConfirmationDialogNode
         {
