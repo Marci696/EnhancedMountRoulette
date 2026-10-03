@@ -4,17 +4,16 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using Dalamud.Game.Gui.Toast;
+using EnhancedMountRoulette.Commands;
+using EnhancedMountRoulette.Configuration;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.ContextMenu;
 using KamiToolKit.Nodes;
-using EnhancedMountRoulette.Commands;
-using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Native;
 using Lumina.Excel.Sheets;
 using Lumina.Text.ReadOnly;
 using AgentContext = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentContext;
 
-namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
+namespace EnhancedMountRoulette.Addons.Settings.MountListItemEditor;
 
 public class MountListItemEditorNode : ResNode
 {
@@ -478,7 +477,7 @@ public class MountListItemEditorNode : ResNode
             String = "Add All",
             OnClick = ConfirmAndAddAll,
         };
-        NativeButtonStyles.StyleAsAdd(addAllButtonNode);
+        ButtonStyles.StyleAsAdd(addAllButtonNode);
         row.AddNode(addAllButtonNode);
 
         removeAllButtonNode = new TextButtonNode
@@ -487,7 +486,7 @@ public class MountListItemEditorNode : ResNode
             String = "Remove All",
             OnClick = ConfirmAndRemoveAll,
         };
-        NativeButtonStyles.StyleAsRemove(removeAllButtonNode);
+        ButtonStyles.StyleAsRemove(removeAllButtonNode);
         row.AddNode(removeAllButtonNode);
 
         return row;

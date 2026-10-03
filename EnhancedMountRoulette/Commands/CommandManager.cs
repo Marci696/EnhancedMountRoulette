@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using EnhancedMountRoulette.Addons.Settings;
 using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Config;
-using EnhancedMountRoulette.Windows.Native;
+using EnhancedMountRoulette.Windows.Settings;
 
 namespace EnhancedMountRoulette.Commands;
 
@@ -11,7 +11,7 @@ internal class CommandManager : IDisposable
 {
     private List<ICommand> Commands { get; }
 
-    public CommandManager(NativeSettingsAddon nativeSettings, LegacySettingsWindow legacySettings)
+    public CommandManager(SettingsAddon nativeSettings, LegacySettingsWindow legacySettings)
     {
         Commands =
         [

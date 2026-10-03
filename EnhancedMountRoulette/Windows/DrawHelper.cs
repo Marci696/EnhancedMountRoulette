@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Numerics;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.ImGuiSeStringRenderer;
@@ -11,8 +12,6 @@ using FFXIVClientStructs.FFXIV.Client.Graphics.Scene;
 using Lumina.Data.Parsing.Layer;
 
 namespace EnhancedMountRoulette.Windows;
-
-using Dalamud.Bindings.ImGui;
 
 public static class DrawHelper
 {

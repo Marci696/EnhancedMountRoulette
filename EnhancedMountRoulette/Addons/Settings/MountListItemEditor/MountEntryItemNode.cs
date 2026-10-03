@@ -1,15 +1,13 @@
 using System;
 using System.Globalization;
 using System.Numerics;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Enums;
 using KamiToolKit.Interfaces;
 using KamiToolKit.Nodes;
 using Lumina.Excel.Sheets;
-using EnhancedMountRoulette.Windows.Native;
 
-namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
+namespace EnhancedMountRoulette.Addons.Settings.MountListItemEditor;
 
 public unsafe class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 {
@@ -145,7 +143,7 @@ public unsafe class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
                 }
             },
         };
-        NativeButtonStyles.StyleAsAdd(button);
+        ButtonStyles.StyleAsAdd(button);
         button.AttachNode(this);
         return button;
     }
@@ -222,11 +220,11 @@ public unsafe class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         toggleButton.String = itemData.IsInSummonList ? "Remove" : "Add";
         if (itemData.IsInSummonList)
         {
-            NativeButtonStyles.StyleAsRemove(toggleButton);
+            ButtonStyles.StyleAsRemove(toggleButton);
         }
         else
         {
-            NativeButtonStyles.StyleAsAdd(toggleButton);
+            ButtonStyles.StyleAsAdd(toggleButton);
         }
     }
 

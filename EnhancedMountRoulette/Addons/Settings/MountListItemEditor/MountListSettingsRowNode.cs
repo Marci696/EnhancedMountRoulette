@@ -1,11 +1,10 @@
 using System;
 using System.Linq;
 using System.Numerics;
-using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Native;
+using KamiToolKit.Nodes;
 
-namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
+namespace EnhancedMountRoulette.Addons.Settings.MountListItemEditor;
 
 /// <summary>
 /// Top editor strip: list name, type, fetch mode, delete, and copy-macro.
@@ -116,7 +115,7 @@ public class MountListSettingsRowNode : HorizontalListNode
             String = "Delete",
             OnClick = () => OnDeleteClicked?.Invoke(),
         };
-        NativeButtonStyles.StyleAsRemove(button);
+        ButtonStyles.StyleAsRemove(button);
         AddNode(button);
     }
 

@@ -1,12 +1,11 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using EnhancedMountRoulette.Configuration;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Nodes;
-using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Native;
 
-namespace EnhancedMountRoulette.Windows.Native.MountListsOverview;
+namespace EnhancedMountRoulette.Addons.Settings.MountListsOverview;
 
 /// <summary>
 /// Left-side mount-lists overview: add whitelist/blacklist, list header, and selectable lists.
@@ -112,7 +111,7 @@ public class MountListsOverviewNode : VerticalListNode
                 OnListsChanged?.Invoke();
             },
         };
-        NativeButtonStyles.StyleAsAdd(button);
+        ButtonStyles.StyleAsAdd(button);
         return button;
     }
 

@@ -5,7 +5,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Nodes;
 using KamiToolKit.Nodes.Simplified;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Addons.Settings.Footer;
 
 /// <summary>
 /// Owned/total mount progress with a native Parameter_Gauge frame and a solid fill.

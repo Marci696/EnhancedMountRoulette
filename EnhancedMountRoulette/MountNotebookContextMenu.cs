@@ -1,6 +1,5 @@
 ﻿using System;
 using Dalamud.Game.Gui.ContextMenu;
-using Lumina.Excel.Sheets;
 
 namespace EnhancedMountRoulette;
 

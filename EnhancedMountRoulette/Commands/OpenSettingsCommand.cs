@@ -1,9 +1,9 @@
 ﻿using Dalamud.Game.Command;
-using EnhancedMountRoulette.Windows.Native;
+using EnhancedMountRoulette.Addons.Settings;
 
 namespace EnhancedMountRoulette.Commands;
 
-internal class OpenSettingsCommand(NativeSettingsAddon nativeSettings) : ICommand
+internal class OpenSettingsCommand(SettingsAddon nativeSettings) : ICommand
 {
     public string Command => "/emr-settings";
 

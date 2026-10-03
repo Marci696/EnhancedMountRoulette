@@ -1,29 +1,27 @@
 using System;
 using System.Linq;
 using System.Numerics;
+using EnhancedMountRoulette.Addons.Settings.Footer;
+using EnhancedMountRoulette.Addons.Settings.MountListItemEditor;
+using EnhancedMountRoulette.Addons.Settings.MountListsOverview;
+using EnhancedMountRoulette.Configuration;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.BaseTypes;
 using KamiToolKit.Nodes;
-using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Native.MountListItemEditor;
-using EnhancedMountRoulette.Windows.Native.MountListsOverview;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Addons.Settings;
 
-public unsafe class NativeSettingsAddon : NativeAddon
+public unsafe class SettingsAddon : NativeAddon
 {
     private const float FooterProgressWidth = MountListsOverviewNode.PreferredWidth * 4.0f / 3.0f;
     private const float ColumnDividerWidth = 4.0f;
     private const float ColumnSpacing = 16.0f;
     private const float ContentSpacing = 6.0f;
-    private const float FooterLineHeight = 4.0f;
-    private const float FooterHeight = FooterLineHeight
-        + OwnedMountsProgressNode.PreferredHeight
-        + (ContentSpacing * 2.0f);
+    private static readonly float FooterHeight = FooterNode.PreferredHeight + ContentSpacing;
 
     private MountListsOverviewNode? mountListsOverviewNode;
     private MountListItemEditorNode? mountListItemEditorNode;
-    private OwnedMountsProgressNode? footerProgressNode;
+    private FooterNode? footerNode;
 
     protected override void OnSetup(AtkUnitBase* addon, Span<AtkValue> atkValueSpan)
     {
@@ -50,7 +48,7 @@ public unsafe class NativeSettingsAddon : NativeAddon
     protected override void OnShow(AtkUnitBase* addon)
     {
         // Owned/total only changes on acquire or patch (restart). Recount when the window opens.
-        footerProgressNode?.Refresh();
+        footerNode?.Refresh();
     }
 
     protected override void OnHide(AtkUnitBase* addon)
@@ -127,19 +125,8 @@ public unsafe class NativeSettingsAddon : NativeAddon
 
     private void AddFooter(VerticalListNode contentRoot)
     {
-        contentRoot.AddNode(
-            new HorizontalLineNode
-            {
-                Size = new Vector2(ContentSize.X, FooterLineHeight),
-            }
-        );
-
-        footerProgressNode = new OwnedMountsProgressNode
-        {
-            Size = new Vector2(FooterProgressWidth, OwnedMountsProgressNode.PreferredHeight),
-        };
-        contentRoot.AddNode(footerProgressNode);
-        footerProgressNode.Refresh();
+        footerNode = new FooterNode(ContentSize.X, FooterProgressWidth);
+        contentRoot.AddNode(footerNode);
     }
 
     private void SelectInitialMountList()

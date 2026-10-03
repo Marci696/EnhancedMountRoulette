@@ -1,10 +1,10 @@
-﻿using Dalamud.Bindings.ImGui;
+using Dalamud.Bindings.ImGui;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Interface.Utility.Raii;
 using EnhancedMountRoulette.Commands;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Settings;
 
 public class Explanation : IDrawable
 {

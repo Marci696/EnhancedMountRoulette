@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -12,7 +12,7 @@ using EnhancedMountRoulette.Configuration;
 using Lumina.Excel.Sheets;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Settings;
 
 public class OwnedMountsTable(MountList mountList)
     : Table

@@ -1,11 +1,10 @@
 using System.Numerics;
 using KamiToolKit.Classes;
 using KamiToolKit.Nodes;
-using KamiToolKit.Nodes.Simplified;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Addons.Settings;
 
-public static class NativeButtonStyles
+public static class ButtonStyles
 {
     // Button timelines overwrite BackgroundNode.MultiplyColor every frame.
     // Color (RGBA) is not timeline-driven, so tint via that instead.

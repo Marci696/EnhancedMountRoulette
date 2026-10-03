@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
@@ -8,7 +8,7 @@ using EnhancedMountRoulette.Commands;
 using EnhancedMountRoulette.Configuration;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Settings;
 
 public class MountListTable : Table
 {

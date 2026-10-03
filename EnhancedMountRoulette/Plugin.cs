@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,9 +6,9 @@ using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using EnhancedMountRoulette.Commands;
-using EnhancedMountRoulette.Windows.Config;
-using EnhancedMountRoulette.Windows.Native;
 using Dalamud.Interface.Windowing;
+using EnhancedMountRoulette.Addons.Settings;
+using EnhancedMountRoulette.Windows.Settings;
 using KamiToolKit;
 
 namespace EnhancedMountRoulette;
@@ -62,7 +62,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private CommandManager? CommandManager { get; set; }
 
-    private NativeSettingsAddon? NativeSettingsAddon { get; set; }
+    private SettingsAddon? SettingsAddon { get; set; }
 
     private LegacySettingsWindow? LegacySettingsWindow { get; set; }
 
@@ -128,7 +128,7 @@ public sealed class Plugin : IDalamudPlugin
                 return;
             }
 
-            NativeSettingsAddon = new NativeSettingsAddon
+            SettingsAddon = new SettingsAddon
             {
                 InternalName = "EMRConfig",
                 Title = "Enhanced Mount Roulette",
@@ -140,7 +140,7 @@ public sealed class Plugin : IDalamudPlugin
             WindowSystem.AddWindow(LegacySettingsWindow);
 
             MountNotebookContextMenu = new MountNotebookContextMenu();
-            CommandManager = new CommandManager(NativeSettingsAddon, LegacySettingsWindow);
+            CommandManager = new CommandManager(SettingsAddon, LegacySettingsWindow);
 
             PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
             PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
@@ -168,7 +168,7 @@ public sealed class Plugin : IDalamudPlugin
 
             CommandManager?.Dispose();
             MountNotebookContextMenu?.Dispose();
-            NativeSettingsAddon?.Dispose();
+            SettingsAddon?.Dispose();
             LegacySettingsWindow?.Dispose();
 
             if (isKamiToolKitLibraryInitialized)
@@ -181,5 +181,5 @@ public sealed class Plugin : IDalamudPlugin
         initCancellationTokenSource.Dispose();
     }
 
-    public void ToggleConfigUi() => NativeSettingsAddon?.Toggle();
+    public void ToggleConfigUi() => SettingsAddon?.Toggle();
 }

@@ -1,4 +1,4 @@
-﻿using Dalamud.Game.Command;
+using Dalamud.Game.Command;
 using Dalamud.Utility;
 using EnhancedMountRoulette.Configuration;
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
@@ -6,7 +6,7 @@ using Dalamud.Interface.Windowing;
 using EnhancedMountRoulette.Configuration;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Settings;
 
 public class LegacySettingsWindow : Window, IDisposable, IDrawable
 {

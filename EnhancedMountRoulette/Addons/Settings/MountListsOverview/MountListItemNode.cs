@@ -1,12 +1,12 @@
 using System;
 using System.Numerics;
+using EnhancedMountRoulette.Configuration;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Enums;
 using KamiToolKit.Interfaces;
 using KamiToolKit.Nodes;
-using EnhancedMountRoulette.Configuration;
 
-namespace EnhancedMountRoulette.Windows.Native.MountListsOverview;
+namespace EnhancedMountRoulette.Addons.Settings.MountListsOverview;
 
 public class MountListItemNode : ListItemNode<MountList>, IListItemNode
 {

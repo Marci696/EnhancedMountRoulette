@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -11,7 +11,7 @@ using EnhancedMountRoulette.Commands;
 using EnhancedMountRoulette.Configuration;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Config;
+namespace EnhancedMountRoulette.Windows.Settings;
 
 public class MountListExplanationTable : Table
 {
