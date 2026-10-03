@@ -37,20 +37,11 @@ public class MountListsOverviewNode : VerticalListNode
         ItemSpacing = ItemSpacingY;
         FitWidth = true;
 
-        AddNode(CreateAddButtonsRow());
-        AddNode(CreateListHeader());
+        AddButtonsRow();
+        AddListHeader();
+        mountListNode = AddMountList(height);
 
         MountListItemNode.OnListsChanged = () => OnListsChanged?.Invoke();
-
-        mountListNode = new ListNode<MountList, MountListItemNode>
-        {
-            Size = new Vector2(PreferredWidth, Math.Max(80.0f, height - ChromeHeight)),
-            ItemSpacing = 2.0f,
-            OptionsList = ConfigManager.Instance.OrderedMountList,
-            OnItemSelected = HandleItemSelected,
-            AutoResetScroll = false,
-        };
-        AddNode(mountListNode);
     }
 
     public void Update()
@@ -81,38 +72,16 @@ public class MountListsOverviewNode : VerticalListNode
 
         // OptionsList assignment may FullRebuild and clear SelectedItems; set selection after.
         mountListNode.OptionsList = lists;
-        SyncSelectionHighlight();
+        UpdateSelectionHighlight();
     }
 
     public void Select(MountList mountList)
     {
         selectedMountList = mountList;
-        SyncSelectionHighlight();
+        UpdateSelectionHighlight();
     }
 
-    private void HandleItemSelected(MountList? mountList)
-    {
-        if (mountList is null)
-        {
-            return;
-        }
-
-        selectedMountList = mountList;
-        OnMountListSelected?.Invoke(mountList);
-    }
-
-    private void SyncSelectionHighlight()
-    {
-        mountListNode.SelectedItems.Clear();
-        if (selectedMountList is not null)
-        {
-            mountListNode.SelectedItems.Add(selectedMountList);
-        }
-
-        mountListNode.Update();
-    }
-
-    private HorizontalListNode CreateAddButtonsRow()
+    private void AddButtonsRow()
     {
         var addButtons = new HorizontalListNode
         {
@@ -120,12 +89,12 @@ public class MountListsOverviewNode : VerticalListNode
             ItemSpacing = 4.0f,
         };
 
-        addButtons.AddNode(CreateAddListButton("Add Whitelist", MountListType.Whitelist));
-        addButtons.AddNode(CreateAddListButton("Add Blacklist", MountListType.Blacklist));
-        return addButtons;
+        addButtons.AddNode(AddListButton("Add Whitelist", MountListType.Whitelist));
+        addButtons.AddNode(AddListButton("Add Blacklist", MountListType.Blacklist));
+        AddNode(addButtons);
     }
 
-    private TextButtonNode CreateAddListButton(string label, MountListType listType)
+    private TextButtonNode AddListButton(string label, MountListType listType)
     {
         var button = new TextButtonNode
         {
@@ -147,7 +116,7 @@ public class MountListsOverviewNode : VerticalListNode
         return button;
     }
 
-    private static ResNode CreateListHeader()
+    private void AddListHeader()
     {
         var listHeader = new ResNode
         {
@@ -184,6 +153,42 @@ public class MountListsOverviewNode : VerticalListNode
         };
         defaultHeader.AttachNode(listHeader);
 
-        return listHeader;
+        AddNode(listHeader);
+    }
+
+    private ListNode<MountList, MountListItemNode> AddMountList(float height)
+    {
+        var list = new ListNode<MountList, MountListItemNode>
+        {
+            Size = new Vector2(PreferredWidth, Math.Max(80.0f, height - ChromeHeight)),
+            ItemSpacing = 2.0f,
+            OptionsList = ConfigManager.Instance.OrderedMountList,
+            OnItemSelected = OnItemSelected,
+            AutoResetScroll = false,
+        };
+        AddNode(list);
+        return list;
+    }
+
+    private void OnItemSelected(MountList? mountList)
+    {
+        if (mountList is null)
+        {
+            return;
+        }
+
+        selectedMountList = mountList;
+        OnMountListSelected?.Invoke(mountList);
+    }
+
+    private void UpdateSelectionHighlight()
+    {
+        mountListNode.SelectedItems.Clear();
+        if (selectedMountList is not null)
+        {
+            mountListNode.SelectedItems.Add(selectedMountList);
+        }
+
+        mountListNode.Update();
     }
 }
