@@ -19,7 +19,7 @@ public class MountList
     public ImmutableHashSet<uint> MountIds
     {
         get => _mountIds.ToImmutableHashSet();
-        init => _mountIds = [..value];
+        init => _mountIds = [.. value];
     }
 
     public FetchNextType FetchNextType { get; init; } = FetchNextType.Shuffle;
@@ -110,7 +110,7 @@ public class MountList
                 var mountIdSpan = CollectionsMarshal.AsSpan(availableMountsForList);
                 Random.Shared.Shuffle(mountIdSpan);
 
-                queuedMountIds = new Queue<uint>([..mountIdSpan]);
+                queuedMountIds = new Queue<uint>([.. mountIdSpan]);
             }
             else
             {

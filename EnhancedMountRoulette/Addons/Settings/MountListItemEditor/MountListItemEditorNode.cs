@@ -324,12 +324,7 @@ public class MountListItemEditorNode : ResNode
         selectionDropDown = new EnumDropDownNode<MountSelectionFilter>
         {
             Size = new Vector2(140.0f, RowHeight),
-            Options =
-            [
-                MountSelectionFilter.All,
-                MountSelectionFilter.Selected,
-                MountSelectionFilter.Unselected,
-            ],
+            Options = [MountSelectionFilter.All, MountSelectionFilter.Selected, MountSelectionFilter.Unselected,],
             SelectedOption = MountSelectionFilter.All,
             OnOptionSelected = option =>
             {
@@ -346,12 +341,7 @@ public class MountListItemEditorNode : ResNode
         seatDropDown = new EnumDropDownNode<MountSeatFilter>
         {
             Size = new Vector2(90.0f, RowHeight),
-            Options =
-            [
-                MountSeatFilter.All,
-                MountSeatFilter.Single,
-                MountSeatFilter.Multi,
-            ],
+            Options = [MountSeatFilter.All, MountSeatFilter.Single, MountSeatFilter.Multi,],
             SelectedOption = MountSeatFilter.All,
             OnOptionSelected = option =>
             {
@@ -679,11 +669,10 @@ public class MountListItemEditorNode : ResNode
         );
     }
 
-    private List<uint> GetFilteredOwnedMountIds(bool inSummonList) =>
-        GetFilteredMountEntries()
-            .Where(entry => entry.IsOwned && entry.IsInSummonList == inSummonList)
-            .Select(entry => entry.Mount.RowId)
-            .ToList();
+    private List<uint> GetFilteredOwnedMountIds(bool inSummonList) => GetFilteredMountEntries()
+        .Where(entry => entry.IsOwned && entry.IsInSummonList == inSummonList)
+        .Select(entry => entry.Mount.RowId)
+        .ToList();
 
     private void RenameList(string newName)
     {
@@ -767,10 +756,11 @@ public class MountListItemEditorNode : ResNode
             var mountId = mount.RowId;
 
             if (!string.IsNullOrEmpty(filters.SearchText)
-                && !mount.Singular.ExtractText().Contains(
-                    filters.SearchText,
-                    StringComparison.CurrentCultureIgnoreCase
-                ))
+                && !mount.Singular.ExtractText()
+                    .Contains(
+                        filters.SearchText,
+                        StringComparison.CurrentCultureIgnoreCase
+                    ))
             {
                 continue;
             }
@@ -825,17 +815,29 @@ public class MountListItemEditorNode : ResNode
                 ? entries.OrderBy(entry => entry.SeatCount)
                     .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(entry => entry.SeatCount)
-                    .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
+                    .ThenByDescending(
+                        entry => entry.Mount.Singular.ExtractText(),
+                        StringComparer.CurrentCultureIgnoreCase
+                    ),
             MountSortMode.Owned => sorting.Ascending
                 ? entries.OrderBy(entry => entry.OwnedPercent ?? float.MaxValue)
                     .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(entry => entry.OwnedPercent ?? float.MinValue)
-                    .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
+                    .ThenByDescending(
+                        entry => entry.Mount.Singular.ExtractText(),
+                        StringComparer.CurrentCultureIgnoreCase
+                    ),
             MountSortMode.Patch => sorting.Ascending
                 ? entries.OrderBy(entry => entry.Patch, Comparer<string?>.Create(MountCollectInfo.ComparePatch))
                     .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
-                : entries.OrderByDescending(entry => entry.Patch, Comparer<string?>.Create(MountCollectInfo.ComparePatch))
-                    .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
+                : entries.OrderByDescending(
+                        entry => entry.Patch,
+                        Comparer<string?>.Create(MountCollectInfo.ComparePatch)
+                    )
+                    .ThenByDescending(
+                        entry => entry.Mount.Singular.ExtractText(),
+                        StringComparer.CurrentCultureIgnoreCase
+                    ),
             _ => sorting.Ascending
                 ? entries.OrderBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(
@@ -866,33 +868,30 @@ public class MountListItemEditorNode : ResNode
         RefreshSelectedList();
     }
 
-    private static TextNode AddFilterCategoryLabel(string text, float width) =>
-        new()
-        {
-            Size = new Vector2(width, RowHeight),
-            FontSize = 12,
-            LineSpacing = 12,
-            AlignmentType = AlignmentType.Right,
-            TextFlags = TextFlags.Edge,
-            TextColor = new Vector4(0.85f, 0.85f, 0.85f, 1.0f),
-            String = text,
-        };
+    private static TextNode AddFilterCategoryLabel(string text, float width) => new()
+    {
+        Size = new Vector2(width, RowHeight),
+        FontSize = 12,
+        LineSpacing = 12,
+        AlignmentType = AlignmentType.Right,
+        TextFlags = TextFlags.Edge,
+        TextColor = new Vector4(0.85f, 0.85f, 0.85f, 1.0f),
+        String = text,
+    };
 
-    private static ReadOnlySeString FormatSelectionFilterLabel(MountSelectionFilter filter) =>
-        filter switch
-        {
-            MountSelectionFilter.Selected => "Selected",
-            MountSelectionFilter.Unselected => "Unselected",
-            _ => "All",
-        };
+    private static ReadOnlySeString FormatSelectionFilterLabel(MountSelectionFilter filter) => filter switch
+    {
+        MountSelectionFilter.Selected => "Selected",
+        MountSelectionFilter.Unselected => "Unselected",
+        _ => "All",
+    };
 
-    private static ReadOnlySeString FormatSeatFilterLabel(MountSeatFilter filter) =>
-        filter switch
-        {
-            MountSeatFilter.Single => "One",
-            MountSeatFilter.Multi => "Multi",
-            _ => "All",
-        };
+    private static ReadOnlySeString FormatSeatFilterLabel(MountSeatFilter filter) => filter switch
+    {
+        MountSeatFilter.Single => "One",
+        MountSeatFilter.Multi => "Multi",
+        _ => "All",
+    };
 
     private unsafe void OpenMountContextMenu(Mount mount)
     {
@@ -961,8 +960,7 @@ public class MountListItemEditorNode : ResNode
                     {
                         agent->OpenContextMenu(bindToOwner: false);
                     }
-                }
-                finally
+                } finally
                 {
                     MountRouletteMenuItems.SuppressNativeMountMenuInjection = false;
                 }

@@ -23,10 +23,9 @@ internal static class MountRouletteMenuItems
     /// </summary>
     public static bool SuppressNativeMountMenuInjection { get; set; }
 
-    public static string GetHeaderLabel(MountListType mountListType) =>
-        mountListType == MountListType.Whitelist
-            ? "---- Roulette WhiteLists: ----"
-            : "---- Roulette BlackLists: ----";
+    public static string GetHeaderLabel(MountListType mountListType) => mountListType == MountListType.Whitelist
+        ? "---- Roulette WhiteLists: ----"
+        : "---- Roulette BlackLists: ----";
 
     public static MountListMenuItem CreateForMountList(MountList mountList, Mount mount)
     {
@@ -136,18 +135,16 @@ internal record MountListMenuItem(
     Mount Mount
 )
 {
-    public MenuItem ToNativeMenuItem() =>
-        new()
-        {
-            Name = Name,
-            IsEnabled = true,
-            Prefix = Prefix,
-            PrefixColor = (ushort)PrefixColor,
-            OnClicked = (_) => ToggleMountInList(),
-        };
+    public MenuItem ToNativeMenuItem() => new()
+    {
+        Name = Name,
+        IsEnabled = true,
+        Prefix = Prefix,
+        PrefixColor = (ushort)PrefixColor,
+        OnClicked = (_) => ToggleMountInList(),
+    };
 
-    public ReadOnlySeString ToKamiMenuName() =>
-        FormatKamiMenuName(Prefix, (ushort)PrefixColor, Name);
+    public ReadOnlySeString ToKamiMenuName() => FormatKamiMenuName(Prefix, (ushort)PrefixColor, Name);
 
     public static ReadOnlySeString FormatKamiMenuName(SeIconChar icon, ushort? color, string name)
     {
@@ -175,6 +172,7 @@ internal record MountListMenuItem(
         {
             ImGui.Text(GetImGuiIcon().ToIconString());
         }
+
         ImGui.PopStyleColor();
 
         ImGui.SameLine();

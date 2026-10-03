@@ -30,8 +30,7 @@ public static class FfxivCollectMountData
 
     private static Dictionary<uint, MountCollectInfo> byMountId = new();
 
-    public static MountCollectInfo? Get(uint mountId) =>
-        byMountId.TryGetValue(mountId, out var info) ? info : null;
+    public static MountCollectInfo? Get(uint mountId) => byMountId.TryGetValue(mountId, out var info) ? info : null;
 
     /// <summary>
     /// Loads the last successful cache, then refreshes from the API once.
@@ -50,7 +49,11 @@ public static class FfxivCollectMountData
         }
         catch (Exception ex)
         {
-            Plugin.Log.Error(ex, "Failed to retrieve mount Own%/Patch data from FFXIV Collect; using cached data ({Count} mounts).", byMountId.Count);
+            Plugin.Log.Error(
+                ex,
+                "Failed to retrieve mount Own%/Patch data from FFXIV Collect; using cached data ({Count} mounts).",
+                byMountId.Count
+            );
         }
     }
 
@@ -137,8 +140,10 @@ public static class FfxivCollectMountData
         }
     }
 
-    private static string GetCachePath() =>
-        Path.Combine(Plugin.PluginInterface.GetPluginConfigDirectory(), CacheFileName);
+    private static string GetCachePath() => Path.Combine(
+        Plugin.PluginInterface.GetPluginConfigDirectory(),
+        CacheFileName
+    );
 
     private sealed class CollectMountsResponse
     {
