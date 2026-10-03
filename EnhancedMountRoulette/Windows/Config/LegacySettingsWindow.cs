@@ -8,13 +8,13 @@ using static EnhancedMountRoulette.Windows.DrawHelper;
 
 namespace EnhancedMountRoulette.Windows.Config;
 
-public class ConfigWindow : Window, IDisposable, IDrawable
+public class LegacySettingsWindow : Window, IDisposable, IDrawable
 {
     private readonly MountListTable mountListTable = new MountListTable();
     private readonly Explanation explanation = new();
 
-    public ConfigWindow() : base(
-        "Enhanced Mount Roulette Configuration"
+    public LegacySettingsWindow() : base(
+        "Enhanced Mount Roulette Configuration (Legacy)"
     )
     {
         // Flags |= ImGuiWindowFlags.AlwaysAutoResize;

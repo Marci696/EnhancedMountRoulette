@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
 using EnhancedMountRoulette.Commands;
+using EnhancedMountRoulette.Windows.Config;
 using EnhancedMountRoulette.Windows.Native;
+using Dalamud.Interface.Windowing;
 using KamiToolKit;
 
 namespace EnhancedMountRoulette;
@@ -59,9 +62,37 @@ public sealed class Plugin : IDalamudPlugin
 
     private CommandManager? CommandManager { get; set; }
 
-    private ConfigAddon? ConfigAddon { get; set; }
+    private NativeSettingsAddon? NativeSettingsAddon { get; set; }
+
+    private LegacySettingsWindow? LegacySettingsWindow { get; set; }
+
+    private WindowSystem? WindowSystem { get; set; }
 
     private MountNotebookContextMenu? MountNotebookContextMenu { get; set; }
+
+    /// <summary>
+    /// Serializes async init vs <see cref="Dispose"/> so they cannot create and tear down
+    /// windows/commands/KamiToolKit at the same time. Does not lock game or UI state.
+    /// </summary>
+    private readonly Lock initSync = new();
+
+    /// <summary>
+    /// Cancelled in <see cref="Dispose"/> so a still-running <see cref="InitializeAsync"/>
+    /// can bail out before creating UI after unload has started.
+    /// </summary>
+    private readonly CancellationTokenSource initCancellationTokenSource = new();
+
+    /// <summary>
+    /// True after <see cref="Dispose"/> has begun; init checks this under <see cref="initSync"/>.
+    /// </summary>
+    private bool isDisposed;
+
+    /// <summary>
+    /// True after <see cref="KamiToolKitLibrary.InitializeAsync"/> succeeded for this plugin
+    /// instance, so <see cref="Dispose"/> knows whether <see cref="KamiToolKitLibrary.Dispose"/>
+    /// must run (including the case where unload raced mid-init).
+    /// </summary>
+    private bool isKamiToolKitLibraryInitialized;
 
     public Plugin()
     {
@@ -70,38 +101,90 @@ public sealed class Plugin : IDalamudPlugin
         FFXIVClientStructs.Interop.Generated.Addresses.Register();
         InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
 
-        _ = InitializeAsync();
+        _ = InitializeAsync(initCancellationTokenSource.Token);
     }
 
-    private async Task InitializeAsync()
+    private async Task InitializeAsync(CancellationToken cancellationToken)
     {
         await KamiToolKitLibrary.InitializeAsync(PluginInterface, "Enhanced Mount Roulette");
 
+        lock (initSync)
+        {
+            if (isDisposed)
+            {
+                KamiToolKitLibrary.Dispose();
+                return;
+            }
+
+            isKamiToolKitLibraryInitialized = true;
+        }
+
         await FfxivCollectMountData.InitializeAsync();
 
-        ConfigAddon = new ConfigAddon
+        if (cancellationToken.IsCancellationRequested)
         {
-            InternalName = "EMRConfig",
-            Title = "Enhanced Mount Roulette",
-            Size = new Vector2(900.0f, 620.0f),
-        };
+            return;
+        }
 
-        MountNotebookContextMenu = new MountNotebookContextMenu();
-        CommandManager = new CommandManager(ConfigAddon);
+        lock (initSync)
+        {
+            if (isDisposed)
+            {
+                return;
+            }
 
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
+            NativeSettingsAddon = new NativeSettingsAddon
+            {
+                InternalName = "EMRConfig",
+                Title = "Enhanced Mount Roulette",
+                Size = new Vector2(900.0f, 620.0f),
+            };
+
+            LegacySettingsWindow = new LegacySettingsWindow();
+            WindowSystem = new WindowSystem("EnhancedMountRoulette");
+            WindowSystem.AddWindow(LegacySettingsWindow);
+
+            MountNotebookContextMenu = new MountNotebookContextMenu();
+            CommandManager = new CommandManager(NativeSettingsAddon, LegacySettingsWindow);
+
+            PluginInterface.UiBuilder.Draw += WindowSystem.Draw;
+            PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
+        }
     }
 
     public void Dispose()
     {
-        PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
+        lock (initSync)
+        {
+            if (isDisposed)
+            {
+                return;
+            }
 
-        CommandManager?.Dispose();
-        MountNotebookContextMenu?.Dispose();
-        ConfigAddon?.Dispose();
+            isDisposed = true;
 
-        KamiToolKitLibrary.Dispose();
+            PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
+
+            if (WindowSystem is not null)
+            {
+                PluginInterface.UiBuilder.Draw -= WindowSystem.Draw;
+                WindowSystem.RemoveAllWindows();
+            }
+
+            CommandManager?.Dispose();
+            MountNotebookContextMenu?.Dispose();
+            NativeSettingsAddon?.Dispose();
+            LegacySettingsWindow?.Dispose();
+
+            if (isKamiToolKitLibraryInitialized)
+            {
+                KamiToolKitLibrary.Dispose();
+            }
+        }
+
+        initCancellationTokenSource.Cancel();
+        initCancellationTokenSource.Dispose();
     }
 
-    public void ToggleConfigUi() => ConfigAddon?.Toggle();
+    public void ToggleConfigUi() => NativeSettingsAddon?.Toggle();
 }

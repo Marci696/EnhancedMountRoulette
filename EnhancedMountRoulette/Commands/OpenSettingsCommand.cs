@@ -3,7 +3,7 @@ using EnhancedMountRoulette.Windows.Native;
 
 namespace EnhancedMountRoulette.Commands;
 
-internal class OpenSettingsMenu(ConfigAddon configAddon) : ICommand
+internal class OpenSettingsCommand(NativeSettingsAddon nativeSettings) : ICommand
 {
     public string Command => "/emr-settings";
 
@@ -11,6 +11,6 @@ internal class OpenSettingsMenu(ConfigAddon configAddon) : ICommand
 
     private void Handler(string _, string __)
     {
-        configAddon.Toggle();
+        nativeSettings.Toggle();
     }
 }

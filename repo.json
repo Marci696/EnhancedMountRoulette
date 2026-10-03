@@ -16,7 +16,7 @@
     "AssemblyVersion": "2.0.0.0",
     "TestingAssemblyVersion": null,
     "ApplicableVersion": "any",
-    "DalamudApiLevel": 14,
+    "DalamudApiLevel": 15,
     "IsHide": false,
     "IsTestingExclusive": false,
     "ImageUrls": [],

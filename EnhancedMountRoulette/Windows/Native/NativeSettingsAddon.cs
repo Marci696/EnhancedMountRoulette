@@ -8,7 +8,7 @@ using EnhancedMountRoulette.Configuration;
 
 namespace EnhancedMountRoulette.Windows.Native;
 
-public unsafe class ConfigAddon : NativeAddon
+public unsafe class NativeSettingsAddon : NativeAddon
 {
     private const float LeftColumnWidth = 240.0f;
     private const float OwnershipProgressWidth = LeftColumnWidth * 4.0f / 3.0f;
@@ -190,6 +190,7 @@ public unsafe class ConfigAddon : NativeAddon
         {
             selectedMountList = first;
             editorNode.Bind(first);
+            SyncMountListSelection();
         }
     }
 
@@ -203,7 +204,17 @@ public unsafe class ConfigAddon : NativeAddon
     {
         // Dropdown popups reattach to the addon root while open; collapse first
         // so Escape → Close does not finalize them with live event links.
-        editorNode?.CollapseOpenDropDowns();
+        // Also cancel any deferred context-menu open scheduled for the next tick.
+        editorNode?.PrepareForHide();
+    }
+
+    public override void Dispose()
+    {
+        // Collapse/cancel before KamiToolKit Close()/finalize tears nodes down.
+        editorNode?.PrepareForTeardown();
+        MountListItemNode.OnListsChanged = null;
+        MountEntryItemNode.OnOpenContextMenu = null;
+        base.Dispose();
     }
 
     private void OnMountListSelected(MountList? mountList)
@@ -225,7 +236,6 @@ public unsafe class ConfigAddon : NativeAddon
         }
 
         var lists = ConfigManager.Instance.OrderedMountList;
-        mountListNode.OptionsList = lists;
 
         if (selectedMountList is null || lists.All(list => list.Id != selectedMountList.Id))
         {
@@ -236,11 +246,31 @@ public unsafe class ConfigAddon : NativeAddon
             selectedMountList = lists.First(list => list.Id == selectedMountList.Id);
         }
 
+        // OptionsList assignment may FullRebuild and clear SelectedItems; set selection after.
+        mountListNode.OptionsList = lists;
+        SyncMountListSelection();
+
         if (selectedMountList is not null)
         {
             editorNode?.Bind(selectedMountList);
         }
 
         ownershipProgressNode?.Refresh();
+    }
+
+    private void SyncMountListSelection()
+    {
+        if (mountListNode is null)
+        {
+            return;
+        }
+
+        mountListNode.SelectedItems.Clear();
+        if (selectedMountList is not null)
+        {
+            mountListNode.SelectedItems.Add(selectedMountList);
+        }
+
+        mountListNode.Update();
     }
 }

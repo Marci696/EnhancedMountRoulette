@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using EnhancedMountRoulette.Configuration;
+using EnhancedMountRoulette.Windows.Config;
 using EnhancedMountRoulette.Windows.Native;
 
 namespace EnhancedMountRoulette.Commands;
@@ -10,7 +11,7 @@ internal class CommandManager : IDisposable
 {
     private List<ICommand> Commands { get; }
 
-    public CommandManager(ConfigAddon configAddon)
+    public CommandManager(NativeSettingsAddon nativeSettings, LegacySettingsWindow legacySettings)
     {
         Commands =
         [
@@ -20,7 +21,8 @@ internal class CommandManager : IDisposable
             new ClearMountListCommand(),
             new DeleteMountListCommand(),
             new DeleteAllMountListsCommand(),
-            new OpenSettingsMenu(configAddon),
+            new OpenSettingsCommand(nativeSettings),
+            new OpenLegacySettingsCommand(legacySettings),
         ];
 
         foreach (var command in Commands)

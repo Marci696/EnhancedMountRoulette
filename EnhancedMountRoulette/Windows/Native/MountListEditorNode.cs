@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading;
 using Dalamud.Game.Gui.Toast;
 using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
@@ -40,6 +41,20 @@ public class MountListEditorNode : ResNode
     private MountSelectionFilter selectionFilter = MountSelectionFilter.All;
     private MountSeatFilter seatFilter = MountSeatFilter.All;
     private bool ownedOnlyFilter = true;
+
+    /// <summary>
+    /// Set once during final dispose. Blocks further UI work (context menus, dropdown
+    /// collapse) so deferred callbacks cannot touch nodes after teardown starts.
+    /// Not set on ordinary hide/show — the window can reopen.
+    /// </summary>
+    private bool isTearingDown;
+
+    /// <summary>
+    /// Cancels a deferred Framework.RunOnTick context-menu open.
+    /// Right-click schedules the open for the next frame; hide/dispose cancel this so we
+    /// never call AgentContext after the addon is gone.
+    /// </summary>
+    private CancellationTokenSource contextMenuCancellationTokenSource = new();
 
     private readonly TextInputNode nameInput;
     private readonly StringDropDownNode typeDropDown;
@@ -396,10 +411,72 @@ public class MountListEditorNode : ResNode
     /// </summary>
     public void CollapseOpenDropDowns()
     {
+        if (isTearingDown)
+        {
+            return;
+        }
+
         typeDropDown.Collapse(playSoundEffect: false);
         fetchTypeDropDown.Collapse(playSoundEffect: false);
         selectionFilterDropDown.Collapse(playSoundEffect: false);
         seatFilterDropDown.Collapse(playSoundEffect: false);
+    }
+
+    /// <summary>
+    /// Safe work before the addon hides (window can open again later).
+    /// Cancels deferred context-menu opens and collapses dropdown popups.
+    /// </summary>
+    public void PrepareForHide()
+    {
+        if (isTearingDown)
+        {
+            return;
+        }
+
+        CancelPendingContextMenuOpen(replaceTokenSource: true);
+        CollapseOpenDropDowns();
+        mountContextMenu.Close();
+    }
+
+    /// <summary>
+    /// Final teardown before node disposal. Must not run on ordinary hide/show.
+    /// </summary>
+    public void PrepareForTeardown()
+    {
+        if (isTearingDown)
+        {
+            return;
+        }
+
+        isTearingDown = true;
+        MountEntryItemNode.OnOpenContextMenu = null;
+        CancelPendingContextMenuOpen(replaceTokenSource: false);
+
+        typeDropDown.Collapse(playSoundEffect: false);
+        fetchTypeDropDown.Collapse(playSoundEffect: false);
+        selectionFilterDropDown.Collapse(playSoundEffect: false);
+        seatFilterDropDown.Collapse(playSoundEffect: false);
+        mountContextMenu.Close();
+    }
+
+    private void CancelPendingContextMenuOpen(bool replaceTokenSource)
+    {
+        contextMenuCancellationTokenSource.Cancel();
+        contextMenuCancellationTokenSource.Dispose();
+
+        if (replaceTokenSource)
+        {
+            contextMenuCancellationTokenSource = new CancellationTokenSource();
+        }
+
+        MountRouletteMenuItems.SuppressNativeMountMenuInjection = false;
+    }
+
+    protected override void Dispose(bool isNativeDestructor)
+    {
+        PrepareForTeardown();
+        mountContextMenu.Dispose();
+        base.Dispose(isNativeDestructor);
     }
 
     protected override void OnSizeChanged()
@@ -788,6 +865,11 @@ public class MountListEditorNode : ResNode
 
     private unsafe void OpenMountContextMenu(Mount mount)
     {
+        if (isTearingDown)
+        {
+            return;
+        }
+
         mountContextMenu.Clear();
 
         mountContextMenu.AddItem(
@@ -814,30 +896,47 @@ public class MountListEditorNode : ResNode
         // Open on the next tick so the MouseUp that follows MouseDown does not
         // immediately dismiss the freshly opened AgentContext menu.
         var ownerAddonId = GetOwnerAddonId?.Invoke() ?? 0u;
-        MountRouletteMenuItems.SuppressNativeMountMenuInjection = true;
-        Plugin.Framework.RunOnTick(() =>
-        {
-            try
-            {
-                // KamiToolKit Open() uses bindToOwner:true with whatever focus exists.
-                // Without a focused text input that closes the menu immediately, so
-                // re-bind to our addon (or open unbound) after items are registered.
-                mountContextMenu.Open();
+        var token = contextMenuCancellationTokenSource.Token;
 
-                var agent = AgentContext.Instance();
-                if (ownerAddonId is not 0)
-                {
-                    agent->OpenContextMenuForAddon(ownerAddonId);
-                }
-                else
-                {
-                    agent->OpenContextMenu(bindToOwner: false);
-                }
-            }
-            finally
+        Plugin.Framework.RunOnTick(
+            () =>
             {
-                MountRouletteMenuItems.SuppressNativeMountMenuInjection = false;
-            }
-        });
+                if (isTearingDown || token.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                // Suppress only around Open(): if the tick is cancelled, we must
+                // not leave SuppressNativeMountMenuInjection stuck true.
+                MountRouletteMenuItems.SuppressNativeMountMenuInjection = true;
+                try
+                {
+                    // KamiToolKit Open() uses bindToOwner:true with whatever focus exists.
+                    // Without a focused text input that closes the menu immediately, so
+                    // re-bind to our addon (or open unbound) after items are registered.
+                    mountContextMenu.Open();
+
+                    var agent = AgentContext.Instance();
+                    if (agent is null)
+                    {
+                        return;
+                    }
+
+                    if (ownerAddonId is not 0)
+                    {
+                        agent->OpenContextMenuForAddon(ownerAddonId);
+                    }
+                    else
+                    {
+                        agent->OpenContextMenu(bindToOwner: false);
+                    }
+                }
+                finally
+                {
+                    MountRouletteMenuItems.SuppressNativeMountMenuInjection = false;
+                }
+            },
+            cancellationToken: token
+        );
     }
 }
