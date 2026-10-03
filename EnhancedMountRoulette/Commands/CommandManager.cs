@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EnhancedMountRoulette.Addons.Settings;
 using EnhancedMountRoulette.Configuration;
-using EnhancedMountRoulette.Windows.Settings;
+using EnhancedMountRoulette.Windows.LegacySettings;
 
 namespace EnhancedMountRoulette.Commands;
 

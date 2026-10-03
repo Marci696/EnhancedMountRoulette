@@ -4,7 +4,7 @@ using Dalamud.Interface.Utility.Raii;
 using EnhancedMountRoulette.Commands;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Settings;
+namespace EnhancedMountRoulette.Windows.LegacySettings;
 
 public class Explanation : IDrawable
 {

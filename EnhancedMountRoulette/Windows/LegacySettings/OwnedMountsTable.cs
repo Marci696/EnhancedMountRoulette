@@ -12,7 +12,7 @@ using EnhancedMountRoulette.Configuration;
 using Lumina.Excel.Sheets;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Settings;
+namespace EnhancedMountRoulette.Windows.LegacySettings;
 
 public class OwnedMountsTable(MountList mountList)
     : Table

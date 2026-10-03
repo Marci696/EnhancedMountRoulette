@@ -8,7 +8,7 @@ using EnhancedMountRoulette.Commands;
 using EnhancedMountRoulette.Configuration;
 using static EnhancedMountRoulette.Windows.DrawHelper;
 
-namespace EnhancedMountRoulette.Windows.Settings;
+namespace EnhancedMountRoulette.Windows.LegacySettings;
 
 public class MountListTable : Table
 {

@@ -1,5 +1,5 @@
 using Dalamud.Game.Command;
-using EnhancedMountRoulette.Windows.Settings;
+using EnhancedMountRoulette.Windows.LegacySettings;
 
 namespace EnhancedMountRoulette.Commands;
 

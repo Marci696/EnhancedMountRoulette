@@ -8,7 +8,7 @@ using Dalamud.Plugin.Services;
 using EnhancedMountRoulette.Commands;
 using Dalamud.Interface.Windowing;
 using EnhancedMountRoulette.Addons.Settings;
-using EnhancedMountRoulette.Windows.Settings;
+using EnhancedMountRoulette.Windows.LegacySettings;
 using KamiToolKit;
 
 namespace EnhancedMountRoulette;
