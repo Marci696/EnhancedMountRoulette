@@ -4,7 +4,6 @@ using System.Linq;
 using System.Numerics;
 using System.Threading;
 using Dalamud.Game.Gui.Toast;
-using Dalamud.Utility;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.ContextMenu;
 using KamiToolKit.Nodes;
@@ -34,7 +33,7 @@ public class MountListEditorNode : ResNode
     /// </summary>
     public Func<uint>? GetOwnerAddonId { get; set; }
 
-    private MountList? boundList;
+    private MountList? selectedList;
     private string mountFilter = "";
     private MountSortMode sortMode = MountSortMode.Name;
     private bool sortAscending = true;
@@ -118,13 +117,13 @@ public class MountListEditorNode : ResNode
             Options = Enum.GetNames<MountListType>().ToList(),
             OnOptionSelected = option =>
             {
-                if (boundList is null || !Enum.TryParse<MountListType>(option, out var type))
+                if (selectedList is null || !Enum.TryParse<MountListType>(option, out var type))
                 {
                     return;
                 }
 
-                ConfigManager.Instance.ChangeMountListType(boundList, type);
-                RefreshBoundList();
+                ConfigManager.Instance.ChangeMountListType(selectedList, type);
+                RefreshSelectedList();
                 OnListsChanged?.Invoke();
             },
         };
@@ -136,13 +135,13 @@ public class MountListEditorNode : ResNode
             Options = Enum.GetNames<FetchNextType>().ToList(),
             OnOptionSelected = option =>
             {
-                if (boundList is null || !Enum.TryParse<FetchNextType>(option, out var fetchType))
+                if (selectedList is null || !Enum.TryParse<FetchNextType>(option, out var fetchType))
                 {
                     return;
                 }
 
-                ConfigManager.Instance.StoreMountList(new MountList(boundList) { FetchNextType = fetchType });
-                RefreshBoundList();
+                ConfigManager.Instance.StoreMountList(new MountList(selectedList) { FetchNextType = fetchType });
+                RefreshSelectedList();
                 OnListsChanged?.Invoke();
             },
         };
@@ -163,12 +162,12 @@ public class MountListEditorNode : ResNode
             String = "Copy Macro",
             OnClick = () =>
             {
-                if (boundList is null)
+                if (selectedList is null)
                 {
                     return;
                 }
 
-                Dalamud.Bindings.ImGui.ImGui.SetClipboardText(SummonMountCommand.GetMacro(boundList));
+                Dalamud.Bindings.ImGui.ImGui.SetClipboardText(SummonMountCommand.GetMacro(selectedList));
                 Plugin.ToastGui.ShowNormal(
                     "Copied to clipboard",
                     new ToastOptions { Position = ToastPosition.Bottom, Speed = ToastSpeed.Fast }
@@ -363,10 +362,10 @@ public class MountListEditorNode : ResNode
         SetEditorVisible(false);
     }
 
-    public void Bind(MountList mountList)
+    public void Select(MountList mountList)
     {
-        var listChanged = boundList is null || boundList.Id != mountList.Id;
-        boundList = mountList;
+        var listChanged = selectedList is null || selectedList.Id != mountList.Id;
+        selectedList = mountList;
         SetEditorVisible(true);
 
         nameInput.String = mountList.Name;
@@ -585,7 +584,7 @@ public class MountListEditorNode : ResNode
 
     private void ConfirmAndDeleteList()
     {
-        if (boundList is not { } listToDelete)
+        if (selectedList is not { } listToDelete)
         {
             return;
         }
@@ -595,7 +594,7 @@ public class MountListEditorNode : ResNode
             () =>
             {
                 ConfigManager.Instance.RemoveMountList(listToDelete);
-                boundList = null;
+                selectedList = null;
                 SetEditorVisible(false);
                 OnListsChanged?.Invoke();
             }
@@ -604,7 +603,7 @@ public class MountListEditorNode : ResNode
 
     private void ConfirmAndAddAll()
     {
-        if (boundList is not { } list)
+        if (selectedList is not { } list)
         {
             return;
         }
@@ -620,15 +619,14 @@ public class MountListEditorNode : ResNode
             () =>
             {
                 ConfigManager.Instance.ConsiderAllMountsForSummoning(list, mountIds);
-                RefreshBoundList();
-                RefreshMountEntries();
+                RefreshSelectedList();
             }
         );
     }
 
     private void ConfirmAndRemoveAll()
     {
-        if (boundList is not { } list)
+        if (selectedList is not { } list)
         {
             return;
         }
@@ -644,8 +642,7 @@ public class MountListEditorNode : ResNode
             () =>
             {
                 ConfigManager.Instance.OverlookAllMountsForSummoning(list, mountIds);
-                RefreshBoundList();
-                RefreshMountEntries();
+                RefreshSelectedList();
             }
         );
     }
@@ -658,41 +655,41 @@ public class MountListEditorNode : ResNode
 
     private void RenameList(string newName)
     {
-        if (boundList is null || string.IsNullOrWhiteSpace(newName) || newName == boundList.Name)
+        if (selectedList is null || string.IsNullOrWhiteSpace(newName) || newName == selectedList.Name)
         {
             return;
         }
 
         if (ConfigManager.Instance.MountLists.ContainsKey(newName))
         {
-            nameInput.String = boundList.Name;
+            nameInput.String = selectedList.Name;
             return;
         }
 
-        ConfigManager.Instance.RenameMountList(boundList, newName);
-        RefreshBoundList();
+        ConfigManager.Instance.RenameMountList(selectedList, newName);
+        RefreshSelectedList();
         OnListsChanged?.Invoke();
     }
 
-    private void RefreshBoundList()
+    private void RefreshSelectedList()
     {
-        if (boundList is null)
+        if (selectedList is null)
         {
             return;
         }
 
-        boundList = ConfigManager.Instance.OrderedMountList.FirstOrDefault(list => list.Id == boundList.Id)
-            ?? ConfigManager.Instance.MountLists.GetValueOrDefault(boundList.Name);
+        selectedList = ConfigManager.Instance.OrderedMountList.FirstOrDefault(list => list.Id == selectedList.Id)
+            ?? ConfigManager.Instance.MountLists.GetValueOrDefault(selectedList.Name);
 
-        if (boundList is not null)
+        if (selectedList is not null)
         {
-            Bind(boundList);
+            Select(selectedList);
         }
     }
 
     private void RefreshMountEntries()
     {
-        if (boundList is null)
+        if (selectedList is null)
         {
             mountsNode.OptionsList = [];
             return;
@@ -709,18 +706,18 @@ public class MountListEditorNode : ResNode
 
     private List<MountEntry> GetFilteredMountEntries()
     {
-        if (boundList is null)
+        if (selectedList is null)
         {
             return [];
         }
 
         var ownedMountIds = MountManager.GetOwnedMountIds();
-        var available = boundList.GetAvailableMountsForSummoning(ownedMountIds).ToHashSet();
+        var available = selectedList.GetAvailableMountsForSummoning(ownedMountIds).ToHashSet();
 
         IEnumerable<Mount> candidateMounts;
         if (ownedOnlyFilter)
         {
-            var unavailable = boundList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds);
+            var unavailable = selectedList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds);
             candidateMounts = available
                 .Concat(unavailable)
                 .Select(MountManager.GetMount)
@@ -817,22 +814,21 @@ public class MountListEditorNode : ResNode
 
     private void ToggleMembership(MountEntry entry)
     {
-        if (boundList is null || !entry.IsOwned)
+        if (selectedList is null || !entry.IsOwned)
         {
             return;
         }
 
         if (entry.IsInSummonList)
         {
-            ConfigManager.Instance.OverlookMountFromSummoning(boundList, entry.Mount);
+            ConfigManager.Instance.OverlookMountFromSummoning(selectedList, entry.Mount);
         }
         else
         {
-            ConfigManager.Instance.ConsiderMountForSummoning(boundList, entry.Mount);
+            ConfigManager.Instance.ConsiderMountForSummoning(selectedList, entry.Mount);
         }
 
-        RefreshBoundList();
-        RefreshMountEntries();
+        RefreshSelectedList();
     }
 
     private static TextNode CreateFilterCategoryLabel(string text, float width) =>

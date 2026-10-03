@@ -189,7 +189,7 @@ public unsafe class NativeSettingsAddon : NativeAddon
         if (ConfigManager.Instance.OrderedMountList.FirstOrDefault() is { } first)
         {
             selectedMountList = first;
-            editorNode.Bind(first);
+            editorNode.Select(first);
             SyncMountListSelection();
         }
     }
@@ -198,6 +198,12 @@ public unsafe class NativeSettingsAddon : NativeAddon
     {
         mountListNode?.Update();
         editorNode?.Update();
+    }
+
+    protected override void OnShow(AtkUnitBase* addon)
+    {
+        // Owned/total only changes on acquire or patch (restart). Recount when the window opens.
+        ownershipProgressNode?.Refresh();
     }
 
     protected override void OnHide(AtkUnitBase* addon)
@@ -225,7 +231,7 @@ public unsafe class NativeSettingsAddon : NativeAddon
         }
 
         selectedMountList = mountList;
-        editorNode?.Bind(mountList);
+        editorNode?.Select(mountList);
     }
 
     private void RefreshMountLists()
@@ -252,10 +258,8 @@ public unsafe class NativeSettingsAddon : NativeAddon
 
         if (selectedMountList is not null)
         {
-            editorNode?.Bind(selectedMountList);
+            editorNode?.Select(selectedMountList);
         }
-
-        ownershipProgressNode?.Refresh();
     }
 
     private void SyncMountListSelection()

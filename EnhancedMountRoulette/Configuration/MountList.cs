@@ -39,7 +39,7 @@ public class MountList
 
     private Queue<uint> queuedMountIds = [];
 
-    public static HashSet<uint> GetMoundIdsForMountList(
+    public static HashSet<uint> GetMountIdsForMountList(
         MountListType type,
         ISet<uint> ownedMountIds,
         ISet<uint> mountIdsConsideredForSummoning

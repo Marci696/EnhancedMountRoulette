@@ -186,9 +186,9 @@ public sealed class ConfigManager
             {
                 Type = newMountListType,
                 MountIds =
-                    MountList.GetMoundIdsForMountList(
+                    MountList.GetMountIdsForMountList(
                             newMountListType,
-                            ownedMountIds: MountManager.GetOwnedMountIds(),
+                            ownedMountIds: ownedMountIds,
                             mountIdsConsideredForSummoning: mountList.GetAvailableMountsForSummoning(ownedMountIds)
                                 .ToHashSet()
                         )
