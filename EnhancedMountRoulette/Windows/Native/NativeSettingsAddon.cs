@@ -164,11 +164,13 @@ public unsafe class NativeSettingsAddon : NativeAddon
 
         // Overlay only — VerticalLineNode.Size bypasses Width/Height overrides and would
         // report ContentSize.Y as layout width if added to the horizontal list.
+        // VerticalLineNode is a horizontal line rotated 90° around origin (0,0), so the
+        // bar occupies [X - Width, X]. Offset by Width/2 to center it in the column gap.
         columnDivider = new VerticalLineNode();
         columnDivider.Width = ColumnDividerWidth;
         columnDivider.Height = columnsHeight;
         columnDivider.Position = new Vector2(
-            LeftColumnWidth + (ColumnSpacing - ColumnDividerWidth) / 2.0f,
+            LeftColumnWidth + ColumnSpacing / 2.0f + ColumnDividerWidth / 2.0f,
             0.0f
         );
         columnDivider.AttachNode(columnsLayout);
