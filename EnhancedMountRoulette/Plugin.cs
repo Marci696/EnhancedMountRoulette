@@ -96,11 +96,6 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin()
     {
-        // TODO remove once no longer custom xiv struct version
-        InteropGenerator.Runtime.Resolver.GetInstance.Setup();
-        FFXIVClientStructs.Interop.Generated.Addresses.Register();
-        InteropGenerator.Runtime.Resolver.GetInstance.Resolve();
-
         _ = InitializeAsync(initCancellationTokenSource.Token);
     }
 
