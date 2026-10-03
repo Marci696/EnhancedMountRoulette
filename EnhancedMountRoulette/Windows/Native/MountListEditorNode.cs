@@ -34,12 +34,10 @@ public class MountListEditorNode : ResNode
     public Func<uint>? GetOwnerAddonId { get; set; }
 
     private MountList? selectedList;
-    private string mountFilter = "";
-    private MountSortMode sortMode = MountSortMode.Name;
-    private bool sortAscending = true;
-    private MountSelectionFilter selectionFilter = MountSelectionFilter.All;
-    private MountSeatFilter seatFilter = MountSeatFilter.All;
-    private bool ownedOnlyFilter = true;
+    
+    private readonly MountListFilters filters = new();
+    
+    private (MountSortMode Mode, bool Ascending) sorting = (MountSortMode.Name, true);
 
     /// <summary>
     /// Set once during final dispose. Blocks further UI work (context menus, dropdown
@@ -197,7 +195,7 @@ public class MountListEditorNode : ResNode
             PlaceholderString = "Search mounts...",
             OnInputReceived = value =>
             {
-                mountFilter = value.ToString();
+                filters.SearchText = value.ToString();
                 RefreshMountEntries();
             },
         };
@@ -218,7 +216,7 @@ public class MountListEditorNode : ResNode
             SelectedOption = MountSelectionFilter.All,
             OnOptionSelected = option =>
             {
-                selectionFilter = option;
+                filters.Selection = option;
                 RefreshMountEntries();
             },
         };
@@ -240,7 +238,7 @@ public class MountListEditorNode : ResNode
             SelectedOption = MountSeatFilter.All,
             OnOptionSelected = option =>
             {
-                seatFilter = option;
+                filters.Seats = option;
                 RefreshMountEntries();
             },
         };
@@ -257,7 +255,7 @@ public class MountListEditorNode : ResNode
             IsChecked = true,
             OnClick = isChecked =>
             {
-                ownedOnlyFilter = isChecked;
+                filters.OwnedOnly = isChecked;
                 RefreshMountEntries();
             },
         };
@@ -383,19 +381,16 @@ public class MountListEditorNode : ResNode
 
     private void ResetFilters()
     {
-        mountFilter = "";
-        selectionFilter = MountSelectionFilter.All;
-        seatFilter = MountSeatFilter.All;
-        ownedOnlyFilter = true;
+        filters.Reset();
 
-        searchInput.String = "";
-        selectionFilterDropDown.SelectedOption = MountSelectionFilter.All;
-        seatFilterDropDown.SelectedOption = MountSeatFilter.All;
+        searchInput.String = filters.SearchText;
+        selectionFilterDropDown.SelectedOption = filters.Selection;
+        seatFilterDropDown.SelectedOption = filters.Seats;
 
         // Writing IsChecked triggers OnClick; suppress so we don't refresh mid-reset.
         var ownedClick = ownedFilterCheckbox.OnClick;
         ownedFilterCheckbox.OnClick = null;
-        ownedFilterCheckbox.IsChecked = true;
+        ownedFilterCheckbox.IsChecked = filters.OwnedOnly;
         ownedFilterCheckbox.OnClick = ownedClick;
     }
 
@@ -550,15 +545,9 @@ public class MountListEditorNode : ResNode
 
     private void ToggleSort(MountSortMode mode)
     {
-        if (sortMode == mode)
-        {
-            sortAscending = !sortAscending;
-        }
-        else
-        {
-            sortMode = mode;
-            sortAscending = true;
-        }
+        sorting = sorting.Mode == mode
+            ? (mode, !sorting.Ascending)
+            : (mode, true);
 
         UpdateSortHeaderLabels();
         RefreshMountEntries();
@@ -574,12 +563,12 @@ public class MountListEditorNode : ResNode
 
     private string FormatSortLabel(string label, MountSortMode mode)
     {
-        if (sortMode != mode)
+        if (sorting.Mode != mode)
         {
             return label;
         }
 
-        return sortAscending ? $"{label} ▲" : $"{label} ▼";
+        return sorting.Ascending ? $"{label} ▲" : $"{label} ▼";
     }
 
     private void ConfirmAndDeleteList()
@@ -715,7 +704,7 @@ public class MountListEditorNode : ResNode
         var available = selectedList.GetAvailableMountsForSummoning(ownedMountIds).ToHashSet();
 
         IEnumerable<Mount> candidateMounts;
-        if (ownedOnlyFilter)
+        if (filters.OwnedOnly)
         {
             var unavailable = selectedList.GetOwnedButUnavailableMountsForSummoning(ownedMountIds);
             candidateMounts = available
@@ -734,8 +723,11 @@ public class MountListEditorNode : ResNode
         {
             var mountId = mount.RowId;
 
-            if (!string.IsNullOrEmpty(mountFilter)
-                && !mount.Singular.ExtractText().Contains(mountFilter, StringComparison.CurrentCultureIgnoreCase))
+            if (!string.IsNullOrEmpty(filters.SearchText)
+                && !mount.Singular.ExtractText().Contains(
+                    filters.SearchText,
+                    StringComparison.CurrentCultureIgnoreCase
+                ))
             {
                 continue;
             }
@@ -744,22 +736,22 @@ public class MountListEditorNode : ResNode
             var isInList = available.Contains(mountId);
             var seatCount = MountManager.GetSeatCount(mount);
 
-            if (selectionFilter == MountSelectionFilter.Selected && !isInList)
+            if (filters.Selection == MountSelectionFilter.Selected && !isInList)
             {
                 continue;
             }
 
-            if (selectionFilter == MountSelectionFilter.Unselected && isInList)
+            if (filters.Selection == MountSelectionFilter.Unselected && isInList)
             {
                 continue;
             }
 
-            if (seatFilter == MountSeatFilter.Single && seatCount != 1)
+            if (filters.Seats == MountSeatFilter.Single && seatCount != 1)
             {
                 continue;
             }
 
-            if (seatFilter == MountSeatFilter.Multi && seatCount < 2)
+            if (filters.Seats == MountSeatFilter.Multi && seatCount < 2)
             {
                 continue;
             }
@@ -784,24 +776,24 @@ public class MountListEditorNode : ResNode
 
     private List<MountEntry> SortEntries(List<MountEntry> entries)
     {
-        IOrderedEnumerable<MountEntry> ordered = sortMode switch
+        IOrderedEnumerable<MountEntry> ordered = sorting.Mode switch
         {
-            MountSortMode.Seats => sortAscending
+            MountSortMode.Seats => sorting.Ascending
                 ? entries.OrderBy(entry => entry.SeatCount)
                     .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(entry => entry.SeatCount)
                     .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
-            MountSortMode.Owned => sortAscending
+            MountSortMode.Owned => sorting.Ascending
                 ? entries.OrderBy(entry => entry.OwnedPercent ?? float.MaxValue)
                     .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(entry => entry.OwnedPercent ?? float.MinValue)
                     .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
-            MountSortMode.Patch => sortAscending
+            MountSortMode.Patch => sorting.Ascending
                 ? entries.OrderBy(entry => entry.Patch, Comparer<string?>.Create(MountCollectInfo.ComparePatch))
                     .ThenBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(entry => entry.Patch, Comparer<string?>.Create(MountCollectInfo.ComparePatch))
                     .ThenByDescending(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase),
-            _ => sortAscending
+            _ => sorting.Ascending
                 ? entries.OrderBy(entry => entry.Mount.Singular.ExtractText(), StringComparer.CurrentCultureIgnoreCase)
                 : entries.OrderByDescending(
                     entry => entry.Mount.Singular.ExtractText(),
