@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -9,11 +9,12 @@ using KamiToolKit.ContextMenu;
 using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Commands;
 using EnhancedMountRoulette.Configuration;
+using EnhancedMountRoulette.Windows.Native;
 using Lumina.Excel.Sheets;
 using Lumina.Text.ReadOnly;
 using AgentContext = FFXIVClientStructs.FFXIV.Client.UI.Agent.AgentContext;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
 
 public class MountListItemEditorNode : ResNode
 {
@@ -25,6 +26,8 @@ public class MountListItemEditorNode : ResNode
     private const float ActionsRowHeight = 28.0f;
     private const float ActionsRowGap = 6.0f;
     private const float HeaderButtonHeight = 24.0f;
+    private const float RowHeight = 28.0f;
+    private const float ListScrollbarInset = 16.0f;
 
     public System.Action? OnListsChanged { get; set; }
 
@@ -34,15 +37,15 @@ public class MountListItemEditorNode : ResNode
     public Func<uint>? GetOwnerAddonId { get; set; }
 
     private MountList? selectedList;
-    
+
     private readonly MountListFilters filters = new();
-    
+
     private (MountSortMode Mode, bool Ascending) sorting = (MountSortMode.Name, true);
 
     /// <summary>
     /// Set once during final dispose. Blocks further UI work (context menus, dropdown
     /// collapse) so deferred callbacks cannot touch nodes after teardown starts.
-    /// Not set on ordinary hide/show — the window can reopen.
+    /// Not set on ordinary hide/show � the window can reopen.
     /// </summary>
     private bool isTearingDown;
 
@@ -53,11 +56,7 @@ public class MountListItemEditorNode : ResNode
     /// </summary>
     private CancellationTokenSource contextMenuCancellationTokenSource = new();
 
-    private readonly TextInputNode nameInput;
-    private readonly StringDropDownNode typeDropDown;
-    private readonly StringDropDownNode fetchTypeDropDown;
-    private readonly TextButtonNode deleteButton;
-    private readonly TextButtonNode copyMacroButton;
+    private readonly MountListSettingsRowNode settingsRow;
     private readonly TextInputNode searchInput;
     private readonly TextButtonNode addAllButton;
     private readonly TextButtonNode removeAllButton;
@@ -74,7 +73,6 @@ public class MountListItemEditorNode : ResNode
     private readonly ListNode<MountEntry, MountEntryItemNode> mountsNode;
     private readonly TextNode emptyHint;
     private readonly ResNode columnHeader;
-    private readonly HorizontalListNode settingsRow;
     private readonly HorizontalLineNode settingsDivider;
     private readonly HorizontalListNode filterRow;
     private readonly HorizontalListNode actionsRow;
@@ -85,276 +83,27 @@ public class MountListItemEditorNode : ResNode
 
     public MountListItemEditorNode()
     {
-        confirmationDialog = new ConfirmationDialogNode
-        {
-            Position = Vector2.Zero,
-            Size = new Vector2(600.0f, 400.0f),
-        };
-
-        settingsRow = new HorizontalListNode
-        {
-            Position = new Vector2(0.0f, SettingsRowY),
-            Size = new Vector2(600.0f, 28.0f),
-            ItemSpacing = 6.0f,
-        };
-        settingsRow.AttachNode(this);
-
-        nameInput = new TextInputNode
-        {
-            Size = new Vector2(160.0f, 28.0f),
-            PlaceholderString = "List name",
-            MaxCharacters = 50,
-            OnInputComplete = value => RenameList(value.ToString()),
-        };
-        nameInput.OnFocusLost = () => RenameList(nameInput.String.ToString());
-        settingsRow.AddNode(nameInput);
-
-        typeDropDown = new StringDropDownNode
-        {
-            Size = new Vector2(110.0f, 28.0f),
-            Options = Enum.GetNames<MountListType>().ToList(),
-            OnOptionSelected = option =>
-            {
-                if (selectedList is null || !Enum.TryParse<MountListType>(option, out var type))
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.ChangeMountListType(selectedList, type);
-                RefreshSelectedList();
-                OnListsChanged?.Invoke();
-            },
-        };
-        settingsRow.AddNode(typeDropDown);
-
-        fetchTypeDropDown = new StringDropDownNode
-        {
-            Size = new Vector2(150.0f, 28.0f),
-            Options = Enum.GetNames<FetchNextType>().ToList(),
-            OnOptionSelected = option =>
-            {
-                if (selectedList is null || !Enum.TryParse<FetchNextType>(option, out var fetchType))
-                {
-                    return;
-                }
-
-                ConfigManager.Instance.StoreMountList(new MountList(selectedList) { FetchNextType = fetchType });
-                RefreshSelectedList();
-                OnListsChanged?.Invoke();
-            },
-        };
-        settingsRow.AddNode(fetchTypeDropDown);
-
-        deleteButton = new TextButtonNode
-        {
-            Size = new Vector2(70.0f, 28.0f),
-            String = "Delete",
-            OnClick = ConfirmAndDeleteList,
-        };
-        NativeButtonStyles.StyleAsRemove(deleteButton);
-        settingsRow.AddNode(deleteButton);
-
-        copyMacroButton = new TextButtonNode
-        {
-            Size = new Vector2(90.0f, 28.0f),
-            String = "Copy Macro",
-            OnClick = () =>
-            {
-                if (selectedList is null)
-                {
-                    return;
-                }
-
-                Dalamud.Bindings.ImGui.ImGui.SetClipboardText(SummonMountCommand.GetMacro(selectedList));
-                Plugin.ToastGui.ShowNormal(
-                    "Copied to clipboard",
-                    new ToastOptions { Position = ToastPosition.Bottom, Speed = ToastSpeed.Fast }
-                );
-            },
-        };
-        settingsRow.AddNode(copyMacroButton);
-
-        settingsDivider = new HorizontalLineNode
-        {
-            Position = new Vector2(0.0f, DividerY),
-            Size = new Vector2(600.0f, 4.0f),
-        };
-        settingsDivider.AttachNode(this);
-
-        filterRow = new HorizontalListNode
-        {
-            Position = new Vector2(0.0f, FilterRowY),
-            Size = new Vector2(600.0f, 28.0f),
-            ItemSpacing = 6.0f,
-        };
-        filterRow.AttachNode(this);
-
-        searchInput = new TextInputNode
-        {
-            Size = new Vector2(145.0f, 28.0f),
-            PlaceholderString = "Search mounts...",
-            OnInputReceived = value =>
-            {
-                filters.SearchText = value.ToString();
-                RefreshMountEntries();
-            },
-        };
-        filterRow.AddNode(searchInput);
-
-        selectionFilterLabel = CreateFilterCategoryLabel("Selected:", 70.0f);
-        filterRow.AddNode(selectionFilterLabel);
-
-        selectionFilterDropDown = new EnumDropDownNode<MountSelectionFilter>
-        {
-            Size = new Vector2(140.0f, 28.0f),
-            Options =
-            [
-                MountSelectionFilter.All,
-                MountSelectionFilter.Selected,
-                MountSelectionFilter.Unselected,
-            ],
-            SelectedOption = MountSelectionFilter.All,
-            OnOptionSelected = option =>
-            {
-                filters.Selection = option;
-                RefreshMountEntries();
-            },
-        };
-        selectionFilterDropDown.GetLabelFunction = FormatSelectionFilterLabel;
-        filterRow.AddNode(selectionFilterDropDown);
-
-        seatFilterLabel = CreateFilterCategoryLabel("Seats:", 48.0f);
-        filterRow.AddNode(seatFilterLabel);
-
-        seatFilterDropDown = new EnumDropDownNode<MountSeatFilter>
-        {
-            Size = new Vector2(90.0f, 28.0f),
-            Options =
-            [
-                MountSeatFilter.All,
-                MountSeatFilter.Single,
-                MountSeatFilter.Multi,
-            ],
-            SelectedOption = MountSeatFilter.All,
-            OnOptionSelected = option =>
-            {
-                filters.Seats = option;
-                RefreshMountEntries();
-            },
-        };
-        seatFilterDropDown.GetLabelFunction = FormatSeatFilterLabel;
-        filterRow.AddNode(seatFilterDropDown);
-
-        ownedFilterLabel = CreateFilterCategoryLabel("Owned:", 52.0f);
-        filterRow.AddNode(ownedFilterLabel);
-
-        ownedFilterCheckbox = new CheckboxNode
-        {
-            Size = new Vector2(20.0f, 20.0f),
-            String = string.Empty,
-            IsChecked = true,
-            OnClick = isChecked =>
-            {
-                filters.OwnedOnly = isChecked;
-                RefreshMountEntries();
-            },
-        };
-        // Attach directly to the filter row so component events stay under the list node tree.
-        ownedFilterCheckbox.Y = (28.0f - ownedFilterCheckbox.Height) / 2.0f;
-        filterRow.AddNode(ownedFilterCheckbox);
-
-        columnHeader = new ResNode
-        {
-            Position = new Vector2(0.0f, HeaderRowY),
-            Size = new Vector2(600.0f, HeaderButtonHeight),
-        };
-        columnHeader.AttachNode(this);
-
-        nameSortButton = new TextButtonNode
-        {
-            Position = new Vector2(MountEntryItemNode.NameLeft, 0.0f),
-            Size = new Vector2(200.0f, HeaderButtonHeight),
-            String = "Name ▲",
-            OnClick = () => ToggleSort(MountSortMode.Name),
-        };
-        nameSortButton.AttachNode(columnHeader);
-
-        ownedSortButton = new TextButtonNode
-        {
-            Position = new Vector2(220.0f, 0.0f),
-            Size = new Vector2(MountEntryItemNode.OwnedWidth, HeaderButtonHeight),
-            String = "Own%",
-            OnClick = () => ToggleSort(MountSortMode.Owned),
-        };
-        ownedSortButton.AttachNode(columnHeader);
-
-        patchSortButton = new TextButtonNode
-        {
-            Position = new Vector2(280.0f, 0.0f),
-            Size = new Vector2(MountEntryItemNode.PatchWidth, HeaderButtonHeight),
-            String = "Patch",
-            OnClick = () => ToggleSort(MountSortMode.Patch),
-        };
-        patchSortButton.AttachNode(columnHeader);
-
-        seatsSortButton = new TextButtonNode
-        {
-            Position = new Vector2(320.0f, 0.0f),
-            Size = new Vector2(MountEntryItemNode.SeatsWidth, HeaderButtonHeight),
-            String = "Seats",
-            OnClick = () => ToggleSort(MountSortMode.Seats),
-        };
-        seatsSortButton.AttachNode(columnHeader);
-
-        mountsNode = new ListNode<MountEntry, MountEntryItemNode>
-        {
-            Position = new Vector2(0.0f, MountsListY),
-            Size = new Vector2(600.0f, 400.0f),
-            ItemSpacing = 0.0f,
-            OptionsList = [],
-            AutoResetScroll = false,
-        };
-        mountsNode.AttachNode(this);
-
-        MountEntryItemNode.OnOpenContextMenu = OpenMountContextMenu;
-
-        actionsRow = new HorizontalListNode
-        {
-            Position = new Vector2(0.0f, 500.0f),
-            Size = new Vector2(600.0f, ActionsRowHeight),
-            ItemSpacing = 6.0f,
-        };
-        actionsRow.AttachNode(this);
-
-        addAllButton = new TextButtonNode
-        {
-            Size = new Vector2(90.0f, 28.0f),
-            String = "Add All",
-            OnClick = ConfirmAndAddAll,
-        };
-        NativeButtonStyles.StyleAsAdd(addAllButton);
-        actionsRow.AddNode(addAllButton);
-
-        removeAllButton = new TextButtonNode
-        {
-            Size = new Vector2(100.0f, 28.0f),
-            String = "Remove All",
-            OnClick = ConfirmAndRemoveAll,
-        };
-        NativeButtonStyles.StyleAsRemove(removeAllButton);
-        actionsRow.AddNode(removeAllButton);
-
-        emptyHint = new TextNode
-        {
-            Position = new Vector2(0.0f, 0.0f),
-            Size = new Vector2(600.0f, 40.0f),
-            FontSize = 14,
-            String = "Select a mount list to edit.",
-            IsVisible = true,
-        };
-        emptyHint.AttachNode(this);
-
-        confirmationDialog.AttachNode(this);
+        settingsRow = AddSettingsRow();
+        settingsDivider = AddSettingsDivider();
+        filterRow = AddFilterRow(
+            out searchInput,
+            out selectionFilterLabel,
+            out selectionFilterDropDown,
+            out seatFilterLabel,
+            out seatFilterDropDown,
+            out ownedFilterLabel,
+            out ownedFilterCheckbox
+        );
+        columnHeader = AddColumnHeader(
+            out nameSortButton,
+            out ownedSortButton,
+            out patchSortButton,
+            out seatsSortButton
+        );
+        mountsNode = AddMountsList();
+        actionsRow = AddActionsRow(out addAllButton, out removeAllButton);
+        emptyHint = AddEmptyHint();
+        confirmationDialog = AddConfirmationDialog();
 
         UpdateSortHeaderLabels();
         SetEditorVisible(false);
@@ -366,9 +115,7 @@ public class MountListItemEditorNode : ResNode
         selectedList = mountList;
         SetEditorVisible(true);
 
-        nameInput.String = mountList.Name;
-        typeDropDown.SelectedOption = mountList.Type.ToString();
-        fetchTypeDropDown.SelectedOption = mountList.FetchNextType.ToString();
+        settingsRow.Load(mountList);
 
         if (listChanged)
         {
@@ -410,8 +157,7 @@ public class MountListItemEditorNode : ResNode
             return;
         }
 
-        typeDropDown.Collapse(playSoundEffect: false);
-        fetchTypeDropDown.Collapse(playSoundEffect: false);
+        settingsRow.CollapseDropDowns();
         selectionFilterDropDown.Collapse(playSoundEffect: false);
         seatFilterDropDown.Collapse(playSoundEffect: false);
     }
@@ -446,8 +192,7 @@ public class MountListItemEditorNode : ResNode
         MountEntryItemNode.OnOpenContextMenu = null;
         CancelPendingContextMenuOpen(replaceTokenSource: false);
 
-        typeDropDown.Collapse(playSoundEffect: false);
-        fetchTypeDropDown.Collapse(playSoundEffect: false);
+        settingsRow.CollapseDropDowns();
         selectionFilterDropDown.Collapse(playSoundEffect: false);
         seatFilterDropDown.Collapse(playSoundEffect: false);
         mountContextMenu.Close();
@@ -476,7 +221,305 @@ public class MountListItemEditorNode : ResNode
     protected override void OnSizeChanged()
     {
         base.OnSizeChanged();
+        LayoutEditorChrome();
+        LayoutSortHeaderButtons();
+    }
 
+    private MountListSettingsRowNode AddSettingsRow()
+    {
+        var row = new MountListSettingsRowNode
+        {
+            Position = new Vector2(0.0f, SettingsRowY),
+            OnNameCommitted = RenameList,
+            OnTypeSelected = ChangeListType,
+            OnFetchTypeSelected = ChangeFetchType,
+            OnDeleteClicked = ConfirmAndDeleteList,
+            OnCopyMacroClicked = CopyMacro,
+        };
+        row.AttachNode(this);
+        return row;
+    }
+
+    private void ChangeListType(MountListType type)
+    {
+        if (selectedList is null)
+        {
+            return;
+        }
+
+        ConfigManager.Instance.ChangeMountListType(selectedList, type);
+        RefreshSelectedList();
+        OnListsChanged?.Invoke();
+    }
+
+    private void ChangeFetchType(FetchNextType fetchType)
+    {
+        if (selectedList is null)
+        {
+            return;
+        }
+
+        ConfigManager.Instance.StoreMountList(new MountList(selectedList) { FetchNextType = fetchType });
+        RefreshSelectedList();
+        OnListsChanged?.Invoke();
+    }
+
+    private void CopyMacro()
+    {
+        if (selectedList is null)
+        {
+            return;
+        }
+
+        Dalamud.Bindings.ImGui.ImGui.SetClipboardText(SummonMountCommand.GetMacro(selectedList));
+        Plugin.ToastGui.ShowNormal(
+            "Copied to clipboard",
+            new ToastOptions { Position = ToastPosition.Bottom, Speed = ToastSpeed.Fast }
+        );
+    }
+
+    private HorizontalLineNode AddSettingsDivider()
+    {
+        var divider = new HorizontalLineNode
+        {
+            Position = new Vector2(0.0f, DividerY),
+            Size = new Vector2(600.0f, 4.0f),
+        };
+        divider.AttachNode(this);
+        return divider;
+    }
+
+    private HorizontalListNode AddFilterRow(
+        out TextInputNode searchInputNode,
+        out TextNode selectionLabel,
+        out EnumDropDownNode<MountSelectionFilter> selectionDropDown,
+        out TextNode seatLabel,
+        out EnumDropDownNode<MountSeatFilter> seatDropDown,
+        out TextNode ownedLabel,
+        out CheckboxNode ownedCheckbox
+    )
+    {
+        var row = new HorizontalListNode
+        {
+            Position = new Vector2(0.0f, FilterRowY),
+            Size = new Vector2(600.0f, RowHeight),
+            ItemSpacing = 6.0f,
+        };
+        row.AttachNode(this);
+
+        searchInputNode = new TextInputNode
+        {
+            Size = new Vector2(145.0f, RowHeight),
+            PlaceholderString = "Search mounts...",
+            OnInputReceived = value =>
+            {
+                filters.SearchText = value.ToString();
+                RefreshMountEntries();
+            },
+        };
+        row.AddNode(searchInputNode);
+
+        selectionLabel = CreateFilterCategoryLabel("Selected:", 70.0f);
+        row.AddNode(selectionLabel);
+
+        selectionDropDown = new EnumDropDownNode<MountSelectionFilter>
+        {
+            Size = new Vector2(140.0f, RowHeight),
+            Options =
+            [
+                MountSelectionFilter.All,
+                MountSelectionFilter.Selected,
+                MountSelectionFilter.Unselected,
+            ],
+            SelectedOption = MountSelectionFilter.All,
+            OnOptionSelected = option =>
+            {
+                filters.Selection = option;
+                RefreshMountEntries();
+            },
+        };
+        selectionDropDown.GetLabelFunction = FormatSelectionFilterLabel;
+        row.AddNode(selectionDropDown);
+
+        seatLabel = CreateFilterCategoryLabel("Seats:", 48.0f);
+        row.AddNode(seatLabel);
+
+        seatDropDown = new EnumDropDownNode<MountSeatFilter>
+        {
+            Size = new Vector2(90.0f, RowHeight),
+            Options =
+            [
+                MountSeatFilter.All,
+                MountSeatFilter.Single,
+                MountSeatFilter.Multi,
+            ],
+            SelectedOption = MountSeatFilter.All,
+            OnOptionSelected = option =>
+            {
+                filters.Seats = option;
+                RefreshMountEntries();
+            },
+        };
+        seatDropDown.GetLabelFunction = FormatSeatFilterLabel;
+        row.AddNode(seatDropDown);
+
+        ownedLabel = CreateFilterCategoryLabel("Owned:", 52.0f);
+        row.AddNode(ownedLabel);
+
+        ownedCheckbox = new CheckboxNode
+        {
+            Size = new Vector2(20.0f, 20.0f),
+            String = string.Empty,
+            IsChecked = true,
+            OnClick = isChecked =>
+            {
+                filters.OwnedOnly = isChecked;
+                RefreshMountEntries();
+            },
+        };
+        // Attach directly to the filter row so component events stay under the list node tree.
+        ownedCheckbox.Y = (RowHeight - ownedCheckbox.Height) / 2.0f;
+        row.AddNode(ownedCheckbox);
+
+        return row;
+    }
+
+    private ResNode AddColumnHeader(
+        out TextButtonNode nameButton,
+        out TextButtonNode ownedButton,
+        out TextButtonNode patchButton,
+        out TextButtonNode seatsButton
+    )
+    {
+        var header = new ResNode
+        {
+            Position = new Vector2(0.0f, HeaderRowY),
+            Size = new Vector2(600.0f, HeaderButtonHeight),
+        };
+        header.AttachNode(this);
+
+        nameButton = CreateSortHeaderButton("Name ?", MountSortMode.Name, MountEntryItemNode.NameLeft, 200.0f);
+        nameButton.AttachNode(header);
+
+        ownedButton = CreateSortHeaderButton(
+            "Own%",
+            MountSortMode.Owned,
+            220.0f,
+            MountEntryItemNode.OwnedWidth
+        );
+        ownedButton.AttachNode(header);
+
+        patchButton = CreateSortHeaderButton(
+            "Patch",
+            MountSortMode.Patch,
+            280.0f,
+            MountEntryItemNode.PatchWidth
+        );
+        patchButton.AttachNode(header);
+
+        seatsButton = CreateSortHeaderButton(
+            "Seats",
+            MountSortMode.Seats,
+            320.0f,
+            MountEntryItemNode.SeatsWidth
+        );
+        seatsButton.AttachNode(header);
+
+        return header;
+    }
+
+    private TextButtonNode CreateSortHeaderButton(
+        string label,
+        MountSortMode mode,
+        float x,
+        float width
+    )
+    {
+        return new TextButtonNode
+        {
+            Position = new Vector2(x, 0.0f),
+            Size = new Vector2(width, HeaderButtonHeight),
+            String = label,
+            OnClick = () => ToggleSort(mode),
+        };
+    }
+
+    private ListNode<MountEntry, MountEntryItemNode> AddMountsList()
+    {
+        var list = new ListNode<MountEntry, MountEntryItemNode>
+        {
+            Position = new Vector2(0.0f, MountsListY),
+            Size = new Vector2(600.0f, 400.0f),
+            ItemSpacing = 0.0f,
+            OptionsList = [],
+            AutoResetScroll = false,
+        };
+        list.AttachNode(this);
+        MountEntryItemNode.OnOpenContextMenu = OpenMountContextMenu;
+        return list;
+    }
+
+    private HorizontalListNode AddActionsRow(
+        out TextButtonNode addAllButtonNode,
+        out TextButtonNode removeAllButtonNode
+    )
+    {
+        var row = new HorizontalListNode
+        {
+            Position = new Vector2(0.0f, 500.0f),
+            Size = new Vector2(600.0f, ActionsRowHeight),
+            ItemSpacing = 6.0f,
+        };
+        row.AttachNode(this);
+
+        addAllButtonNode = new TextButtonNode
+        {
+            Size = new Vector2(90.0f, RowHeight),
+            String = "Add All",
+            OnClick = ConfirmAndAddAll,
+        };
+        NativeButtonStyles.StyleAsAdd(addAllButtonNode);
+        row.AddNode(addAllButtonNode);
+
+        removeAllButtonNode = new TextButtonNode
+        {
+            Size = new Vector2(100.0f, RowHeight),
+            String = "Remove All",
+            OnClick = ConfirmAndRemoveAll,
+        };
+        NativeButtonStyles.StyleAsRemove(removeAllButtonNode);
+        row.AddNode(removeAllButtonNode);
+
+        return row;
+    }
+
+    private TextNode AddEmptyHint()
+    {
+        var hint = new TextNode
+        {
+            Position = new Vector2(0.0f, 0.0f),
+            Size = new Vector2(600.0f, 40.0f),
+            FontSize = 14,
+            String = "Select a mount list to edit.",
+            IsVisible = true,
+        };
+        hint.AttachNode(this);
+        return hint;
+    }
+
+    private ConfirmationDialogNode AddConfirmationDialog()
+    {
+        var dialog = new ConfirmationDialogNode
+        {
+            Position = Vector2.Zero,
+            Size = new Vector2(600.0f, 400.0f),
+        };
+        dialog.AttachNode(this);
+        return dialog;
+    }
+
+    private void LayoutEditorChrome()
+    {
         var actionsY = Height - ActionsRowHeight;
         actionsRow.Position = new Vector2(0.0f, actionsY);
         actionsRow.Width = Width;
@@ -491,27 +534,33 @@ public class MountListItemEditorNode : ResNode
         settingsRow.Width = Width;
         filterRow.Width = Width;
         confirmationDialog.Size = Size;
+    }
 
-        var toggleX = Width - MountEntryItemNode.ToggleWidth - MountEntryItemNode.RightPadding
-            - 16.0f; // list scrollbar inset
+    private void LayoutSortHeaderButtons()
+    {
+        var toggleX = Width
+            - MountEntryItemNode.ToggleWidth
+            - MountEntryItemNode.RightPadding
+            - ListScrollbarInset;
         var seatsX = toggleX - MountEntryItemNode.ColumnGap - MountEntryItemNode.SeatsWidth;
-
-        seatsSortButton.Position = new Vector2(seatsX, 0.0f);
-        seatsSortButton.Size = new Vector2(MountEntryItemNode.SeatsWidth, HeaderButtonHeight);
-
         var patchX = seatsX - MountEntryItemNode.ColumnGap - MountEntryItemNode.PatchWidth;
-        patchSortButton.Position = new Vector2(patchX, 0.0f);
-        patchSortButton.Size = new Vector2(MountEntryItemNode.PatchWidth, HeaderButtonHeight);
-
         var ownedX = patchX - MountEntryItemNode.ColumnGap - MountEntryItemNode.OwnedWidth;
-        ownedSortButton.Position = new Vector2(ownedX, 0.0f);
-        ownedSortButton.Size = new Vector2(MountEntryItemNode.OwnedWidth, HeaderButtonHeight);
+
+        PlaceSortHeaderButton(seatsSortButton, seatsX, MountEntryItemNode.SeatsWidth);
+        PlaceSortHeaderButton(patchSortButton, patchX, MountEntryItemNode.PatchWidth);
+        PlaceSortHeaderButton(ownedSortButton, ownedX, MountEntryItemNode.OwnedWidth);
 
         nameSortButton.Position = new Vector2(MountEntryItemNode.NameLeft, 0.0f);
         nameSortButton.Size = new Vector2(
             Math.Max(40.0f, ownedX - MountEntryItemNode.ColumnGap - MountEntryItemNode.NameLeft),
             HeaderButtonHeight
         );
+    }
+
+    private void PlaceSortHeaderButton(TextButtonNode button, float x, float width)
+    {
+        button.Position = new Vector2(x, 0.0f);
+        button.Size = new Vector2(width, HeaderButtonHeight);
     }
 
     private void SetEditorVisible(bool visible)
@@ -522,11 +571,6 @@ public class MountListItemEditorNode : ResNode
         filterRow.IsVisible = visible;
         actionsRow.IsVisible = visible;
         columnHeader.IsVisible = visible;
-        nameInput.IsVisible = visible;
-        typeDropDown.IsVisible = visible;
-        fetchTypeDropDown.IsVisible = visible;
-        deleteButton.IsVisible = visible;
-        copyMacroButton.IsVisible = visible;
         searchInput.IsVisible = visible;
         addAllButton.IsVisible = visible;
         removeAllButton.IsVisible = visible;
@@ -568,7 +612,7 @@ public class MountListItemEditorNode : ResNode
             return label;
         }
 
-        return sorting.Ascending ? $"{label} ▲" : $"{label} ▼";
+        return sorting.Ascending ? $"{label} ?" : $"{label} ?";
     }
 
     private void ConfirmAndDeleteList()
@@ -651,7 +695,7 @@ public class MountListItemEditorNode : ResNode
 
         if (ConfigManager.Instance.MountLists.ContainsKey(newName))
         {
-            nameInput.String = selectedList.Name;
+            settingsRow.SetName(selectedList.Name);
             return;
         }
 
@@ -763,7 +807,7 @@ public class MountListItemEditorNode : ResNode
                     isOwned,
                     isInList,
                     seatCount,
-                    collectInfo?.OwnedDisplay ?? "—",
+                    collectInfo?.OwnedDisplay ?? "�",
                     collectInfo?.OwnedPercent,
                     collectInfo?.Patch,
                     ToggleMembership
@@ -826,7 +870,7 @@ public class MountListItemEditorNode : ResNode
     private static TextNode CreateFilterCategoryLabel(string text, float width) =>
         new()
         {
-            Size = new Vector2(width, 28.0f),
+            Size = new Vector2(width, RowHeight),
             FontSize = 12,
             LineSpacing = 12,
             AlignmentType = AlignmentType.Right,

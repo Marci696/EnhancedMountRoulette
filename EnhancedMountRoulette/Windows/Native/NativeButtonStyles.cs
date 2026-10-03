@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using System.Numerics;
 using KamiToolKit.Classes;
 using KamiToolKit.Nodes;
 using KamiToolKit.Nodes.Simplified;

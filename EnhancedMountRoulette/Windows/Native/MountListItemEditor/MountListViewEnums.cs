@@ -1,4 +1,4 @@
-﻿namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
 
 public enum MountSortMode
 {

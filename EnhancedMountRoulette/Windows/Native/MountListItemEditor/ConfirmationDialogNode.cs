@@ -4,7 +4,7 @@ using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Nodes;
 using KamiToolKit.Nodes.Simplified;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
 
 public class ConfirmationDialogNode : ResNode
 {

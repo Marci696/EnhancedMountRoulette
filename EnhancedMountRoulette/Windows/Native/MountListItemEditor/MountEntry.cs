@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using Lumina.Excel.Sheets;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
 
 public sealed record MountEntry(
     Mount Mount,

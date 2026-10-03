@@ -1,4 +1,4 @@
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
 
 /// <summary>
 /// Mount list editor filter state. One instance lives on the editor and is mutated in place.

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Enums;
@@ -6,7 +6,7 @@ using KamiToolKit.Interfaces;
 using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Configuration;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListsOverview;
 
 public class MountListItemNode : ListItemNode<MountList>, IListItemNode
 {
@@ -110,7 +110,7 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
         stripeNode.IsVisible = rowIndex >= 0 && rowIndex % 2 == 1;
 
         nameNode.String = itemData.Name;
-        metaNode.String = $"{itemData.Type} · {itemData.FetchNextType}";
+        metaNode.String = $"{itemData.Type} � {itemData.FetchNextType}";
 
         var previousOnClick = defaultCheckbox.OnClick;
         defaultCheckbox.OnClick = null;

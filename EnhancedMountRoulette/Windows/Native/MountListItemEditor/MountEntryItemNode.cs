@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Numerics;
 using Dalamud.Utility;
@@ -7,8 +7,9 @@ using KamiToolKit.Enums;
 using KamiToolKit.Interfaces;
 using KamiToolKit.Nodes;
 using Lumina.Excel.Sheets;
+using EnhancedMountRoulette.Windows.Native;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListItemEditor;
 
 public unsafe class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
 {
@@ -202,7 +203,7 @@ public unsafe class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         ownedNode.String = itemData.OwnedDisplay;
         ownedNode.TextColor = textColor;
 
-        patchNode.String = string.IsNullOrEmpty(itemData.Patch) ? "—" : itemData.Patch;
+        patchNode.String = string.IsNullOrEmpty(itemData.Patch) ? "�" : itemData.Patch;
         patchNode.TextColor = textColor;
 
         seatsNode.String = itemData.SeatCount.ToString(CultureInfo.InvariantCulture);

@@ -1,10 +1,12 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Numerics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.BaseTypes;
 using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Configuration;
+using EnhancedMountRoulette.Windows.Native.MountListItemEditor;
+using EnhancedMountRoulette.Windows.Native.MountListsOverview;
 
 namespace EnhancedMountRoulette.Windows.Native;
 

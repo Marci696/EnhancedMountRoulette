@@ -4,8 +4,9 @@ using System.Numerics;
 using FFXIVClientStructs.FFXIV.Component.GUI;
 using KamiToolKit.Nodes;
 using EnhancedMountRoulette.Configuration;
+using EnhancedMountRoulette.Windows.Native;
 
-namespace EnhancedMountRoulette.Windows.Native;
+namespace EnhancedMountRoulette.Windows.Native.MountListsOverview;
 
 /// <summary>
 /// Left-side mount-lists overview: add whitelist/blacklist, list header, and selectable lists.
