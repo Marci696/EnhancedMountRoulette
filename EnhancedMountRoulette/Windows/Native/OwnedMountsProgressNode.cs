@@ -35,67 +35,11 @@ public class OwnedMountsProgressNode : ResNode
 
     public OwnedMountsProgressNode()
     {
-        headerNode = new TextNode
-        {
-            Position = Vector2.Zero,
-            Size = new Vector2(LabelWidth, BarHeight),
-            FontSize = 12,
-            LineSpacing = 12,
-            AlignmentType = AlignmentType.Left,
-            TextColor = HeaderColor,
-            String = "Owned mounts:",
-        };
-        headerNode.AttachNode(this);
-
-        backgroundNode = new SimpleNineGridNode
-        {
-            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
-            TexturePath = "ui/uld/Parameter_Gauge.tex",
-            TextureSize = new Vector2(160.0f, 20.0f),
-            TextureCoordinates = new Vector2(0.0f, 100.0f),
-            LeftOffset = 20,
-            RightOffset = 20,
-        };
-        backgroundNode.AttachNode(this);
-
-        // Textured fill (not ColorImageNode): empty image nodes have been implicated in
-        // AtkEventManager.ClearEvents crashes during addon finalization.
-        fillNode = new SimpleNineGridNode
-        {
-            Position = new Vector2(LabelWidth + LabelGap + FillInsetX, FillInsetY),
-            TexturePath = "ui/uld/PartyList_GaugeCast.tex",
-            TextureSize = new Vector2(188.0f, 7.0f),
-            TextureCoordinates = new Vector2(8.0f, 3.0f),
-            LeftOffset = 10,
-            RightOffset = 10,
-            IsVisible = false,
-        };
-        fillNode.Color = new Vector4(1.0f, 1.0f, 1.0f, FillColor.W);
-        fillNode.AddColor = new Vector3(FillColor.X, FillColor.Y, FillColor.Z);
-        fillNode.AttachNode(this);
-
-        borderNode = new SimpleNineGridNode
-        {
-            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
-            TexturePath = "ui/uld/Parameter_Gauge.tex",
-            TextureSize = new Vector2(160.0f, 20.0f),
-            TextureCoordinates = new Vector2(0.0f, 0.0f),
-            LeftOffset = 20,
-            RightOffset = 20,
-        };
-        borderNode.AttachNode(this);
-
-        labelNode = new TextNode
-        {
-            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
-            FontSize = 11,
-            LineSpacing = 11,
-            AlignmentType = AlignmentType.Center,
-            TextFlags = TextFlags.Edge,
-            TextColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f),
-            String = "0/0 (0%)",
-        };
-        labelNode.AttachNode(this);
+        headerNode = AddHeader();
+        backgroundNode = AddBackground();
+        fillNode = AddFill();
+        borderNode = AddBorder();
+        labelNode = AddLabel();
     }
 
     public void Refresh()
@@ -109,18 +53,121 @@ public class OwnedMountsProgressNode : ResNode
         lastOwned = owned;
         lastTotal = total;
 
-        ApplyFill();
+        UpdateFill();
         labelNode.String = string.Create(
             CultureInfo.InvariantCulture,
             $"{owned}/{total} ({(total > 0 ? (int)Math.Round(100.0 * owned / total) : 0)}%)"
         );
     }
 
+    protected override void OnSizeChanged()
+    {
+        base.OnSizeChanged();
+        LayoutBar();
+    }
+
+    private TextNode AddHeader()
+    {
+        var node = new TextNode
+        {
+            Position = Vector2.Zero,
+            Size = new Vector2(LabelWidth, BarHeight),
+            FontSize = 12,
+            LineSpacing = 12,
+            AlignmentType = AlignmentType.Left,
+            TextColor = HeaderColor,
+            String = "Owned mounts:",
+        };
+        node.AttachNode(this);
+        return node;
+    }
+
+    private SimpleNineGridNode AddBackground()
+    {
+        var node = new SimpleNineGridNode
+        {
+            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
+            TexturePath = "ui/uld/Parameter_Gauge.tex",
+            TextureSize = new Vector2(160.0f, 20.0f),
+            TextureCoordinates = new Vector2(0.0f, 100.0f),
+            LeftOffset = 20,
+            RightOffset = 20,
+        };
+        node.AttachNode(this);
+        return node;
+    }
+
+    private SimpleNineGridNode AddFill()
+    {
+        // Textured fill (not ColorImageNode): empty image nodes have been implicated in
+        // AtkEventManager.ClearEvents crashes during addon finalization.
+        var node = new SimpleNineGridNode
+        {
+            Position = new Vector2(LabelWidth + LabelGap + FillInsetX, FillInsetY),
+            TexturePath = "ui/uld/PartyList_GaugeCast.tex",
+            TextureSize = new Vector2(188.0f, 7.0f),
+            TextureCoordinates = new Vector2(8.0f, 3.0f),
+            LeftOffset = 10,
+            RightOffset = 10,
+            IsVisible = false,
+        };
+        node.Color = new Vector4(1.0f, 1.0f, 1.0f, FillColor.W);
+        node.AddColor = new Vector3(FillColor.X, FillColor.Y, FillColor.Z);
+        node.AttachNode(this);
+        return node;
+    }
+
+    private SimpleNineGridNode AddBorder()
+    {
+        var node = new SimpleNineGridNode
+        {
+            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
+            TexturePath = "ui/uld/Parameter_Gauge.tex",
+            TextureSize = new Vector2(160.0f, 20.0f),
+            TextureCoordinates = new Vector2(0.0f, 0.0f),
+            LeftOffset = 20,
+            RightOffset = 20,
+        };
+        node.AttachNode(this);
+        return node;
+    }
+
+    private TextNode AddLabel()
+    {
+        var node = new TextNode
+        {
+            Position = new Vector2(LabelWidth + LabelGap, 0.0f),
+            FontSize = 11,
+            LineSpacing = 11,
+            AlignmentType = AlignmentType.Center,
+            TextFlags = TextFlags.Edge,
+            TextColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f),
+            String = "0/0 (0%)",
+        };
+        node.AttachNode(this);
+        return node;
+    }
+
     private float BarLeft => LabelWidth + LabelGap;
 
     private float BarWidth => Math.Max(0.0f, Width - BarLeft);
 
-    private void ApplyFill()
+    private void LayoutBar()
+    {
+        headerNode.Size = new Vector2(LabelWidth, Height);
+
+        var barSize = new Vector2(BarWidth, Height);
+        backgroundNode.Position = new Vector2(BarLeft, 0.0f);
+        backgroundNode.Size = barSize;
+        borderNode.Position = new Vector2(BarLeft, 0.0f);
+        borderNode.Size = barSize;
+        labelNode.Position = new Vector2(BarLeft, 0.0f);
+        labelNode.Size = barSize;
+
+        UpdateFill();
+    }
+
+    private void UpdateFill()
     {
         var maxFillWidth = Math.Max(0.0f, BarWidth - (FillInsetX * 2.0f));
         var fillHeight = Math.Max(0.0f, BarHeight - (FillInsetY * 2.0f));
@@ -132,22 +179,5 @@ public class OwnedMountsProgressNode : ResNode
         fillNode.Height = fillHeight;
         fillNode.Width = maxFillWidth * fraction;
         fillNode.IsVisible = fillNode.Width > 0.5f;
-    }
-
-    protected override void OnSizeChanged()
-    {
-        base.OnSizeChanged();
-
-        headerNode.Size = new Vector2(LabelWidth, Height);
-
-        var barSize = new Vector2(BarWidth, Height);
-        backgroundNode.Position = new Vector2(BarLeft, 0.0f);
-        backgroundNode.Size = barSize;
-        borderNode.Position = new Vector2(BarLeft, 0.0f);
-        borderNode.Size = barSize;
-        labelNode.Position = new Vector2(BarLeft, 0.0f);
-        labelNode.Size = barSize;
-
-        ApplyFill();
     }
 }

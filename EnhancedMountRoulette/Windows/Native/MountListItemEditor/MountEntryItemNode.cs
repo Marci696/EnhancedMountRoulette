@@ -203,7 +203,7 @@ public unsafe class MountEntryItemNode : ListItemNode<MountEntry>, IListItemNode
         ownedNode.String = itemData.OwnedDisplay;
         ownedNode.TextColor = textColor;
 
-        patchNode.String = string.IsNullOrEmpty(itemData.Patch) ? "�" : itemData.Patch;
+        patchNode.String = string.IsNullOrEmpty(itemData.Patch) ? "—" : itemData.Patch;
         patchNode.TextColor = textColor;
 
         seatsNode.String = itemData.SeatCount.ToString(CultureInfo.InvariantCulture);

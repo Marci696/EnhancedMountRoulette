@@ -25,24 +25,51 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
     public const float ListContentRightInset = 16.0f;
 
     private static readonly Vector4 OddRowBackground = new(1.0f, 1.0f, 1.0f, 0.08f);
+    private static readonly Vector4 SubtitleTextColor = new(0.75f, 0.75f, 0.75f, 1.0f);
 
     private readonly ColorImageNode stripeNode;
     private readonly CheckboxNode defaultCheckbox;
     private readonly TextNode nameNode;
-    private readonly TextNode metaNode;
+    private readonly TextNode subtitleNode;
 
     public MountListItemNode()
     {
-        stripeNode = new ColorImageNode
+        stripeNode = AddStripe();
+        nameNode = AddName();
+        subtitleNode = AddSubtitle();
+        defaultCheckbox = AddDefaultCheckbox();
+        Size = new Vector2(240.0f, ItemHeight);
+    }
+
+    protected override void OnSizeChanged()
+    {
+        base.OnSizeChanged();
+        LayoutColumns();
+    }
+
+    protected override void SetNodeData(MountList itemData)
+    {
+        UpdateStripe(itemData);
+        UpdateTexts(itemData);
+        UpdateDefaultCheckbox(itemData);
+    }
+
+    private ColorImageNode AddStripe()
+    {
+        var node = new ColorImageNode
         {
             Position = Vector2.Zero,
             Size = new Vector2(240.0f, ItemHeight),
             Color = OddRowBackground,
             IsVisible = false,
         };
-        stripeNode.AttachNode(this, NodePosition.AsFirstChild);
+        node.AttachNode(this, NodePosition.AsFirstChild);
+        return node;
+    }
 
-        nameNode = new TextNode
+    private TextNode AddName()
+    {
+        var node = new TextNode
         {
             Position = new Vector2(TextLeft, 4.0f),
             Size = new Vector2(180.0f, 16.0f),
@@ -50,20 +77,28 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
             LineSpacing = 12,
             AlignmentType = AlignmentType.Left,
         };
-        nameNode.AttachNode(this);
+        node.AttachNode(this);
+        return node;
+    }
 
-        metaNode = new TextNode
+    private TextNode AddSubtitle()
+    {
+        var node = new TextNode
         {
             Position = new Vector2(TextLeft, 20.0f),
             Size = new Vector2(180.0f, 14.0f),
             FontSize = 10,
             LineSpacing = 10,
             AlignmentType = AlignmentType.Left,
-            TextColor = new Vector4(0.75f, 0.75f, 0.75f, 1.0f),
+            TextColor = SubtitleTextColor,
         };
-        metaNode.AttachNode(this);
+        node.AttachNode(this);
+        return node;
+    }
 
-        defaultCheckbox = new CheckboxNode
+    private CheckboxNode AddDefaultCheckbox()
+    {
+        var checkbox = new CheckboxNode
         {
             Position = new Vector2(200.0f, (ItemHeight - CheckboxSize) / 2.0f),
             Size = new Vector2(CheckboxSize, CheckboxSize),
@@ -79,15 +114,12 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
                 OnListsChanged?.Invoke();
             },
         };
-        defaultCheckbox.AttachNode(this);
-
-        Size = new Vector2(240.0f, ItemHeight);
+        checkbox.AttachNode(this);
+        return checkbox;
     }
 
-    protected override void OnSizeChanged()
+    private void LayoutColumns()
     {
-        base.OnSizeChanged();
-
         stripeNode.Size = Size;
 
         // CheckboxNode draws its box on the left (~Height-4 wide); center that box in the column.
@@ -100,18 +132,24 @@ public class MountListItemNode : ListItemNode<MountList>, IListItemNode
         nameNode.Position = new Vector2(TextLeft, 4.0f);
         nameNode.Size = new Vector2(textWidth, 16.0f);
 
-        metaNode.Position = new Vector2(TextLeft, 20.0f);
-        metaNode.Size = new Vector2(textWidth, 14.0f);
+        subtitleNode.Position = new Vector2(TextLeft, 20.0f);
+        subtitleNode.Size = new Vector2(textWidth, 14.0f);
     }
 
-    protected override void SetNodeData(MountList itemData)
+    private void UpdateStripe(MountList itemData)
     {
         var rowIndex = ConfigManager.Instance.OrderedMountList.FindIndex(list => list.Id == itemData.Id);
         stripeNode.IsVisible = rowIndex >= 0 && rowIndex % 2 == 1;
+    }
 
+    private void UpdateTexts(MountList itemData)
+    {
         nameNode.String = itemData.Name;
-        metaNode.String = $"{itemData.Type} � {itemData.FetchNextType}";
+        subtitleNode.String = $"{itemData.Type} · {itemData.FetchNextType}";
+    }
 
+    private void UpdateDefaultCheckbox(MountList itemData)
+    {
         var previousOnClick = defaultCheckbox.OnClick;
         defaultCheckbox.OnClick = null;
         defaultCheckbox.IsChecked = itemData.IsDefault;

@@ -45,7 +45,7 @@ public class MountListItemEditorNode : ResNode
     /// <summary>
     /// Set once during final dispose. Blocks further UI work (context menus, dropdown
     /// collapse) so deferred callbacks cannot touch nodes after teardown starts.
-    /// Not set on ordinary hide/show � the window can reopen.
+    /// Not set on ordinary hide/show — the window can reopen.
     /// </summary>
     private bool isTearingDown;
 
@@ -319,7 +319,7 @@ public class MountListItemEditorNode : ResNode
         };
         row.AddNode(searchInputNode);
 
-        selectionLabel = CreateFilterCategoryLabel("Selected:", 70.0f);
+        selectionLabel = AddFilterCategoryLabel("Selected:", 70.0f);
         row.AddNode(selectionLabel);
 
         selectionDropDown = new EnumDropDownNode<MountSelectionFilter>
@@ -341,7 +341,7 @@ public class MountListItemEditorNode : ResNode
         selectionDropDown.GetLabelFunction = FormatSelectionFilterLabel;
         row.AddNode(selectionDropDown);
 
-        seatLabel = CreateFilterCategoryLabel("Seats:", 48.0f);
+        seatLabel = AddFilterCategoryLabel("Seats:", 48.0f);
         row.AddNode(seatLabel);
 
         seatDropDown = new EnumDropDownNode<MountSeatFilter>
@@ -363,7 +363,7 @@ public class MountListItemEditorNode : ResNode
         seatDropDown.GetLabelFunction = FormatSeatFilterLabel;
         row.AddNode(seatDropDown);
 
-        ownedLabel = CreateFilterCategoryLabel("Owned:", 52.0f);
+        ownedLabel = AddFilterCategoryLabel("Owned:", 52.0f);
         row.AddNode(ownedLabel);
 
         ownedCheckbox = new CheckboxNode
@@ -398,10 +398,10 @@ public class MountListItemEditorNode : ResNode
         };
         header.AttachNode(this);
 
-        nameButton = CreateSortHeaderButton("Name ?", MountSortMode.Name, MountEntryItemNode.NameLeft, 200.0f);
+        nameButton = AddSortHeaderButton("Name ▲", MountSortMode.Name, MountEntryItemNode.NameLeft, 200.0f);
         nameButton.AttachNode(header);
 
-        ownedButton = CreateSortHeaderButton(
+        ownedButton = AddSortHeaderButton(
             "Own%",
             MountSortMode.Owned,
             220.0f,
@@ -409,7 +409,7 @@ public class MountListItemEditorNode : ResNode
         );
         ownedButton.AttachNode(header);
 
-        patchButton = CreateSortHeaderButton(
+        patchButton = AddSortHeaderButton(
             "Patch",
             MountSortMode.Patch,
             280.0f,
@@ -417,7 +417,7 @@ public class MountListItemEditorNode : ResNode
         );
         patchButton.AttachNode(header);
 
-        seatsButton = CreateSortHeaderButton(
+        seatsButton = AddSortHeaderButton(
             "Seats",
             MountSortMode.Seats,
             320.0f,
@@ -428,7 +428,7 @@ public class MountListItemEditorNode : ResNode
         return header;
     }
 
-    private TextButtonNode CreateSortHeaderButton(
+    private TextButtonNode AddSortHeaderButton(
         string label,
         MountSortMode mode,
         float x,
@@ -612,7 +612,7 @@ public class MountListItemEditorNode : ResNode
             return label;
         }
 
-        return sorting.Ascending ? $"{label} ?" : $"{label} ?";
+        return sorting.Ascending ? $"{label} ▲" : $"{label} ▼";
     }
 
     private void ConfirmAndDeleteList()
@@ -807,7 +807,7 @@ public class MountListItemEditorNode : ResNode
                     isOwned,
                     isInList,
                     seatCount,
-                    collectInfo?.OwnedDisplay ?? "�",
+                    collectInfo?.OwnedDisplay ?? "—",
                     collectInfo?.OwnedPercent,
                     collectInfo?.Patch,
                     ToggleMembership
@@ -867,7 +867,7 @@ public class MountListItemEditorNode : ResNode
         RefreshSelectedList();
     }
 
-    private static TextNode CreateFilterCategoryLabel(string text, float width) =>
+    private static TextNode AddFilterCategoryLabel(string text, float width) =>
         new()
         {
             Size = new Vector2(width, RowHeight),
