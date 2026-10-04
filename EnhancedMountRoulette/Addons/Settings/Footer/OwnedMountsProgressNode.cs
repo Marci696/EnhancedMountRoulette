@@ -30,8 +30,8 @@ public class OwnedMountsProgressNode : ResNode
     private readonly SimpleNineGridNode borderNode;
     private readonly TextNode labelNode;
 
-    private int lastOwned = -1;
-    private int lastTotal = -1;
+    private int? lastOwned;
+    private int? lastTotal;
 
     public OwnedMountsProgressNode()
     {
@@ -171,8 +171,10 @@ public class OwnedMountsProgressNode : ResNode
     {
         var maxFillWidth = Math.Max(0.0f, BarWidth - (FillInsetX * 2.0f));
         var fillHeight = Math.Max(0.0f, BarHeight - (FillInsetY * 2.0f));
-        var fraction = lastTotal > 0
-            ? Math.Clamp(lastOwned / (float)lastTotal, 0.0f, 1.0f)
+        var owned = lastOwned ?? 0;
+        var total = lastTotal ?? 0;
+        var fraction = total > 0
+            ? Math.Clamp(owned / (float)total, 0.0f, 1.0f)
             : 0.0f;
 
         fillNode.Position = new Vector2(BarLeft + FillInsetX, FillInsetY);

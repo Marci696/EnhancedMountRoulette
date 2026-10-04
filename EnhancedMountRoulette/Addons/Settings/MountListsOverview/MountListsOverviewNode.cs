@@ -22,13 +22,11 @@ public class MountListsOverviewNode : VerticalListNode
 
     private readonly ListNode<MountList, MountListItemNode> mountListNode;
 
-    private MountList? selectedMountList;
-
     public Action? OnListsChanged { get; set; }
 
     public Action<MountList>? OnMountListSelected { get; set; }
 
-    public MountList? SelectedMountList => selectedMountList;
+    public MountList? SelectedMountList { get; private set; }
 
     public MountListsOverviewNode(float height)
     {
@@ -59,24 +57,18 @@ public class MountListsOverviewNode : VerticalListNode
     public void Refresh()
     {
         var lists = ConfigManager.Instance.OrderedMountList;
-
-        if (selectedMountList is null || lists.All(list => list.Id != selectedMountList.Id))
-        {
-            selectedMountList = lists.FirstOrDefault();
-        }
-        else
-        {
-            selectedMountList = lists.First(list => list.Id == selectedMountList.Id);
-        }
+        var next = SelectedMountList is { Id: var selectedId }
+            ? lists.FirstOrDefault(list => list.Id == selectedId) ?? lists.FirstOrDefault()
+            : lists.FirstOrDefault();
 
         // OptionsList assignment may FullRebuild and clear SelectedItems; set selection after.
         mountListNode.OptionsList = lists;
-        UpdateSelectionHighlight();
+        Select(next);
     }
 
-    public void Select(MountList mountList)
+    public void Select(MountList? mountList)
     {
-        selectedMountList = mountList;
+        SelectedMountList = mountList;
         UpdateSelectionHighlight();
     }
 
@@ -176,16 +168,16 @@ public class MountListsOverviewNode : VerticalListNode
             return;
         }
 
-        selectedMountList = mountList;
+        SelectedMountList = mountList;
         OnMountListSelected?.Invoke(mountList);
     }
 
     private void UpdateSelectionHighlight()
     {
         mountListNode.SelectedItems.Clear();
-        if (selectedMountList is not null)
+        if (SelectedMountList is not null)
         {
-            mountListNode.SelectedItems.Add(selectedMountList);
+            mountListNode.SelectedItems.Add(SelectedMountList);
         }
 
         mountListNode.Update();
