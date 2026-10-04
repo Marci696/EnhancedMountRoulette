@@ -168,7 +168,7 @@ public class MountListsOverviewNode : VerticalListNode
             return;
         }
 
-        SelectedMountList = mountList;
+        Select(mountList);
         OnMountListSelected?.Invoke(mountList);
     }
 
